@@ -7,8 +7,6 @@
     <title>About Us | TourismPro</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/about.css">
-
-
 </head>
 
 <body>
@@ -19,61 +17,178 @@
             <a href="tours.html">Tours</a>
             <a href="about.html">About</a>
             <a href="login.html">Login</a>
-            <a href="register.html">Register</a>
+            <a href="register.html" class="btn btn-outline"
+                style="color: white; border-color: rgba(255,255,255,0.3); margin-left: 0.5rem;">Register</a>
         </div>
     </nav>
 
+    <!-- Hero Section -->
     <div class="about-hero">
-        <h1>About <span style="color: var(--secondary);">TourismPro</span></h1>
-        <p style="color: var(--text-muted); font-size: 1.25rem;">Connecting travelers with unforgettable experiences.
-        </p>
+        <div class="hero-content">
+            <h1>About <span style="color: var(--secondary);">TourismPro</span></h1>
+            <p style="color: var(--text-muted); font-size: 1.25rem; max-width: 600px; margin: 1rem auto;">
+                Connecting travelers with unforgettable experiences around the globe.
+            </p>
+        </div>
     </div>
 
-    <section>
-        <div class="grid-3">
-            <div style="grid-column: span 3; max-width: 800px; margin: 0 auto; text-align: center;">
+    <!-- Our Story Section -->
+    <section class="about-section">
+        <div class="container">
+            <div class="story-content">
                 <h2 class="section-title">Our Story</h2>
-                <p style="color: var(--text-main); line-height: 1.8; font-size: 1.1rem; margin-bottom: 2rem;">
-                    Founded in 2023, TourismPro started with a simple idea: to make travel planning seamless and
-                    personal.
-                    We believe that the best journeys are those that connect you with local culture and authentic
-                    experiences.
-                    From humble beginnings as a small blog, we've grown into a global platform connecting thousands of
-                    travelers
-                    with expert local guides.
-                </p>
+                <div class="story-text">
+                    <p>
+                        Founded in 2023, TourismPro started with a simple idea: to make travel planning seamless and
+                        personal. We believe that the best journeys are those that connect you with local culture and
+                        authentic
+                        experiences. From humble beginnings as a small blog, we've grown into a global platform
+                        connecting
+                        thousands of travelers with expert local guides.
+                    </p>
+                    <p>
+                        Today, we operate in over 50 countries, with a network of 500+ certified guides who are
+                        passionate
+                        about sharing their love for their homeland. Our platform has helped over 10,000 travelers
+                        create
+                        unforgettable memories.
+                    </p>
+                </div>
             </div>
-        </div>
-
-        <div class="mission-box">
-            <h2 style="margin-bottom: 1rem; color: var(--primary);">Our Mission</h2>
-            <p style="font-size: 1.25rem; font-style: italic;">"To empower travelers to explore the world with
-                confidence and curiosity."</p>
         </div>
     </section>
 
-    <section>
-        <h2 class="section-title">Meet the Team</h2>
-        <div class="grid-3">
-            <div class="team-member">
-                <div class="member-img">👑</div>
-                <h3>Alex Johnson</h3>
-                <p style="color: var(--primary);">CEO & Founder</p>
-                <p style="margin-top: 1rem; color: var(--text-muted);">Passionate traveler with 10+ years in the
-                    industry.</p>
+    <!-- Mission & Vision -->
+    <section class="mission-section">
+        <div class="container">
+            <div class="mission-grid">
+                <div class="mission-card">
+                    <div class="mission-icon">🎯</div>
+                    <h3>Our Mission</h3>
+                    <p>"To empower travelers to explore the world with confidence and curiosity, while supporting local
+                        communities through sustainable tourism."</p>
+                </div>
+                <div class="mission-card">
+                    <div class="mission-icon">👁️</div>
+                    <h3>Our Vision</h3>
+                    <p>"To become the world's most trusted platform for authentic travel experiences, bridging cultures
+                        and
+                        creating meaningful connections."</p>
+                </div>
+                <div class="mission-card">
+                    <div class="mission-icon">💙</div>
+                    <h3>Our Values</h3>
+                    <p>Authenticity, Sustainability, Community, Excellence, and Adventure guide everything we do at
+                        TourismPro.</p>
+                </div>
             </div>
-            <div class="team-member">
-                <div class="member-img">💻</div>
-                <h3>Sarah Chen</h3>
-                <p style="color: var(--primary);">CTO</p>
-                <p style="margin-top: 1rem; color: var(--text-muted);">Tech wizard ensuring seamless digital
-                    experiences.</p>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section class="team-section">
+        <div class="container">
+            <h2 class="section-title">Meet Our Team</h2>
+            <p class="section-subtitle">The passionate people behind TourismPro</p>
+
+            <div class="team-grid">
+                <div class="team-card">
+                    <div class="team-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">AJ
+                    </div>
+                    <h3>Alex Johnson</h3>
+                    <p class="team-role">CEO & Founder</p>
+                    <p class="team-bio">Passionate traveler with 15+ years in the tourism industry. Founded TourismPro
+                        to
+                        revolutionize how people experience travel.</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">SC
+                    </div>
+                    <h3>Sarah Chen</h3>
+                    <p class="team-role">Chief Technology Officer</p>
+                    <p class="team-bio">Tech wizard with expertise in building scalable platforms. Ensures seamless
+                        digital
+                        experiences for our users and partners.</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">MR
+                    </div>
+                    <h3>Mike Ross</h3>
+                    <p class="team-role">Head of Design</p>
+                    <p class="team-bio">Creative visionary with a passion for beautiful and intuitive interfaces. Leads
+                        our
+                        design team in creating memorable user experiences.</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-dribbble"></i></a>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">MP
+                    </div>
+                    <h3>Maria Perez</h3>
+                    <p class="team-role">Head of Operations</p>
+                    <p class="team-bio">Operations expert ensuring smooth execution of all tours and maintaining our
+                        high
+                        quality standards across the globe.</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
             </div>
-            <div class="team-member">
-                <div class="member-img">🎨</div>
-                <h3>Mike Ross</h3>
-                <p style="color: var(--primary);">Head of Design</p>
-                <p style="margin-top: 1rem; color: var(--text-muted);">Creating beautiful and intuitive interfaces.</p>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">10,000+</div>
+                    <div class="stat-label">Happy Travelers</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-label">Certified Guides</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">50+</div>
+                    <div class="stat-label">Countries</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">4.9</div>
+                    <div class="stat-label">Average Rating</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Ready to Start Your Journey?</h2>
+                <p>Join thousands of travelers who have discovered amazing experiences with TourismPro.</p>
+                <div class="cta-buttons">
+                    <a href="register.html" class="btn btn-primary">Sign Up Now</a>
+                    <a href="tours.html" class="btn btn-outline">Explore Tours</a>
+                </div>
             </div>
         </div>
     </section>
@@ -89,7 +204,7 @@
                 <a href="index.html">Home</a>
                 <a href="tours.html">Tours</a>
                 <a href="about.html">About Us</a>
-                <a href="#">Contact</a>
+                <a href="contact.html">Contact</a>
             </div>
             <div class="footer-col">
                 <h4>Legal</h4>
@@ -99,15 +214,18 @@
             </div>
             <div class="footer-col">
                 <h4>Connect</h4>
-                <a href="#">Twitter</a>
-                <a href="#">Instagram</a>
-                <a href="#">Facebook</a>
+                <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
+                <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
+                <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
             </div>
         </div>
         <div class="copyright">
             <p>&copy; 2025 TourismPro. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- Add Font Awesome for icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 
 </html>

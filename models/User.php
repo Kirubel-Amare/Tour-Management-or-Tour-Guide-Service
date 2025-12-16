@@ -1,91 +1,132 @@
 <?php
+
 class User
 {
     private $conn;
-    private $json_file = '../../data/users.json'; // Path relative to API files
+    private $table_name = "users";
 
-    // User Properties
     public $id;
     public $name;
     public $email;
     public $password;
+
     public $role;
-    public $created_at;
 
-    // Constructor with DB (kept for compatibility)
-    public function __construct($db)
+    public function __construct()
     {
-        $this->conn = $db;
-        // Fix path if running from root vs api folder
-        if (!file_exists($this->json_file) && file_exists('data/users.json')) {
-            $this->json_file = 'data/users.json';
+        require_once __DIR__ . '/../config/Database.php';
+        $database = new Database();
+        $this->conn = $database->connect();
+
+        if (!$this->conn) {
+            die("Database connection failed!");
         }
     }
 
-    private function getData()
-    {
-        if (!file_exists($this->json_file)) {
-            file_put_contents($this->json_file, '[]');
-            return [];
+public function register()
+{
+    $query = "INSERT INTO " . $this->table_name . " 
+              (`name`, `email`, `password`, `role`) 
+              VALUES (:name, :email, :password, :role)";
+              
+    $stmt = $this->conn->prepare($query);
+
+    $this->name = htmlspecialchars(strip_tags($this->name));
+    $this->email = htmlspecialchars(strip_tags($this->email));
+    $this->password = password_hash($this->password, PASSWORD_BCRYPT);
+    $this->role = htmlspecialchars(strip_tags($this->role));
+
+    $stmt->bindParam(":name", $this->name);
+    $stmt->bindParam(":email", $this->email);
+    $stmt->bindParam(":password", $this->password);
+    $stmt->bindParam(":role", $this->role);
+
+    try {
+        if ($stmt->execute()) {
+            return true;
+        } else {
+            print_r($stmt->errorInfo()); // <-- show SQL errors
+            return false;
         }
-        $content = file_get_contents($this->json_file);
-        return json_decode($content, true) ?? [];
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage();
+        return false;
     }
+}
 
-    private function saveData($data)
-    {
-        file_put_contents($this->json_file, json_encode($data, JSON_PRETTY_PRINT));
+public function login()
+{
+    $query = "SELECT id, name, password, role FROM " . $this->table_name . " WHERE email = ? LIMIT 0,1";
+    $stmt = $this->conn->prepare($query);
+    $stmt->bindParam(1, $this->email);
+    $stmt->execute();
+
+    if ($stmt->rowCount() > 0) {
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (password_verify($this->password, $row['password'])) {
+            $this->id = $row['id'];
+            $this->name = $row['name'];
+            $this->role = $row['role']; // <-- add this
+            return true;
+        }
     }
+    return false;
+}
 
-    // Create User (Register)
-    public function create()
+
+    public function emailExists()
     {
-        $users = $this->getData();
-
-        // Auto increment ID
-        $last_user = end($users);
-        $this->id = $last_user ? $last_user['id'] + 1 : 1;
-        $this->created_at = date('Y-m-d H:i:s');
-
-        $new_user = [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'password' => $this->password,
-            'role' => $this->role,
-            'created_at' => $this->created_at
-        ];
-
-        $users[] = $new_user;
-        $this->saveData($users);
-        return true;
+        $query = "SELECT id FROM " . $this->table_name . " WHERE email = ? LIMIT 0,1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->email);
+        $stmt->execute();
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+        return false;
     }
-
-    // Login (Verify)
-    public function login()
+    public function readOne()
     {
-        $users = $this->getData();
-        foreach ($users as $user) {
-            if ($user['email'] === $this->email) {
-                if (password_verify($this->password, $user['password'])) {
-                    $this->id = $user['id'];
-                    $this->name = $user['name'];
-                    $this->role = $user['role'];
-                    return true;
-                }
-            }
+        $query = "SELECT * FROM " . $this->table_name . " WHERE id = ? LIMIT 0,1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->id);
+        $stmt->execute();
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            $this->name = $row['name'];
+            $this->email = $row['email'];
+            return true;
         }
         return false;
     }
 
-    // Check if email exists
-    public function emailExists()
+    public function update()
     {
-        $users = $this->getData();
-        foreach ($users as $user) {
-            if ($user['email'] === $this->email) {
-                return true;
-            }
+        $query = "UPDATE " . $this->table_name . " SET name = :name, email = :email";
+
+        if (!empty($this->password)) {
+            $query .= ", password = :password";
+        }
+
+        $query .= " WHERE id = :id";
+
+        $stmt = $this->conn->prepare($query);
+
+        $this->name = htmlspecialchars(strip_tags($this->name));
+        $this->email = htmlspecialchars(strip_tags($this->email));
+
+        $stmt->bindParam(':name', $this->name);
+        $stmt->bindParam(':email', $this->email);
+        $stmt->bindParam(':id', $this->id);
+
+        if (!empty($this->password)) {
+            $this->password = password_hash($this->password, PASSWORD_BCRYPT);
+            $stmt->bindParam(':password', $this->password);
+        }
+
+        if ($stmt->execute()) {
+            return true;
         }
         return false;
     }
