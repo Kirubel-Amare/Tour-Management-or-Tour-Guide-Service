@@ -1,0 +1,39 @@
+ 
+        .about-hero {
+            text-align: center;
+            padding: 8rem 1rem 4rem;
+        }
+
+        .about-hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .mission-box {
+            background: var(--glass);
+            padding: 3rem;
+            border-radius: 1rem;
+            border: 1px solid var(--glass-border);
+            margin-top: 3rem;
+            text-align: center;
+        }
+
+        .team-member {
+            text-align: center;
+            background: var(--glass);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .member-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: var(--glass-border);
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }

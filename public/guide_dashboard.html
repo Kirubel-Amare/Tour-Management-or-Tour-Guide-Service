@@ -6,157 +6,304 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guide Dashboard | TourismPro</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="css/guide_dashboard.css">
 </head>
 
 <body>
     <nav class="navbar">
-        <a href="index.html" class="logo">TourismPro <span
-                style="font-size: 0.8rem; background: var(--secondary); padding: 2px 6px; border-radius: 4px; vertical-align: middle;">GUIDE</span></a>
+        <a href="index.html" class="logo">
+            TourismPro <span class="guide-badge">GUIDE DASHBOARD</span>
+        </a>
         <div class="nav-links">
-            <span id="welcome-msg" style="color: var(--text-muted); margin-right: 1rem;"></span>
-            <a href="#" onclick="logout()">Logout</a>
+            <div class="user-profile">
+                <span id="user-name" style="margin-right: 1rem; font-weight: 600; color: white;"></span>
+                <div
+                    style="display: inline-block; width: 32px; height: 32px; background: var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    G
+                </div>
+            </div>
+            <a href="index.html" class="btn btn-outline" style="color: white; border-color: rgba(255,255,255,0.3);">
+                <i class="fas fa-home"></i>
+            </a>
+            <a href="#" onclick="logout()" class="btn btn-danger">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
         </div>
     </nav>
 
-    <div
-        style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+    <div class="dashboard-container fade-in">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" onclick="switchTab('dashboard')">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#tours" class="nav-item" onclick="switchTab('tours')">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <span>My Tours</span>
+                    <span
+                        style="margin-left: auto; background: var(--primary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;"
+                        id="tour-count">0</span>
+                </a>
+                <a href="#bookings" class="nav-item" onclick="switchTab('bookings')">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Bookings</span>
+                    <span
+                        style="margin-left: auto; background: var(--success); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;"
+                        id="booking-count">0</span>
+                </a>
+                <a href="#revenue" class="nav-item" onclick="switchTab('revenue')">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Revenue</span>
+                </a>
+                <a href="#reviews" class="nav-item" onclick="switchTab('reviews')">
+                    <i class="fas fa-star"></i>
+                    <span>Reviews</span>
+                    <span
+                        style="margin-left: auto; background: var(--warning); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;"
+                        id="review-count">0</span>
+                </a>
+                <a href="#settings" class="nav-item" onclick="switchTab('settings')">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
 
-        <!-- Create Tour Column -->
-        <div>
-            <div class="auth-card" style="max-width: 100%;">
-                <h3 style="margin-bottom: 1.5rem;">Create New Tour</h3>
-                <form id="create-tour-form">
-                    <div class="form-group">
-                        <label>Title</label>
-                        <input type="text" id="title" required>
+            <div class="section-card">
+                <h3 style="margin-bottom: 1rem;">Quick Stats</h3>
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">This Month</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">$<span
+                            id="month-revenue">0</span></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                    <div>
+                        <div style="color: var(--text-muted);">Conversion</div>
+                        <div style="font-weight: 600; color: var(--success);" id="conversion-rate">0%</div>
                     </div>
-                    <div class="form-group">
-                        <label>Location</label>
-                        <select id="location" required>
-                            <option value="">Select a Place...</option>
-                            <!-- Populated via API -->
-                        </select>
+                    <div>
+                        <div style="color: var(--text-muted);">Rating</div>
+                        <div style="font-weight: 600; color: var(--warning);" id="avg-rating-sidebar">0.0</div>
                     </div>
-                    <div class="form-group">
-                        <label>Price ($)</label>
-                        <input type="number" id="price" required step="0.01">
-                    </div>
-                    <div class="form-group">
-                        <label>Date</label>
-                        <input type="date" id="date" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <input type="text" id="desc" required
-                            style="width: 100%; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); border-radius: 0.5rem; color: white;">
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Publish Tour</button>
-                </form>
+                </div>
             </div>
         </div>
 
-        <!-- My Tours Column -->
-        <div>
-            <h2 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">My
-                Active Tours</h2>
-            <div id="tours-list">
-                <p style="color: var(--text-muted);">Loading tours...</p>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon tours">
+                                <i class="fas fa-map-marked-alt"></i>
+                            </div>
+                            <span class="stat-trend trend-up">+12%</span>
+                        </div>
+                        <div class="stat-value" id="total-tours">0</div>
+                        <div class="stat-label">Active Tours</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon bookings">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <span class="stat-trend trend-up">+8%</span>
+                        </div>
+                        <div class="stat-value" id="total-bookings">0</div>
+                        <div class="stat-label">Total Bookings</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon revenue">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <span class="stat-trend trend-up">+24%</span>
+                        </div>
+                        <div class="stat-value" id="total-revenue">$0</div>
+                        <div class="stat-label">Total Revenue</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon rating">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span class="stat-trend trend-up">+0.3</span>
+                        </div>
+                        <div class="stat-value" id="avg-rating">0.0</div>
+                        <div class="stat-label">Avg Rating</div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity & Recent Bookings -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <!-- Recent Activity -->
+                    <div class="section-card">
+                        <div class="content-header">
+                            <h2><i class="fas fa-history"></i> Recent Activity</h2>
+                            <button class="btn btn-outline" style="border-color: var(--border);">
+                                View All
+                            </button>
+                        </div>
+                        <div class="activity-timeline" id="activity-timeline">
+                            <!-- Activity items will be inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Recent Bookings -->
+                    <div class="section-card">
+                        <div class="content-header">
+                            <h2><i class="fas fa-calendar-alt"></i> Recent Bookings</h2>
+                            <button class="btn btn-outline" style="border-color: var(--border);">
+                                View All
+                            </button>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table class="bookings-table">
+                                <thead>
+                                    <tr>
+                                        <th>Customer</th>
+                                        <th>Tour</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-bookings">
+                                    <!-- Bookings will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="section-card">
+                    <h2 style="margin-bottom: 1.5rem;"><i class="fas fa-bolt"></i> Quick Actions</h2>
+                    <div class="quick-actions">
+                        <div class="action-btn" onclick="createNewTour()">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Create Tour</span>
+                        </div>
+                        <div class="action-btn" onclick="viewCalendar()">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>View Calendar</span>
+                        </div>
+                        <div class="action-btn" onclick="exportReports()">
+                            <i class="fas fa-file-export"></i>
+                            <span>Export Reports</span>
+                        </div>
+                        <div class="action-btn" onclick="sendNewsletter()">
+                            <i class="fas fa-envelope"></i>
+                            <span>Send Update</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tours Tab -->
+            <div id="tours-tab" class="tab-content" style="display: none;">
+                <div class="section-card">
+                    <div class="content-header">
+                        <h2><i class="fas fa-map-marked-alt"></i> My Tours</h2>
+                        <div>
+                            <button class="btn btn-primary" onclick="showCreateTourModal()">
+                                <i class="fas fa-plus"></i> Create New Tour
+                            </button>
+                        </div>
+                    </div>
+                    <div id="tours-list" class="tours-grid">
+                        <!-- Tours will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Tour Modal -->
+            <div id="create-tour-modal" class="section-card" style="display: none;">
+                <div class="content-header">
+                    <h2><i class="fas fa-plus-circle"></i> Create New Tour</h2>
+                    <button class="btn btn-outline" onclick="closeCreateTourModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form id="create-tour-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-heading"></i> Tour Title</label>
+                            <input type="text" id="tour-title" required placeholder="E.g., Paris Night Tour"
+                                class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Location</label>
+                            <select id="tour-location" required class="form-control">
+                                <option value="">Select a Place...</option>
+                                <option value="Paris, France">Paris, France</option>
+                                <option value="Tokyo, Japan">Tokyo, Japan</option>
+                                <option value="New York, USA">New York, USA</option>
+                                <option value="Rome, Italy">Rome, Italy</option>
+                                <option value="Bali, Indonesia">Bali, Indonesia</option>
+                                <option value="Sydney, Australia">Sydney, Australia</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-dollar-sign"></i> Price ($)</label>
+                            <input type="number" id="tour-price" required step="0.01" min="1" placeholder="99.99"
+                                class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-alt"></i> Date</label>
+                            <input type="date" id="tour-date" required class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group form-full-width">
+                        <label><i class="fas fa-align-left"></i> Description</label>
+                        <textarea id="tour-desc" required rows="4" placeholder="Describe your tour experience..."
+                            class="form-control"></textarea>
+                    </div>
+
+                    <div class="form-group form-full-width">
+                        <label><i class="fas fa-image"></i> Image URL (Optional)</label>
+                        <input type="url" id="tour-image" placeholder="https://example.com/image.jpg"
+                            class="form-control">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-users"></i> Max Participants</label>
+                            <input type="number" id="tour-max-participants" min="1" max="50" value="10"
+                                class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-clock"></i> Duration (hours)</label>
+                            <input type="number" id="tour-duration" min="1" max="24" value="3" class="form-control">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            <i class="fas fa-rocket"></i> Publish Tour
+                        </button>
+                        <button type="button" onclick="closeCreateTourModal()" class="btn btn-outline"
+                            style="border-color: var(--border);">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <script src="js/utils.js"></script>
-    <script>
-        // Init
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || user.role !== 'guide') window.location.href = 'login.html';
-
-        document.getElementById('welcome-msg').textContent = `Hello, ${user.name}`;
-
-        // Load Places for Dropdown
-        async function loadPlaces() {
-            try {
-                const res = await fetch('/api/places/read.php');
-                const places = await res.json();
-                const select = document.getElementById('location');
-                places.forEach(p => {
-                    const option = document.createElement('option');
-                    option.value = `${p.city}, ${p.country}`;
-                    option.textContent = `${p.name} (${p.city})`;
-                    select.appendChild(option);
-                });
-            } catch (e) { console.error('Error loading places', e); }
-        }
-
-        // Load Tours
-        async function loadTours() {
-            try {
-                const res = await fetch('/api/tours/read.php');
-                const tours = await res.json();
-                const container = document.getElementById('tours-list');
-                const myTours = tours.filter(t => t.guide_id == user.id);
-
-                if (myTours.length === 0) {
-                    container.innerHTML = '<p style="color: var(--text-muted);">No tours created yet.</p>';
-                } else {
-                    container.innerHTML = myTours.map(t => createTourCard(t, true)).join('');
-                }
-            } catch (e) {
-                console.error('Error loading tours', e);
-            }
-        }
-
-        // Create Tour Handler
-        document.getElementById('create-tour-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const tourData = {
-                guide_id: user.id,
-                title: document.getElementById('title').value,
-                location: document.getElementById('location').value,
-                price: document.getElementById('price').value,
-                schedule_date: document.getElementById('date').value,
-                description: document.getElementById('desc').value,
-            };
-
-            const res = await fetch('/api/tours/create.php', {
-                method: 'POST',
-                body: JSON.stringify(tourData)
-            });
-
-            if (res.ok) {
-                alert('Tour Created Successfully!');
-                loadTours();
-                e.target.reset(); // Clear form
-            } else {
-                alert('Failed to create tour.');
-            }
-        });
-
-        // Delete Tour Handler
-        async function deleteTour(id) {
-            if (!confirm('Are you sure you want to delete this tour?')) return;
-
-            const res = await fetch('/api/tours/delete.php', {
-                method: 'DELETE',
-                body: JSON.stringify({ id: id, guide_id: user.id })
-            });
-
-            if (res.ok) {
-                loadTours();
-            } else {
-                alert('Failed to delete tour.');
-            }
-        }
-
-        async function logout() {
-            await fetch('/api/auth/logout.php', { method: 'POST' });
-            localStorage.removeItem('user');
-            window.location.href = 'index.html';
-        }
-
-        loadPlaces();
-        loadTours();
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="js/guide_dashboard.js"></script>
 </body>
 
 </html>

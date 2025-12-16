@@ -1,153 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tourist Dashboard | TourismPro</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/tourist_dashboard.css">
 </head>
-
 <body>
     <nav class="navbar">
-        <a href="index.html" class="logo">TourismPro <span
-                style="font-size: 0.8rem; background: var(--primary); padding: 2px 6px; border-radius: 4px; vertical-align: middle;">TOURIST</span></a>
+        <a href="index.html" class="logo">
+            TourismPro <span class="tourist-badge">TOURIST</span>
+        </a>
         <div class="nav-links">
-            <span id="welcome-msg" style="color: var(--text-muted); margin-right: 1rem;"></span>
-            <a href="#" onclick="logout()">Logout</a>
+            <div class="user-profile" style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--tourist-primary) 0%, var(--tourist-accent) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    T
+                </div>
+                <span id="user-name" style="color: white; font-weight: 600;"></span>
+            </div>
+            <a href="index.html" class="btn btn-outline" style="color: white; border-color: rgba(255,255,255,0.3);">
+                <i class="fas fa-home"></i>
+            </a>
+            <a href="#" onclick="logout()" class="btn btn-danger">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
         </div>
     </nav>
 
-    <div
-        style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem; display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
-
-        <!-- Browse Tours -->
-        <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2>Available Tours</h2>
-                <div style="position: relative;">
-                    <input type="text" id="search" placeholder="Search places..."
-                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--glass-border); background: var(--glass); color: white;">
-                    <button onclick="filterTours()" class="btn btn-primary"
-                        style="padding: 0.5rem 1rem;">Search</button>
+    <div class="dashboard-container fade-in">
+        <!-- Welcome Hero Section -->
+        <div class="welcome-hero">
+            <div class="welcome-content">
+                <h1>Welcome back, <span id="user-greeting"></span>!</h1>
+                <p>Ready for your next adventure? Explore amazing tours and manage your bookings all in one place.</p>
+                <div class="welcome-stats">
+                    <div class="stat">
+                        <span class="stat-number" id="total-bookings">0</span>
+                        <span class="stat-label">Total Bookings</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number" id="upcoming-tours">0</span>
+                        <span class="stat-label">Upcoming Tours</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number" id="countries-visited">0</span>
+                        <span class="stat-label">Countries Visited</span>
+                    </div>
                 </div>
-            </div>
-
-            <div id="all-tours-list">
-                <p style="color: var(--text-muted);">Loading tours...</p>
             </div>
         </div>
 
-        <!-- My Bookings -->
-        <div>
-            <div class="auth-card" style="max-width: 100%;">
-                <h3 style="margin-bottom: 1rem;">My Bookings</h3>
-                <div id="bookings-list">
-                    <p style="color: var(--text-muted); font-size: 0.9rem;">No bookings yet.</p>
+        <div class="main-grid">
+            <!-- Main Content: Tours -->
+            <div>
+                <div class="search-section">
+                    <div class="search-header">
+                        <h2>Available Tours</h2>
+                        <button onclick="refreshTours()" class="btn btn-outline" style="border-color: var(--border);">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    
+                    <div class="search-box">
+                        <input type="text" id="search-input" class="search-input" placeholder="Search tours by name, location, or guide...">
+                        <button onclick="searchTours()" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                    
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label><i class="fas fa-filter"></i> Filter by Location</label>
+                            <select id="location-filter" class="search-input" onchange="filterTours()">
+                                <option value="">All Locations</option>
+                                <option value="Paris">Paris</option>
+                                <option value="Tokyo">Tokyo</option>
+                                <option value="New York">New York</option>
+                                <option value="Rome">Rome</option>
+                                <option value="Bali">Bali</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-dollar-sign"></i> Price Range</label>
+                            <select id="price-filter" class="search-input" onchange="filterTours()">
+                                <option value="">Any Price</option>
+                                <option value="0-100">Under $100</option>
+                                <option value="100-200">$100 - $200</option>
+                                <option value="200-500">$200 - $500</option>
+                                <option value="500+">Over $500</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-star"></i> Minimum Rating</label>
+                            <select id="rating-filter" class="search-input" onchange="filterTours()">
+                                <option value="">Any Rating</option>
+                                <option value="4">4+ Stars</option>
+                                <option value="4.5">4.5+ Stars</option>
+                                <option value="5">5 Stars</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tours-container">
+                    <div id="tours-list" class="tours-grid">
+                        <!-- Tours will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Recommended Tours -->
+                <div class="recommended-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-fire"></i> Recommended For You</h2>
+                        <button onclick="viewAllRecommended()" class="btn btn-outline" style="border-color: var(--border);">
+                            View All
+                        </button>
+                    </div>
+                    <div id="recommended-tours" class="tours-grid">
+                        <!-- Recommended tours will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar: Bookings & Profile -->
+            <div class="bookings-sidebar">
+                <div class="bookings-header">
+                    <h3><i class="fas fa-calendar-check"></i> My Bookings</h3>
+                    <span class="badge" style="background: var(--tourist-primary); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;" id="booking-count">0</span>
+                </div>
+                
+                <div id="bookings-list" class="bookings-list">
+                    <!-- Bookings will be loaded here -->
+                </div>
+
+                <!-- Upcoming Trip -->
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid var(--border);">
+                    <h4 style="margin-bottom: 1rem; color: var(--dark);">
+                        <i class="fas fa-plane"></i> Upcoming Trip
+                    </h4>
+                    <div id="upcoming-trip" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 1rem; border-radius: var(--radius); border-left: 4px solid var(--tourist-secondary);">
+                        <p id="next-trip" style="color: var(--text-muted); font-size: 0.9rem;">No upcoming trips</p>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid var(--border);">
+                    <h4 style="margin-bottom: 1rem; color: var(--dark);">
+                        <i class="fas fa-chart-pie"></i> Travel Stats
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
+                        <div style="text-align: center; padding: 0.75rem; background: #f8fafc; border-radius: var(--radius);">
+                            <div style="font-size: 1.25rem; font-weight: 700; color: var(--tourist-primary);" id="total-spent">$0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Total Spent</div>
+                        </div>
+                        <div style="text-align: center; padding: 0.75rem; background: #f8fafc; border-radius: var(--radius);">
+                            <div style="font-size: 1.25rem; font-weight: 700; color: var(--tourist-secondary);" id="avg-rating">0.0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Avg Guide Rating</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="js/utils.js"></script>
-    <script>
-        // Init
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || user.role !== 'tourist') window.location.href = 'login.html';
+    <!-- Tour Details Modal -->
+    <div id="tour-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: var(--radius); padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 id="modal-tour-title" style="color: var(--dark); margin: 0;"></h3>
+                <button onclick="closeTourModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+            </div>
+            <div id="modal-tour-content">
+                <!-- Tour details will be loaded here -->
+            </div>
+        </div>
+    </div>
+    <script src="js/tourist_dashboard.js"></script>
 
-        document.getElementById('welcome-msg').textContent = `Hello, ${user.name}`;
-
-        let allTours = [];
-
-        // Load All Tours
-        async function loadTours() {
-            try {
-                const res = await fetch('/api/tours/read.php');
-                allTours = await res.json();
-                renderTours(allTours);
-            } catch (e) {
-                console.error('Error loading tours', e);
-            }
-        }
-
-        function renderTours(tours) {
-            const container = document.getElementById('all-tours-list');
-            if (tours.length === 0) {
-                container.innerHTML = '<p style="color: var(--text-muted);">No tours available at the moment.</p>';
-            } else {
-                container.innerHTML = tours.map(t => createTourCard(t, false)).join('');
-            }
-        }
-
-        function filterTours() {
-            const query = document.getElementById('search').value.toLowerCase();
-            const filtered = allTours.filter(t =>
-                t.title.toLowerCase().includes(query) ||
-                t.location.toLowerCase().includes(query)
-            );
-            renderTours(filtered);
-        }
-
-        // Book Tour Handler
-        async function bookTour(tourId) {
-            if (!confirm('Confirm booking for this tour?')) return;
-
-            const res = await fetch('/api/bookings/create.php', {
-                method: 'POST',
-                body: JSON.stringify({
-                    tour_id: tourId,
-                    tourist_id: user.id
-                })
-            });
-
-            if (res.ok) {
-                alert('Booking Confirmed!');
-                loadBookings();
-            } else {
-                alert('Booking Failed.');
-            }
-        }
-
-        // Load My Bookings
-        async function loadBookings() {
-            try {
-                const res = await fetch(`/api/bookings/read.php?tourist_id=${user.id}`);
-                const bookings = await res.json();
-
-                const container = document.getElementById('bookings-list');
-                if (bookings.length === 0) {
-                    container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No bookings yet.</p>';
-                } else {
-                    // Enrich with tour names (inefficient for large data but fine for demo)
-                    // We need to fetch tours first or use the 'allTours' memory
-                    const enrichedHTML = bookings.map(b => {
-                        const tour = allTours.find(t => t.id == b.tour_id);
-                        return `
-                            <div style="border-bottom: 1px solid var(--glass-border); padding: 0.5rem 0; margin-bottom: 0.5rem;">
-                                <p style="font-weight: bold; font-size: 0.9rem;">${tour ? tour.title : 'Unknown Tour'}</p>
-                                <p style="font-size: 0.8rem; color: var(--text-muted);">Status: <span style="color: #4ade80;">${b.status}</span></p>
-                                <p style="font-size: 0.8rem; color: var(--text-muted);">Date: ${b.created_at.split(' ')[0]}</p>
-                            </div>
-                        `;
-                    }).join('');
-                    container.innerHTML = enrichedHTML;
-                }
-            } catch (e) { console.error('Error bookings', e); }
-        }
-
-        async function logout() {
-            await fetch('/api/auth/logout.php', { method: 'POST' });
-            localStorage.removeItem('user');
-            window.location.href = 'index.html';
-        }
-
-        // Initial Load
-        // We load tours first so we have titles for bookings
-        loadTours().then(() => {
-            loadBookings();
-        });
-
-    </script>
-</body>
-
+    </body>
 </html>

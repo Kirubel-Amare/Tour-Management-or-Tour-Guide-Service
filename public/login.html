@@ -30,9 +30,12 @@
                     <label for="email">Email Address</label>
                     <input type="email" id="email" required placeholder="you@example.com">
                 </div>
-                <div class="form-group">
+                <div class="form-group password-toggle">
                     <label for="password">Password</label>
                     <input type="password" id="password" required placeholder="••••••••">
+                    <button type="button" class="toggle-password" onclick="togglePassword('password')">
+                        👁️
+                    </button>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
             </form>
@@ -42,34 +45,39 @@
         </div>
     </div>
 
-   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const loginForm = document.getElementById('login-form');
-        const errorDiv = document.getElementById('error-alert');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const submitBtn = loginForm.querySelector('button[type="submit"]');
-        
-        // Demo credentials
-        const demoAccounts = {
-            tourist: {
-                email: 'tourist@demo.com',
-                password: 'demopass123',
-                name: 'John Traveler',
-                role: 'tourist'
-            },
-            guide: {
-                email: 'guide@demo.com',
-                password: 'demopass123',
-                name: 'Sarah Guide',
-                role: 'guide'
-            }
-        };
-        
-        // Create demo buttons container
-        const demoContainer = document.createElement('div');
-        demoContainer.className = 'demo-options';
-        demoContainer.innerHTML = `
+    <script>
+
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            field.type = field.type === 'password' ? 'text' : 'password';
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            const loginForm = document.getElementById('login-form');
+            const errorDiv = document.getElementById('error-alert');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+
+            // Demo credentials
+            const demoAccounts = {
+                tourist: {
+                    email: 'tourist@demo.com',
+                    password: 'demopass123',
+                    name: 'John Traveler',
+                    role: 'tourist'
+                },
+                guide: {
+                    email: 'guide@demo.com',
+                    password: 'demopass123',
+                    name: 'Sarah Guide',
+                    role: 'guide'
+                }
+            };
+
+            // Create demo buttons container
+            const demoContainer = document.createElement('div');
+            demoContainer.className = 'demo-options';
+            demoContainer.innerHTML = `
             <h4>Try Demo Accounts</h4>
             <div class="demo-buttons">
                 <button type="button" class="demo-btn tourist" data-role="tourist">
@@ -80,197 +88,197 @@
                 </button>
             </div>
         `;
-        loginForm.after(demoContainer);
-        
-        // Demo button handlers
-        document.querySelectorAll('.demo-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const role = this.dataset.role;
-                const account = demoAccounts[role];
-                
-                // Fill form with demo credentials
-                emailInput.value = account.email;
-                passwordInput.value = account.password;
-                
-                // Highlight the filled inputs
-                emailInput.classList.add('demo-filled');
-                passwordInput.classList.add('demo-filled');
-                
-                // Remove highlight after 2 seconds
-                setTimeout(() => {
-                    emailInput.classList.remove('demo-filled');
-                    passwordInput.classList.remove('demo-filled');
-                }, 2000);
-                
-                // Show a hint about which account is being used
-                showSuccessMessage(`Using ${role} demo account. Click "Sign In" to continue.`);
-                
-                // Focus on the submit button
-                submitBtn.focus();
+            loginForm.after(demoContainer);
+
+            // Demo button handlers
+            document.querySelectorAll('.demo-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const role = this.dataset.role;
+                    const account = demoAccounts[role];
+
+                    // Fill form with demo credentials
+                    emailInput.value = account.email;
+                    passwordInput.value = account.password;
+
+                    // Highlight the filled inputs
+                    emailInput.classList.add('demo-filled');
+                    passwordInput.classList.add('demo-filled');
+
+                    // Remove highlight after 2 seconds
+                    setTimeout(() => {
+                        emailInput.classList.remove('demo-filled');
+                        passwordInput.classList.remove('demo-filled');
+                    }, 2000);
+
+                    // Show a hint about which account is being used
+                    showSuccessMessage(`Using ${role} demo account. Click "Sign In" to continue.`);
+
+                    // Focus on the submit button
+                    submitBtn.focus();
+                });
             });
-        });
-        
-        // Show success message
-        function showSuccessMessage(message) {
-            // Remove any existing success message
-            const existingSuccess = document.querySelector('.success-message');
-            if (existingSuccess) existingSuccess.remove();
-            
-            const successDiv = document.createElement('div');
-            successDiv.className = 'success-message';
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-            
-            errorDiv.style.display = 'none';
-            errorDiv.before(successDiv);
-            
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                successDiv.style.display = 'none';
-            }, 5000);
-        }
-        
-        // Form validation
-        function validateForm() {
-            let isValid = true;
-            errorDiv.textContent = '';
-            errorDiv.style.display = 'none';
-            
-            // Email validation
-            const email = emailInput.value.trim();
-            if (!email || !isValidEmail(email)) {
-                showError('Please enter a valid email address');
-                emailInput.focus();
-                isValid = false;
-            }
-            
-            // Password validation
-            const password = passwordInput.value.trim();
-            if (!password || password.length < 6) {
-                showError('Password must be at least 6 characters');
-                if (isValid) passwordInput.focus();
-                isValid = false;
-            }
-            
-            return isValid;
-        }
-        
-        function isValidEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
-        
-        function showError(message) {
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            
-            // Auto-hide error after 5 seconds
-            setTimeout(() => {
+
+            // Show success message
+            function showSuccessMessage(message) {
+                // Remove any existing success message
+                const existingSuccess = document.querySelector('.success-message');
+                if (existingSuccess) existingSuccess.remove();
+
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success-message';
+                successDiv.textContent = message;
+                successDiv.style.display = 'block';
+
                 errorDiv.style.display = 'none';
-            }, 5000);
-        }
-        
-        // Form submission
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!validateForm()) return;
-            
-            const email = emailInput.value.trim();
-            const password = passwordInput.value.trim();
-            
-            // Show loading state
-            submitBtn.classList.add('loading');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Signing In...';
-            
-            try {
-                // Check if using demo credentials
-                let userData;
-                if (email === demoAccounts.tourist.email && password === demoAccounts.tourist.password) {
-                    userData = demoAccounts.tourist;
-                } else if (email === demoAccounts.guide.email && password === demoAccounts.guide.password) {
-                    userData = demoAccounts.guide;
-                } else {
-                    // Try to fetch from server
-                    const response = await fetch('/api/auth/login.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password })
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error('Invalid credentials. Please try again.');
-                    }
-                    
-                    userData = await response.json();
+                errorDiv.before(successDiv);
+
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    successDiv.style.display = 'none';
+                }, 5000);
+            }
+
+            // Form validation
+            function validateForm() {
+                let isValid = true;
+                errorDiv.textContent = '';
+                errorDiv.style.display = 'none';
+
+                // Email validation
+                const email = emailInput.value.trim();
+                if (!email || !isValidEmail(email)) {
+                    showError('Please enter a valid email address');
+                    emailInput.focus();
+                    isValid = false;
                 }
-                
-                // Save user data to localStorage
-                localStorage.setItem('user', JSON.stringify({
-                    id: userData.id || Date.now(),
-                    name: userData.name,
-                    email: email,
-                    role: userData.role,
-                    loggedInAt: new Date().toISOString()
-                }));
-                
-                // Save login session
-                sessionStorage.setItem('isLoggedIn', 'true');
-                
-                // Show success message
-                showSuccessMessage(`Welcome back, ${userData.name}! Redirecting...`);
-                
-                // Redirect with delay
+
+                // Password validation
+                const password = passwordInput.value.trim();
+                if (!password || password.length < 6) {
+                    showError('Password must be at least 6 characters');
+                    if (isValid) passwordInput.focus();
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            function isValidEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+
+            function showError(message) {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+
+                // Auto-hide error after 5 seconds
                 setTimeout(() => {
-                    if (userData.role === 'guide') {
-                        window.location.href = 'guide_dashboard.html';
+                    errorDiv.style.display = 'none';
+                }, 5000);
+            }
+
+            // Form submission
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                if (!validateForm()) return;
+
+                const email = emailInput.value.trim();
+                const password = passwordInput.value.trim();
+
+                // Show loading state
+                submitBtn.classList.add('loading');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Signing In...';
+
+                try {
+                    // Check if using demo credentials
+                    let userData;
+                    if (email === demoAccounts.tourist.email && password === demoAccounts.tourist.password) {
+                        userData = demoAccounts.tourist;
+                    } else if (email === demoAccounts.guide.email && password === demoAccounts.guide.password) {
+                        userData = demoAccounts.guide;
                     } else {
-                        window.location.href = 'tourist_dashboard.html';
+                        // Try to fetch from server
+                        const response = await fetch('/api/auth/login.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Invalid credentials. Please try again.');
+                        }
+
+                        userData = await response.json();
                     }
-                }, 1500);
-                
-            } catch (error) {
-                console.error('Login error:', error);
-                
-                // Show error message
-                showError(error.message || 'Login failed. Please check your credentials.');
-                
-                // Reset button state
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Sign In';
-            }
-        });
-        
-        // Real-time validation
-        emailInput.addEventListener('blur', function() {
-            if (this.value.trim() && !isValidEmail(this.value.trim())) {
-                this.style.borderColor = '#dc2626';
-            } else {
-                this.style.borderColor = '';
-            }
-        });
-        
-        passwordInput.addEventListener('blur', function() {
-            if (this.value.trim() && this.value.trim().length < 6) {
-                this.style.borderColor = '#dc2626';
-            } else {
-                this.style.borderColor = '';
-            }
-        });
-        
-        // Clear validation on focus
-        [emailInput, passwordInput].forEach(input => {
-            input.addEventListener('focus', function() {
-                this.style.borderColor = '';
-                errorDiv.style.display = 'none';
+
+                    // Save user data to localStorage
+                    localStorage.setItem('user', JSON.stringify({
+                        id: userData.id || Date.now(),
+                        name: userData.name,
+                        email: email,
+                        role: userData.role,
+                        loggedInAt: new Date().toISOString()
+                    }));
+
+                    // Save login session
+                    sessionStorage.setItem('isLoggedIn', 'true');
+
+                    // Show success message
+                    showSuccessMessage(`Welcome back, ${userData.name}! Redirecting...`);
+
+                    // Redirect with delay
+                    setTimeout(() => {
+                        if (userData.role === 'guide') {
+                            window.location.href = 'guide_dashboard.html';
+                        } else {
+                            window.location.href = 'tourist_dashboard.html';
+                        }
+                    }, 1500);
+
+                } catch (error) {
+                    console.error('Login error:', error);
+
+                    // Show error message
+                    showError(error.message || 'Login failed. Please check your credentials.');
+
+                    // Reset button state
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In';
+                }
             });
-        });
-        
-        // Add CSS for demo-filled inputs
-        const style = document.createElement('style');
-        style.textContent = `
+
+            // Real-time validation
+            emailInput.addEventListener('blur', function () {
+                if (this.value.trim() && !isValidEmail(this.value.trim())) {
+                    this.style.borderColor = '#dc2626';
+                } else {
+                    this.style.borderColor = '';
+                }
+            });
+
+            passwordInput.addEventListener('blur', function () {
+                if (this.value.trim() && this.value.trim().length < 6) {
+                    this.style.borderColor = '#dc2626';
+                } else {
+                    this.style.borderColor = '';
+                }
+            });
+
+            // Clear validation on focus
+            [emailInput, passwordInput].forEach(input => {
+                input.addEventListener('focus', function () {
+                    this.style.borderColor = '';
+                    errorDiv.style.display = 'none';
+                });
+            });
+
+            // Add CSS for demo-filled inputs
+            const style = document.createElement('style');
+            style.textContent = `
             .demo-filled {
                 border-color: var(--primary) !important;
                 background-color: rgba(79, 70, 229, 0.05) !important;
@@ -282,9 +290,9 @@
                 50% { box-shadow: 0 0 0 5px rgba(79, 70, 229, 0); }
             }
         `;
-        document.head.appendChild(style);
-    });
-</script>
+            document.head.appendChild(style);
+        });
+    </script>
 </body>
 
 </html>
