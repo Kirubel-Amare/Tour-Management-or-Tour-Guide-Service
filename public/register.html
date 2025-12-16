@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | TourismPro</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">TourismPro</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="tours.html">Tours</a>
+            <a href="about.html">About</a>
+            <a href="login.html" >Login</a>
+        </div>
+    </nav>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <h2 style="margin-bottom: 0.5rem; text-align: center;">Create Your Account</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">
+                Join our community of travelers and guides
+            </p>
+
+            <div id="error-alert" class="error-message"></div>
+            <div id="success-alert" class="success-message"></div>
+
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="fullname">Full Name</label>
+                    <input type="text" id="fullname" required placeholder="John Doe">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" required placeholder="you@example.com">
+                </div>
+                
+                <div class="form-group password-toggle">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                    <button type="button" class="toggle-password" onclick="togglePassword('password')">
+                        👁️
+                    </button>
+                </div>
+                
+                <div class="form-group password-toggle">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" required placeholder="••••••••">
+                    <button type="button" class="toggle-password" onclick="togglePassword('confirm-password')">
+                        👁️
+                    </button>
+                </div>
+                
+                <div class="form-group">
+                    <label>I want to join as:</label>
+                    <div class="role-group">
+                        <div class="role-option">
+                            <input type="radio" id="tourist" name="role" value="tourist" checked>
+                            <label for="tourist">👤 Tourist</label>
+                        </div>
+                        <div class="role-option">
+                            <input type="radio" id="guide" name="role" value="guide">
+                            <label for="guide">👨‍🏫 Guide</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="terms" required>
+                    <label for="terms">
+                        I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    Create Account
+                </button>
+            </form>
+            
+            <p class="form-link">
+                Already have an account? <a href="login.html">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            field.type = field.type === 'password' ? 'text' : 'password';
+        }
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fullname = document.getElementById('fullname').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const errorDiv = document.getElementById('error-alert');
+            const successDiv = document.getElementById('success-alert');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            // Reset messages
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            // Validation
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'Passwords do not match';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (password.length < 6) {
+                errorDiv.textContent = 'Password must be at least 6 characters';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating Account...';
+            
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // For demo purposes - save to localStorage
+                const userData = {
+                    id: Date.now(),
+                    name: fullname,
+                    email: email,
+                    role: role,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Save user data
+                localStorage.setItem('user', JSON.stringify(userData));
+                localStorage.setItem('tourismProUsers', JSON.stringify([
+                    ...(JSON.parse(localStorage.getItem('tourismProUsers') || '[]')),
+                    userData
+                ]));
+                
+                // Show success message
+                successDiv.textContent = 'Account created successfully! Redirecting...';
+                successDiv.style.display = 'block';
+                
+                // Redirect after delay
+                setTimeout(() => {
+                    if (role === 'guide') {
+                        window.location.href = 'guide_dashboard.html';
+                    } else {
+                        window.location.href = 'tourist_dashboard.html';
+                    }
+                }, 2000);
+                
+            } catch (error) {
+                errorDiv.textContent = 'Registration failed. Please try again.';
+                errorDiv.style.display = 'block';
+                
+                // Reset button
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>

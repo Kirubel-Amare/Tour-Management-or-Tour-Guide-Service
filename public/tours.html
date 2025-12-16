@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Tours | TourismPro</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">TourismPro</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="tours.html" style="color: var(--primary);">Tours</a>
+            <a href="about.html">About</a>
+            <a href="login.html">Login</a>
+            <a href="register.html">Register</a>
+        </div>
+    </nav>
+
+    <div style="text-align: center; padding: 8rem 1rem 2rem;">
+        <h1 class="section-title" style="margin-bottom: 1rem;">Explore Our Tours</h1>
+        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">
+            Find your next adventure from our wide selection of curated trips.
+        </p>
+    </div>
+
+    <section>
+        <div id="tours-container" class="grid-3">
+            <!-- Loading State -->
+            <p style="grid-column: span 3; text-align: center; color: var(--text-muted);">Loading tours...</p>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-col">
+                <a href="#" class="logo" style="margin-bottom: 1rem; display: inline-block;">TourismPro</a>
+                <p style="color: var(--text-muted);">Making your travel dreams a reality since 2023.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <a href="index.html">Home</a>
+                <a href="tours.html">Tours</a>
+                <a href="about.html">About Us</a>
+                <a href="#">Contact</a>
+            </div>
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Cookie Policy</a>
+            </div>
+            <div class="footer-col">
+                <h4>Connect</h4>
+                <a href="#">Twitter</a>
+                <a href="#">Instagram</a>
+                <a href="#">Facebook</a>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2025 TourismPro. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('tours-container');
+
+            try {
+                // Try to fetch real tours
+                const response = await fetch('/api/tours/read.php');
+                const tours = await response.json();
+
+                if (Array.isArray(tours) && tours.length > 0) {
+                    container.innerHTML = tours.map(tour => createTourCard(tour)).join('');
+                } else {
+                    // Fallback to demo tours if API is empty
+                    showDemoTours(container);
+                }
+            } catch (error) {
+                console.error('Failed to fetch tours:', error);
+                showDemoTours(container);
+            }
+        });
+
+        function showDemoTours(container) {
+            const demoTours = [
+                {
+                    id: 1,
+                    title: "Paris City Tour",
+                    location: "Paris, France",
+                    schedule_date: "2023-12-25",
+                    description: "Explore the Eiffel Tower, Louvre, and more.",
+                    price: 150
+                },
+                {
+                    id: 2,
+                    title: "Tokyo Night Walk",
+                    location: "Tokyo, Japan",
+                    schedule_date: "2024-01-10",
+                    description: "Experience the neon lights of Shinjuku and Shibuya.",
+                    price: 120
+                },
+                {
+                    id: 3,
+                    title: "NY Central Park",
+                    location: "New York, USA",
+                    schedule_date: "2024-03-15",
+                    description: "A relaxing guided walk through Central Park.",
+                    price: 80
+                }
+            ];
+            container.innerHTML = demoTours.map(tour => createTourCard(tour)).join('');
+        }
+    </script>
+</body>
+
+</html>

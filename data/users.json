@@ -1,0 +1,42 @@
+[
+    {
+        "id": 1,
+        "name": "Guide One",
+        "email": "guide1@example.com",
+        "password": "$2y$10$AM8NgDA6eVKklLc\/LqBFc.tZ1ljwoYkUuyEuFyziJST6EdHVjyvpG",
+        "role": "guide",
+        "created_at": "2025-12-15 23:40:08"
+    },
+    {
+        "id": 2,
+        "name": "Tourist One",
+        "email": "tourist1@example.com",
+        "password": "$2y$10$83yN421nOJhllpPpwvC5DeBWxX9ktriSb2bMGzoNQHgfLb\/M5xZOK",
+        "role": "tourist",
+        "created_at": "2025-12-15 23:40:08"
+    },
+    {
+        "id": 3,
+        "name": "kirubel amare",
+        "email": "akirubel8@gmail.com",
+        "password": "$2y$10$2cDgCJY\/WYypm7UqzlN8iOtoSO4jIpifIXKdU2JsRuZKwgnU2Tpiu",
+        "role": "guide",
+        "created_at": "2025-12-16 00:30:27"
+    },
+    {
+        "id": 4,
+        "name": "kiru",
+        "email": "kirubelamaew09@gmail.com",
+        "password": "$2y$10$neXjomfdZAaEQB8lISfoje4s9qnjWwgw1ks7fuPr2FI085E3KnUQq",
+        "role": "tourist",
+        "created_at": "2025-12-16 00:33:51"
+    },
+    {
+        "id": 5,
+        "name": "kiya Amare",
+        "email": "test@example.com",
+        "password": "$2y$10$bukF0F6lx\/Q4BomyaAEyM.ZPrYXWFgn\/KwfK0i.D9pr7QKcJgIq0e",
+        "role": "tourist",
+        "created_at": "2025-12-16 00:36:52"
+    }
+]

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tourist Dashboard | TourismPro</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">TourismPro <span
+                style="font-size: 0.8rem; background: var(--primary); padding: 2px 6px; border-radius: 4px; vertical-align: middle;">TOURIST</span></a>
+        <div class="nav-links">
+            <span id="welcome-msg" style="color: var(--text-muted); margin-right: 1rem;"></span>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </nav>
+
+    <div
+        style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem; display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+
+        <!-- Browse Tours -->
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>Available Tours</h2>
+                <div style="position: relative;">
+                    <input type="text" id="search" placeholder="Search places..."
+                        style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--glass-border); background: var(--glass); color: white;">
+                    <button onclick="filterTours()" class="btn btn-primary"
+                        style="padding: 0.5rem 1rem;">Search</button>
+                </div>
+            </div>
+
+            <div id="all-tours-list">
+                <p style="color: var(--text-muted);">Loading tours...</p>
+            </div>
+        </div>
+
+        <!-- My Bookings -->
+        <div>
+            <div class="auth-card" style="max-width: 100%;">
+                <h3 style="margin-bottom: 1rem;">My Bookings</h3>
+                <div id="bookings-list">
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">No bookings yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        // Init
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.role !== 'tourist') window.location.href = 'login.html';
+
+        document.getElementById('welcome-msg').textContent = `Hello, ${user.name}`;
+
+        let allTours = [];
+
+        // Load All Tours
+        async function loadTours() {
+            try {
+                const res = await fetch('/api/tours/read.php');
+                allTours = await res.json();
+                renderTours(allTours);
+            } catch (e) {
+                console.error('Error loading tours', e);
+            }
+        }
+
+        function renderTours(tours) {
+            const container = document.getElementById('all-tours-list');
+            if (tours.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted);">No tours available at the moment.</p>';
+            } else {
+                container.innerHTML = tours.map(t => createTourCard(t, false)).join('');
+            }
+        }
+
+        function filterTours() {
+            const query = document.getElementById('search').value.toLowerCase();
+            const filtered = allTours.filter(t =>
+                t.title.toLowerCase().includes(query) ||
+                t.location.toLowerCase().includes(query)
+            );
+            renderTours(filtered);
+        }
+
+        // Book Tour Handler
+        async function bookTour(tourId) {
+            if (!confirm('Confirm booking for this tour?')) return;
+
+            const res = await fetch('/api/bookings/create.php', {
+                method: 'POST',
+                body: JSON.stringify({
+                    tour_id: tourId,
+                    tourist_id: user.id
+                })
+            });
+
+            if (res.ok) {
+                alert('Booking Confirmed!');
+                loadBookings();
+            } else {
+                alert('Booking Failed.');
+            }
+        }
+
+        // Load My Bookings
+        async function loadBookings() {
+            try {
+                const res = await fetch(`/api/bookings/read.php?tourist_id=${user.id}`);
+                const bookings = await res.json();
+
+                const container = document.getElementById('bookings-list');
+                if (bookings.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No bookings yet.</p>';
+                } else {
+                    // Enrich with tour names (inefficient for large data but fine for demo)
+                    // We need to fetch tours first or use the 'allTours' memory
+                    const enrichedHTML = bookings.map(b => {
+                        const tour = allTours.find(t => t.id == b.tour_id);
+                        return `
+                            <div style="border-bottom: 1px solid var(--glass-border); padding: 0.5rem 0; margin-bottom: 0.5rem;">
+                                <p style="font-weight: bold; font-size: 0.9rem;">${tour ? tour.title : 'Unknown Tour'}</p>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Status: <span style="color: #4ade80;">${b.status}</span></p>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Date: ${b.created_at.split(' ')[0]}</p>
+                            </div>
+                        `;
+                    }).join('');
+                    container.innerHTML = enrichedHTML;
+                }
+            } catch (e) { console.error('Error bookings', e); }
+        }
+
+        async function logout() {
+            await fetch('/api/auth/logout.php', { method: 'POST' });
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+
+        // Initial Load
+        // We load tours first so we have titles for bookings
+        loadTours().then(() => {
+            loadBookings();
+        });
+
+    </script>
+</body>
+
+</html>
