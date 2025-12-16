@@ -4,37 +4,38 @@ header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
 
 include_once '../../config/Database.php';
-include_once '../../models/Tour.php';
+include_once '../../models/Booking.php';
 
 $database = new Database();
 $db = $database->connect();
-$tour = new Tour($db);
+$booking = new Booking($db);
 
-$stmt = $tour->read();
+$booking->user_id = isset($_GET['user_id']) ? $_GET['user_id'] : die();
+
+$stmt = $booking->readByUser();
 $num = $stmt->rowCount();
 
 if ($num > 0) {
-    $tours_arr = array();
+    $bookings_arr = array();
 
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         extract($row);
 
-        $tour_item = array(
+        $booking_item = array(
             'id' => $id,
-            'title' => $title,
-            'description' => html_entity_decode($description),
+            'tour_id' => $tour_id,
+            'tour_title' => $tour_title,
             'location' => $location,
             'price' => $price,
             'schedule_date' => $schedule_date,
-            'guide_id' => $guide_id,
-            'guide_name' => $guide_name,
-            'created_at' => $created_at
+            'booking_date' => $booking_date,
+            'status' => $status
         );
 
-        array_push($tours_arr, $tour_item);
+        array_push($bookings_arr, $booking_item);
     }
 
-    echo json_encode($tours_arr);
+    echo json_encode($bookings_arr);
 } else {
     echo json_encode(array());
 }

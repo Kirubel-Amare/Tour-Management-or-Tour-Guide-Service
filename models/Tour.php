@@ -2,7 +2,7 @@
 class Tour
 {
     private $conn;
-    private $json_file = '../../data/tours.json';
+    private $table_name = 'tours';
 
     public $id;
     public $guide_id;
@@ -16,127 +16,162 @@ class Tour
     public function __construct($db)
     {
         $this->conn = $db;
-        // Fix path if running from root vs api
-        if (!file_exists($this->json_file) && file_exists('data/tours.json')) {
-            $this->json_file = 'data/tours.json';
-        }
-    }
-
-    private function getData()
-    {
-        if (!file_exists($this->json_file)) {
-            file_put_contents($this->json_file, '[]');
-            return [];
-        }
-        $content = file_get_contents($this->json_file);
-        return json_decode($content, true) ?? [];
-    }
-
-    private function saveData($data)
-    {
-        file_put_contents($this->json_file, json_encode($data, JSON_PRETTY_PRINT));
     }
 
     // Create Tour
     public function create()
     {
-        $data = $this->getData();
+        $query = "INSERT INTO " . $this->table_name . " 
+                  SET guide_id = :guide_id, 
+                      title = :title, 
+                      description = :description, 
+                      location = :location, 
+                      price = :price, 
+                      schedule_date = :schedule_date";
 
-        // Auto ID
-        $last_item = end($data);
-        $this->id = $last_item ? $last_item['id'] + 1 : 1;
-        $this->created_at = date('Y-m-d H:i:s');
+        $stmt = $this->conn->prepare($query);
 
-        $new_item = [
-            'id' => $this->id,
-            'guide_id' => $this->guide_id,
-            'title' => $this->title,
-            'description' => $this->description,
-            'location' => $this->location,
-            'price' => $this->price,
-            'schedule_date' => $this->schedule_date,
-            'created_at' => $this->created_at
-        ];
+        // Sanitize
+        $this->title = htmlspecialchars(strip_tags($this->title));
+        $this->description = htmlspecialchars(strip_tags($this->description));
+        $this->location = htmlspecialchars(strip_tags($this->location));
+        $this->price = htmlspecialchars(strip_tags($this->price));
+        $this->schedule_date = htmlspecialchars(strip_tags($this->schedule_date));
 
-        $data[] = $new_item;
-        $this->saveData($data);
-        return true;
+        // Bind data
+        $stmt->bindParam(':guide_id', $this->guide_id);
+        $stmt->bindParam(':title', $this->title);
+        $stmt->bindParam(':description', $this->description);
+        $stmt->bindParam(':location', $this->location);
+        $stmt->bindParam(':price', $this->price);
+        $stmt->bindParam(':schedule_date', $this->schedule_date);
+
+        if ($stmt->execute()) {
+            return true;
+        }
+
+        // Print error if something goes wrong
+        printf("Error: %s.\n", $stmt->errorInfo()[2]);
+        return false;
     }
 
-    // Read all tours
+    // Read tours (can be for a specific guide if guide_id is set, or all active)
     public function read()
     {
-        return $this->getData();
+        // Select query
+        $query = "SELECT 
+                    t.id, t.guide_id, t.title, t.description, t.location, t.price, t.schedule_date, t.created_at,
+                    u.name as guide_name
+                  FROM " . $this->table_name . " t
+                  LEFT JOIN users u ON t.guide_id = u.id";
+
+        // If guide_id is set, filter by it (for Manager Dashboard 'My Tours')
+        if (!empty($this->guide_id)) {
+            $query .= " WHERE t.guide_id = :guide_id";
+        }
+
+        $query .= " ORDER BY t.created_at DESC";
+
+        $stmt = $this->conn->prepare($query);
+
+        if (!empty($this->guide_id)) {
+            $stmt->bindParam(':guide_id', $this->guide_id);
+        }
+
+        $stmt->execute();
+        return $stmt;
     }
 
     // Read single tour
     public function read_single()
     {
-        $data = $this->getData();
-        foreach ($data as $item) {
-            if ($item['id'] == $this->id) {
-                $this->guide_id = $item['guide_id'];
-                $this->title = $item['title'];
-                $this->description = $item['description'];
-                $this->location = $item['location'];
-                $this->price = $item['price'];
-                $this->schedule_date = $item['schedule_date'];
-                return true;
-            }
+        $query = "SELECT 
+                    t.id, t.guide_id, t.title, t.description, t.location, t.price, t.schedule_date, t.created_at,
+                    u.name as guide_name
+                  FROM " . $this->table_name . " t
+                  LEFT JOIN users u ON t.guide_id = u.id
+                  WHERE t.id = ?
+                  LIMIT 0,1";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->id);
+        $stmt->execute();
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row) {
+            $this->guide_id = $row['guide_id'];
+            $this->title = $row['title'];
+            $this->description = $row['description'];
+            $this->location = $row['location'];
+            $this->price = $row['price'];
+            $this->schedule_date = $row['schedule_date'];
+            $this->created_at = $row['created_at'];
+            return true; // Found
         }
-        return false;
+        return false; // Not found
     }
 
     // Update Tour
     public function update()
     {
-        $data = $this->getData();
-        $found = false;
+        $query = "UPDATE " . $this->table_name . "
+                  SET title = :title, 
+                      description = :description, 
+                      location = :location, 
+                      price = :price, 
+                      schedule_date = :schedule_date
+                  WHERE id = :id AND guide_id = :guide_id"; // Security check: Ensure only owner can update
 
-        foreach ($data as &$item) {
-            if ($item['id'] == $this->id) {
-                // Ensure the user owns this tour (basic check)
-                if ($item['guide_id'] != $this->guide_id)
-                    return false;
+        $stmt = $this->conn->prepare($query);
 
-                $item['title'] = $this->title;
-                $item['description'] = $this->description;
-                $item['location'] = $this->location;
-                $item['price'] = $this->price;
-                $item['schedule_date'] = $this->schedule_date;
-                $found = true;
-                break;
+        // Sanitize
+        $this->title = htmlspecialchars(strip_tags($this->title));
+        $this->description = htmlspecialchars(strip_tags($this->description));
+        $this->location = htmlspecialchars(strip_tags($this->location));
+        $this->price = htmlspecialchars(strip_tags($this->price));
+        $this->schedule_date = htmlspecialchars(strip_tags($this->schedule_date));
+
+        // Bind data
+        $stmt->bindParam(':title', $this->title);
+        $stmt->bindParam(':description', $this->description);
+        $stmt->bindParam(':location', $this->location);
+        $stmt->bindParam(':price', $this->price);
+        $stmt->bindParam(':schedule_date', $this->schedule_date);
+        $stmt->bindParam(':id', $this->id);
+        $stmt->bindParam(':guide_id', $this->guide_id);
+
+        if ($stmt->execute()) {
+            if ($stmt->rowCount() > 0) {
+                return true;
+            } else {
+                // No rows affected, meaning either no change or ID/guide_id mismatch
+                // We can check if the ID exists but guide_id is different to differentiate
+                return false;
             }
         }
-
-        if ($found) {
-            $this->saveData($data);
-            return true;
-        }
+        printf("Error: %s.\n", $stmt->errorInfo()[2]);
         return false;
     }
 
     // Delete Tour
     public function delete()
     {
-        $data = $this->getData();
-        $new_data = [];
-        $found = false;
+        $query = "DELETE FROM " . $this->table_name . " WHERE id = :id AND guide_id = :guide_id";
 
-        foreach ($data as $item) {
-            if ($item['id'] == $this->id) {
-                if ($item['guide_id'] != $this->guide_id)
-                    return false;
-                $found = true;
-                continue;
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindParam(':id', $this->id);
+        $stmt->bindParam(':guide_id', $this->guide_id);
+
+        if ($stmt->execute()) {
+            if ($stmt->rowCount() > 0) {
+                return true;
             }
-            $new_data[] = $item;
+            return false;
         }
 
-        if ($found) {
-            $this->saveData($new_data);
-            return true;
-        }
+        printf("Error: %s.\n", $stmt->errorInfo()[2]);
         return false;
     }
 }

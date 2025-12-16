@@ -2,86 +2,80 @@
 class Booking
 {
     private $conn;
-    private $json_file = '../../data/bookings.json';
+    private $table_name = 'bookings';
 
     public $id;
     public $tour_id;
-    public $tourist_id;
+    public $user_id; // Tourist
+    public $booking_date;
     public $status;
-    public $created_at;
 
     public function __construct($db)
     {
         $this->conn = $db;
-        // Fix path if running from root vs api
-        if (!file_exists($this->json_file) && file_exists('data/bookings.json')) {
-            $this->json_file = 'data/bookings.json';
-        }
-    }
-
-    private function getData()
-    {
-        if (!file_exists($this->json_file)) {
-            file_put_contents($this->json_file, '[]');
-            return [];
-        }
-        $content = file_get_contents($this->json_file);
-        return json_decode($content, true) ?? [];
-    }
-
-    private function saveData($data)
-    {
-        file_put_contents($this->json_file, json_encode($data, JSON_PRETTY_PRINT));
     }
 
     // Create Booking
     public function create()
     {
-        $data = $this->getData();
+        $query = "INSERT INTO " . $this->table_name . " 
+                  SET tour_id = :tour_id, 
+                      user_id = :user_id,
+                      status = 'confirmed'"; // Auto confirm for now
 
-        $last_item = end($data);
-        $this->id = $last_item ? $last_item['id'] + 1 : 1;
-        $this->created_at = date('Y-m-d H:i:s');
+        $stmt = $this->conn->prepare($query);
 
-        $new_item = [
-            'id' => $this->id,
-            'tour_id' => $this->tour_id,
-            'tourist_id' => $this->tourist_id,
-            'status' => 'confirmed', // Default to confirmed for demo
-            'created_at' => $this->created_at
-        ];
+        // Sanitize
+        $this->tour_id = htmlspecialchars(strip_tags($this->tour_id));
+        $this->user_id = htmlspecialchars(strip_tags($this->user_id));
 
-        $data[] = $new_item;
-        $this->saveData($data);
-        return true;
+        // Bind data
+        $stmt->bindParam(':tour_id', $this->tour_id);
+        $stmt->bindParam(':user_id', $this->user_id);
+
+        if ($stmt->execute()) {
+            return true;
+        }
+
+        printf("Error: %s.\n", $stmt->errorInfo()[2]);
+        return false;
     }
 
-    // Read Bookings by Tourist
-    public function read_by_tourist()
+    // Read Bookings for a User (Customer History)
+    public function readByUser()
     {
-        $data = $this->getData();
-        $my_bookings = [];
-        foreach ($data as $item) {
-            if ($item['tourist_id'] == $this->tourist_id) {
-                // Here we would ideally join with Tours to get tour details
-                // For JSON, we do it in the API layer or frontend, 
-                // but let's just return the booking data for now.
-                $my_bookings[] = $item;
-            }
-        }
-        return $my_bookings;
+        $query = "SELECT 
+                    b.id, b.tour_id, b.booking_date, b.status,
+                    t.title as tour_title, t.location, t.price, t.schedule_date
+                  FROM " . $this->table_name . " b
+                  LEFT JOIN tours t ON b.tour_id = t.id
+                  WHERE b.user_id = :user_id
+                  ORDER BY b.booking_date DESC";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':user_id', $this->user_id);
+        $stmt->execute();
+
+        return $stmt;
     }
 
-    // Read Bookings by Tour (For Guides)
-    public function read_by_tour($tour_id)
+    // Read Bookings for a Guide (Manager View Participants)
+    public function readByGuide($guide_id)
     {
-        $data = $this->getData();
-        $tour_bookings = [];
-        foreach ($data as $item) {
-            if ($item['tour_id'] == $tour_id) {
-                $tour_bookings[] = $item;
-            }
-        }
-        return $tour_bookings;
+        $query = "SELECT 
+                    b.id, b.tour_id, b.booking_date, b.status,
+                    t.title as tour_title, t.price, t.schedule_date,
+                    u.name as customer_name, u.email as customer_email
+                  FROM " . $this->table_name . " b
+                  JOIN tours t ON b.tour_id = t.id
+                  JOIN users u ON b.user_id = u.id
+                  WHERE t.guide_id = :guide_id
+                  ORDER BY b.booking_date DESC";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':guide_id', $guide_id);
+        $stmt->execute();
+
+        return $stmt;
     }
 }

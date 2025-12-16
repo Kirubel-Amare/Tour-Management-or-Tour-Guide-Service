@@ -66,6 +66,10 @@
                         style="margin-left: auto; background: var(--warning); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;"
                         id="review-count">0</span>
                 </a>
+                <a href="#places" class="nav-item" onclick="switchTab('places')">
+                    <i class="fas fa-globe-americas"></i>
+                    <span>Places</span>
+                </a>
                 <a href="manager_profile.html" class="nav-item">
                     <i class="fas fa-user"></i>
                     <span>Profile</span>
@@ -219,6 +223,19 @@
                     </div>
                     <div id="tours-list" class="tours-grid">
                         <!-- Tours will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Places Tab -->
+            <div id="places-tab" class="tab-content" style="display: none;">
+                <div class="section-card">
+                    <div class="content-header">
+                        <h2><i class="fas fa-globe-americas"></i> Browse Places</h2>
+                        <p style="color: var(--text-muted);">Explore destinations to create tours for.</p>
+                    </div>
+                    <div id="places-list" class="tours-grid">
+                        <!-- Places will be inserted here -->
                     </div>
                 </div>
             </div>

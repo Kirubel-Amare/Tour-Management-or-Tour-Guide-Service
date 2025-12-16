@@ -8,58 +8,14 @@ if (!user || user.role !== 'manager') {
 // Set user name
 document.getElementById('user-name').textContent = user.name;
 
-// Demo data
-let demoTours = [
-    {
-        id: 1,
-        title: "Paris Night Walking Tour",
-        location: "Paris, France",
-        price: 89.99,
-        date: "2025-03-15",
-        description: "Experience the magic of Paris at night with our guided walking tour through illuminated streets.",
-        image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        bookings: 12,
-        rating: 4.8,
-        maxParticipants: 15,
-        duration: 3,
-        status: "active"
-    },
-    {
-        id: 2,
-        title: "Tokyo Food Adventure",
-        location: "Tokyo, Japan",
-        price: 129.99,
-        date: "2025-03-20",
-        description: "Discover hidden food gems in Tokyo's backstreets with our local food expert guide.",
-        image: "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        bookings: 8,
-        rating: 4.9,
-        maxParticipants: 10,
-        duration: 4,
-        status: "active"
-    }
-];
+// Global state for tours
+let allTours = [];
 
+// Demo bookings and activity (to be replaced later, focusing on Tours now)
 let demoBookings = [
     {
         id: 1,
         customer: "John Smith",
-        tour: "Paris Night Walking Tour",
-        date: "2025-03-15",
-        status: "confirmed",
-        amount: 89.99
-    },
-    {
-        id: 2,
-        customer: "Emma Wilson",
-        tour: "Tokyo Food Adventure",
-        date: "2025-03-20",
-        status: "pending",
-        amount: 129.99
-    },
-    {
-        id: 3,
-        customer: "David Lee",
         tour: "Paris Night Walking Tour",
         date: "2025-03-15",
         status: "confirmed",
@@ -73,20 +29,16 @@ let demoActivity = [
         title: "New booking received",
         description: "John Smith booked Paris Night Tour",
         time: "2 hours ago"
-    },
-    {
-        type: "tour",
-        title: "Tour published",
-        description: "You published Tokyo Food Adventure",
-        time: "1 day ago"
-    },
-    {
-        type: "review",
-        title: "New review received",
-        description: "5-star review for Paris Night Tour",
-        time: "2 days ago"
     }
 ];
+
+// Load all data
+function loadDashboardData() {
+    loadTours(); // This will also update stats when done
+    loadActivity();
+    loadRecentBookings();
+    loadPlaces();
+}
 
 // Tab switching
 function switchTab(tabName) {
@@ -107,23 +59,21 @@ function switchTab(tabName) {
         loadTours();
     } else if (tabName === 'bookings') {
         loadBookings();
+    } else if (tabName === 'places') {
+        loadPlaces();
     }
-}
-
-// Load all data
-function loadDashboardData() {
-    updateStats();
-    loadActivity();
-    loadRecentBookings();
-    loadTours();
 }
 
 // Update statistics
 function updateStats() {
-    const totalTours = demoTours.length;
-    const totalBookings = demoTours.reduce((sum, tour) => sum + tour.bookings, 0);
-    const totalRevenue = demoTours.reduce((sum, tour) => sum + (tour.price * tour.bookings), 0);
-    const avgRating = demoTours.reduce((sum, tour) => sum + tour.rating, 0) / demoTours.length || 0;
+    // Filter tours for this guide
+    const myTours = allTours.filter(t => t.guide_id == user.id);
+
+    const totalTours = myTours.length;
+    // Mock bookings count for now as bookings API isn't linked to DB yet
+    const totalBookings = demoBookings.length;
+    const totalRevenue = demoBookings.reduce((sum, b) => sum + b.amount, 0);
+    const avgRating = 4.8; // Mock rating
 
     document.getElementById('total-tours').textContent = totalTours;
     document.getElementById('total-bookings').textContent = totalBookings;
@@ -140,187 +90,333 @@ function updateStats() {
 function loadActivity() {
     const container = document.getElementById('activity-timeline');
     container.innerHTML = demoActivity.map(activity => `
-                <div class="activity-item">
-                    <div class="activity-icon ${activity.type}">
-                        <i class="fas fa-${activity.type === 'booking' ? 'user-plus' : activity.type === 'tour' ? 'map-marked-alt' : 'star'}"></i>
+        <div class="activity-item">
+            <div class="activity-icon ${activity.type}">
+                <i class="fas fa-${activity.type === 'booking' ? 'user-plus' : activity.type === 'tour' ? 'map-marked-alt' : 'star'}"></i>
+            </div>
+            <div class="activity-content">
+                <div class="activity-title">${activity.title}</div>
+                <div class="activity-description">${activity.description}</div>
+                <div class="activity-time">${activity.time}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Load recent bookings (Participants)
+async function loadBookings() {
+    const container = document.getElementById('recent-bookings');
+    container.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading participants...</td></tr>';
+
+    try {
+        const response = await fetch(`/api/bookings/read_manager.php?guide_id=${user.id}`);
+        const bookings = await response.json();
+
+        // Update global booking stats
+        document.getElementById('total-bookings').textContent = bookings.length;
+        document.getElementById('booking-count').textContent = bookings.length;
+
+        // Calculate revenue
+        const revenue = bookings.reduce((sum, b) => sum + parseFloat(b.price), 0);
+        document.getElementById('total-revenue').textContent = `$${revenue.toFixed(2)}`;
+
+        if (bookings.length === 0) {
+            container.innerHTML = '<tr><td colspan="5" style="text-align:center;">No bookings found yet.</td></tr>';
+        } else {
+            container.innerHTML = bookings.map(booking => `
+                <tr>
+                    <td>
+                        <strong>${booking.customer_name}</strong><br>
+                        <small style="color:var(--text-muted)">${booking.customer_email}</small>
+                    </td>
+                    <td>${booking.tour_title}</td>
+                    <td>${new Date(booking.schedule_date).toLocaleDateString()}</td>
+                    <td><span class="booking-status status-${booking.status}">${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</span></td>
+                    <td><strong>$${booking.price}</strong></td>
+                </tr>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error loading bookings:', error);
+        container.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Failed to load participants.</td></tr>';
+    }
+}
+
+// Load recent bookings alias (for dashboard tab)
+function loadRecentBookings() {
+    loadBookings();
+}
+
+// Load tours from API
+async function loadTours() {
+    const container = document.getElementById('tours-list');
+    container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center;">Loading...</div>';
+
+    try {
+        const response = await fetch('/api/tours/read.php');
+        const tours = await response.json();
+
+        // Filter tours for current manager
+        allTours = tours.filter(t => t.guide_id == user.id);
+
+        updateStats();
+
+        if (allTours.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                    <i class="fas fa-compass" style="font-size: 3rem; color: var(--border); margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--text-muted); margin-bottom: 0.5rem;">No Tours Created Yet</h3>
+                    <p style="color: var(--text-muted);">Create your first tour to get started!</p>
+                    <button class="btn btn-primary" onclick="showCreateTourModal()" style="margin-top: 1rem;">
+                        <i class="fas fa-plus"></i> Create Your First Tour
+                    </button>
+                </div>
+            `;
+        } else {
+            container.innerHTML = allTours.map(tour => createTourCard(tour)).join('');
+        }
+    } catch (error) {
+        console.error('Error loading tours:', error);
+        container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: red;">Failed to load tours.</div>';
+    }
+}
+
+// Load places from API
+async function loadPlaces() {
+    const container = document.getElementById('places-list');
+    const locationSelect = document.getElementById('tour-location');
+
+    // Only show loading if empty
+    if (container.innerHTML.trim() === '') {
+        container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center;">Loading...</div>';
+    }
+
+    try {
+        const response = await fetch('/api/places/read.php');
+        const places = await response.json();
+
+        if (places.length === 0) {
+            container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center;">No places found.</div>';
+        } else {
+            container.innerHTML = places.map(place => `
+                <div class="tour-card">
+                    <div class="tour-image" style="background-image: url('https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'); height: 160px;">
+                        <span class="tour-badge" style="background: var(--secondary);">${place.category}</span>
                     </div>
-                    <div class="activity-content">
-                        <div class="activity-title">${activity.title}</div>
-                        <div class="activity-description">${activity.description}</div>
-                        <div class="activity-time">${activity.time}</div>
+                    <div class="tour-content">
+                        <h3 class="tour-title">${place.name}</h3>
+                        <div class="tour-meta">
+                            <span class="tour-meta-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                ${place.city}, ${place.country}
+                            </span>
+                        </div>
+                        <p class="tour-description" style="margin-top: 0.5rem; font-size: 0.9rem;">
+                            Discover the beauty of ${place.name}. A perfect destination for your next tour group.
+                        </p>
+                        <div class="tour-footer">
+                            <button onclick="createTourForPlace('${place.city}, ${place.country}')" class="btn btn-outline btn-sm" style="width: 100%;">
+                                <i class="fas fa-plus"></i> Create Tour Here
+                            </button>
+                        </div>
                     </div>
                 </div>
             `).join('');
-}
 
-// Load recent bookings
-function loadRecentBookings() {
-    const container = document.getElementById('recent-bookings');
-    container.innerHTML = demoBookings.map(booking => `
-                <tr>
-                    <td><strong>${booking.customer}</strong></td>
-                    <td>${booking.tour}</td>
-                    <td>${new Date(booking.date).toLocaleDateString()}</td>
-                    <td><span class="booking-status status-${booking.status}">${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</span></td>
-                    <td><strong>$${booking.amount}</strong></td>
-                </tr>
-            `).join('');
-}
-
-// Load tours
-function loadTours() {
-    const container = document.getElementById('tours-list');
-    if (demoTours.length === 0) {
-        container.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
-                        <i class="fas fa-compass" style="font-size: 3rem; color: var(--border); margin-bottom: 1rem;"></i>
-                        <h3 style="color: var(--text-muted); margin-bottom: 0.5rem;">No Tours Created Yet</h3>
-                        <p style="color: var(--text-muted);">Create your first tour to get started!</p>
-                        <button class="btn btn-primary" onclick="showCreateTourModal()" style="margin-top: 1rem;">
-                            <i class="fas fa-plus"></i> Create Your First Tour
-                        </button>
-                    </div>
-                `;
-    } else {
-        container.innerHTML = demoTours.map(tour => createTourCard(tour)).join('');
+            // Populate dropdown
+            // Keep the default "Select a Place..." option
+            if (locationSelect) {
+                locationSelect.innerHTML = '<option value="">Select a Place...</option>' +
+                    places.map(place => `<option value="${place.city}, ${place.country}">${place.name} (${place.city}, ${place.country})</option>`).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading places:', error);
+        container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: red;">Failed to load places.</div>';
     }
+}
+
+function createTourForPlace(location) {
+    switchTab('tours');
+    showCreateTourModal();
+    // Pre-select location after a short delay to ensure modal is ready
+    setTimeout(() => {
+        const select = document.getElementById('tour-location');
+        if (select) {
+            select.value = location;
+        }
+    }, 100);
 }
 
 // Create tour card
 function createTourCard(tour) {
-    const formattedDate = new Date(tour.date).toLocaleDateString('en-US', {
+    const formattedDate = new Date(tour.schedule_date).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric'
     });
 
+    // Default image if not present (backend does not store image yet, so use placeholder)
+    const image = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+    const status = 'active'; // Default status for now
+    const rating = 0; // Default
+    const bookings = 0; // Default
+
     return `
-                <div class="tour-card">
-                    <div class="tour-image" style="background-image: url('${tour.image}');">
-                        <span class="tour-badge">${tour.status.toUpperCase()}</span>
+        <div class="tour-card">
+            <div class="tour-image" style="background-image: url('${image}');">
+                <span class="tour-badge">${status.toUpperCase()}</span>
+            </div>
+            <div class="tour-content">
+                <h3 class="tour-title">${tour.title}</h3>
+                <div class="tour-meta">
+                    <span class="tour-meta-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        ${tour.location}
+                    </span>
+                </div>
+                <p class="tour-description">${tour.description}</p>
+                <div class="tour-footer">
+                    <div class="tour-stats">
+                        <div class="tour-price">$${tour.price}</div>
+                        <div style="text-align: right;">
+                             <small style="color: var(--text-muted);">${formattedDate}</small>
+                        </div>
                     </div>
-                    <div class="tour-content">
-                        <h3 class="tour-title">${tour.title}</h3>
-                        <div class="tour-meta">
-                            <span class="tour-meta-item">
-                                <i class="fas fa-map-marker-alt"></i>
-                                ${tour.location}
-                            </span>
-                            <span class="tour-meta-item">
-                                <i class="fas fa-clock"></i>
-                                ${tour.duration}h
-                            </span>
-                        </div>
-                        <p class="tour-description">${tour.description}</p>
-                        <div class="tour-footer">
-                            <div class="tour-stats">
-                                <div class="tour-price">$${tour.price}</div>
-                                <div style="text-align: right;">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="fas fa-star" style="color: var(--warning);"></i>
-                                        <span style="font-weight: 600;">${tour.rating}</span>
-                                    </div>
-                                    <small style="color: var(--text-muted);">${tour.bookings} bookings</small>
-                                </div>
-                            </div>
-                            <div class="tour-actions">
-                                <button onclick="editTour(${tour.id})" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button onclick="viewTourDetails(${tour.id})" class="btn btn-outline btn-sm" style="border-color: var(--border);">
-                                    <i class="fas fa-eye"></i> View
-                                </button>
-                                <button onclick="deleteTour(${tour.id})" class="btn btn-danger btn-sm">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
+                    <div class="tour-actions">
+                        <button onclick="editTour(${tour.id})" class="btn btn-primary btn-sm">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button onclick="viewTourDetails(${tour.id})" class="btn btn-outline btn-sm" style="border-color: var(--border);">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button onclick="deleteTour(${tour.id})" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
-            `;
+            </div>
+        </div>
+    `;
 }
 
 // Tour actions
 function showCreateTourModal() {
     document.getElementById('create-tour-modal').style.display = 'block';
-    document.getElementById('tours-tab').style.display = 'none';
-    document.getElementById('dashboard-tab').style.display = 'none';
+    // Hide other tabs if open, though modal usually overlays
+    // document.getElementById('tours-tab').style.display = 'none'; 
 }
 
 function closeCreateTourModal() {
     document.getElementById('create-tour-modal').style.display = 'none';
-    document.getElementById('tours-tab').style.display = 'block';
+    document.getElementById('create-tour-form').reset();
+    delete document.getElementById('create-tour-form').dataset.editId; // Clear edit ID
 }
 
-// Create tour form handler
-document.getElementById('create-tour-form').addEventListener('submit', function (e) {
+// Create/Update tour form handler
+document.getElementById('create-tour-form').addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    const newTour = {
-        id: demoTours.length + 1,
-        title: document.getElementById('tour-title').value,
-        location: document.getElementById('tour-location').value,
-        price: parseFloat(document.getElementById('tour-price').value),
-        date: document.getElementById('tour-date').value,
-        description: document.getElementById('tour-desc').value,
-        image: document.getElementById('tour-image').value || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        bookings: 0,
-        rating: 0,
-        maxParticipants: parseInt(document.getElementById('tour-max-participants').value),
-        duration: parseInt(document.getElementById('tour-duration').value),
-        status: "active"
+    const title = document.getElementById('tour-title').value;
+    const location = document.getElementById('tour-location').value;
+    const price = parseFloat(document.getElementById('tour-price').value);
+    const date = document.getElementById('tour-date').value;
+    const desc = document.getElementById('tour-desc').value;
+    // Image, maxParticipants, duration are not in backend yet, ignore for now
+
+    const editId = this.dataset.editId;
+
+    const payload = {
+        guide_id: user.id,
+        title: title,
+        location: location,
+        price: price,
+        schedule_date: date,
+        description: desc
     };
 
-    demoTours.unshift(newTour);
+    let url = '/api/tours/create.php';
+    let method = 'POST';
 
-    // Add to activity
-    demoActivity.unshift({
-        type: "tour",
-        title: "Tour published",
-        description: `You published ${newTour.title}`,
-        time: "Just now"
-    });
+    if (editId) {
+        url = '/api/tours/update.php';
+        method = 'PUT';
+        payload.id = editId;
+    }
 
-    alert('Tour created successfully!');
-    this.reset();
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
 
-    // Set default date to tomorrow
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    document.getElementById('tour-date').value = tomorrow.toISOString().split('T')[0];
-
-    closeCreateTourModal();
-    loadDashboardData();
+        if (response.ok) {
+            alert(editId ? 'Tour updated successfully!' : 'Tour created successfully!');
+            closeCreateTourModal();
+            loadTours();
+        } else {
+            const data = await response.json();
+            alert('Error: ' + (data.message || 'Operation failed'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
 });
 
 function editTour(id) {
-    const tour = demoTours.find(t => t.id === id);
+    const tour = allTours.find(t => t.id == id);
     if (tour) {
         document.getElementById('tour-title').value = tour.title;
         document.getElementById('tour-location').value = tour.location;
         document.getElementById('tour-price').value = tour.price;
-        document.getElementById('tour-date').value = tour.date;
+        document.getElementById('tour-date').value = tour.schedule_date;
         document.getElementById('tour-desc').value = tour.description;
-        document.getElementById('tour-image').value = tour.image;
-        document.getElementById('tour-max-participants').value = tour.maxParticipants;
-        document.getElementById('tour-duration').value = tour.duration;
+        // document.getElementById('tour-image').value = tour.image;
+        // document.getElementById('tour-max-participants').value = tour.maxParticipants;
+        // document.getElementById('tour-duration').value = tour.duration;
+
+        // Set edit mode
+        document.getElementById('create-tour-form').dataset.editId = id;
 
         showCreateTourModal();
-        alert('Tour loaded for editing. Update and click "Publish Tour" to save changes.');
     }
 }
 
 function viewTourDetails(id) {
-    const tour = demoTours.find(t => t.id === id);
+    const tour = allTours.find(t => t.id == id);
     if (tour) {
-        alert(`Tour Details:\n\nTitle: ${tour.title}\nLocation: ${tour.location}\nPrice: $${tour.price}\nDate: ${new Date(tour.date).toLocaleDateString()}\nBookings: ${tour.bookings}\nRating: ${tour.rating}/5.0`);
+        alert(`Tour Details:\n\nTitle: ${tour.title}\nLocation: ${tour.location}\nPrice: $${tour.price}\nDate: ${new Date(tour.schedule_date).toLocaleDateString()}\nDescription: ${tour.description}`);
     }
 }
 
-function deleteTour(id) {
+async function deleteTour(id) {
     if (confirm('Are you sure you want to delete this tour? This action cannot be undone.')) {
-        demoTours = demoTours.filter(t => t.id !== id);
-        loadDashboardData();
+        try {
+            const response = await fetch('/api/tours/delete.php', {
+                method: 'DELETE', // Method typically used, but PHP script reads body
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    id: id,
+                    guide_id: user.id
+                })
+            });
+
+            if (response.ok) {
+                // Remove locally to update UI immediately or reload
+                loadTours();
+            } else {
+                alert('Failed to delete tour');
+            }
+        } catch (error) {
+            console.error('Error deleting tour:', error);
+            alert('An error occurred while deleting.');
+        }
     }
 }
 
@@ -331,15 +427,15 @@ function createNewTour() {
 }
 
 function viewCalendar() {
-    alert('Calendar view would open here. This feature shows all your scheduled tours and bookings.');
+    alert('Calendar view would open here.');
 }
 
 function exportReports() {
-    alert('Exporting reports... This would generate a PDF/Excel report of your tours, bookings, and revenue.');
+    alert('Exporting reports...');
 }
 
 function sendNewsletter() {
-    alert('Newsletter modal would open here. Send updates to your past customers about new tours.');
+    alert('Newsletter modal would open here.');
 }
 
 // Logout
@@ -355,15 +451,28 @@ document.addEventListener('DOMContentLoaded', function () {
     // Set minimum date to tomorrow
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    document.getElementById('tour-date').value = tomorrow.toISOString().split('T')[0];
-    document.getElementById('tour-date').min = tomorrow.toISOString().split('T')[0];
+    const dateInput = document.getElementById('tour-date');
+    if (dateInput) {
+        dateInput.value = tomorrow.toISOString().split('T')[0];
+        dateInput.min = tomorrow.toISOString().split('T')[0];
+    }
 
-    // Initialize date picker
-    flatpickr("#tour-date", {
-        minDate: "today",
-        dateFormat: "Y-m-d",
-    });
+    // Initialize date picker if flatpickr exists
+    if (typeof flatpickr !== 'undefined') {
+        flatpickr("#tour-date", {
+            minDate: "today",
+            dateFormat: "Y-m-d",
+        });
+    }
 
     // Load initial data
     loadDashboardData();
+
+    // Close modal event
+    window.onclick = function (event) {
+        const modal = document.getElementById('create-tour-modal');
+        if (event.target == modal) {
+            closeCreateTourModal();
+        }
+    }
 });

@@ -14,16 +14,19 @@ $booking = new Booking($db);
 
 $data = json_decode(file_get_contents("php://input"));
 
-if (!empty($data->tour_id) && !empty($data->tourist_id)) {
+if (
+    !empty($data->tour_id) &&
+    !empty($data->user_id)
+) {
     $booking->tour_id = $data->tour_id;
-    $booking->tourist_id = $data->tourist_id;
+    $booking->user_id = $data->user_id;
 
     if ($booking->create()) {
         http_response_code(201);
         echo json_encode(['message' => 'Booking Created']);
     } else {
         http_response_code(503);
-        echo json_encode(['message' => 'Booking Failed']);
+        echo json_encode(['message' => 'Booking Not Created']);
     }
 } else {
     http_response_code(400);
