@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | TourismPro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin_dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+</head>
+
+<body>
+    <!-- Admin Header -->
+    <nav class="navbar admin-header">
+        <a href="index.html" class="logo" style="color: white;">
+            TourismPro <span class="admin-badge">ADMIN</span>
+        </a>
+        <div class="nav-links">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div
+                        style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.2rem;">
+                        A
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; color: white;" id="admin-name">Administrator</div>
+                        <div style="font-size: 0.85rem; color: #cbd5e1;">Super Admin</div>
+                    </div>
+                </div>
+                <a href="index.html" class="btn btn-outline" style="color: white; border-color: rgba(255,255,255,0.3);">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="#" class="btn btn-danger" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Container -->
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-nav">
+                <div class="nav-group">
+                    <h4>Dashboard</h4>
+                    <a href="#dashboard" class="nav-item active" onclick="switchView('dashboard')">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Overview</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <h4>Management</h4>
+                    <a href="#users" class="nav-item" onclick="switchView('users')">
+                        <i class="fas fa-users"></i>
+                        <span>Users</span>
+                        <span
+                            style="margin-left: auto; background: var(--primary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
+                            id="user-count">0</span>
+                    </a>
+                    <a href="#tours" class="nav-item" onclick="switchView('tours')">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Tours</span>
+                        <span
+                            style="margin-left: auto; background: var(--secondary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
+                            id="tour-count">0</span>
+                    </a>
+                    <a href="#bookings" class="nav-item" onclick="switchView('bookings')">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Bookings</span>
+                        <span
+                            style="margin-left: auto; background: #8b5cf6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
+                            id="booking-count">0</span>
+                    </a>
+                    <a href="#reviews" class="nav-item" onclick="switchView('reviews')">
+                        <i class="fas fa-star"></i>
+                        <span>Reviews</span>
+                        <span
+                            style="margin-left: auto; background: #10b981; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">12</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <h4>System</h4>
+                    <a href="#reports" class="nav-item" onclick="switchView('reports')">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports</span>
+                    </a>
+                    <a href="#settings" class="nav-item" onclick="switchView('settings')">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                    <a href="#analytics" class="nav-item" onclick="switchView('analytics')">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="fade-in">
+                <!-- Welcome Banner -->
+                <div class="welcome-banner">
+                    <div class="welcome-content">
+                        <h1>Welcome Back, <span id="admin-greeting">Admin</span>!</h1>
+                        <p>Here's what's happening with your platform today.</p>
+                    </div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">
+                        <div><i class="fas fa-clock"></i> Last updated: <span id="last-updated">Just now</span></div>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon users">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <span class="stat-trend trend-up">+12%</span>
+                        </div>
+                        <div class="stat-value" id="total-users">0</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon tours">
+                                <i class="fas fa-map-marked-alt"></i>
+                            </div>
+                            <span class="stat-trend trend-up">+8%</span>
+                        </div>
+                        <div class="stat-value" id="total-tours">0</div>
+                        <div class="stat-label">Active Tours</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon bookings">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <span class="stat-trend trend-up">+24%</span>
+                        </div>
+                        <div class="stat-value" id="total-bookings">0</div>
+                        <div class="stat-label">Total Bookings</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon revenue">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <span class="stat-trend trend-up">+18%</span>
+                        </div>
+                        <div class="stat-value" id="total-revenue">$0</div>
+                        <div class="stat-label">Total Revenue</div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-section">
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-line"></i> Revenue Overview</h3>
+                        <div style="height: 300px;">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-pie"></i> User Distribution</h3>
+                        <div style="height: 300px;">
+                            <canvas id="userChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="activity-section">
+                    <div class="activity-header">
+                        <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                        <button class="btn btn-outline" style="border-color: var(--border);">
+                            View All Activity
+                        </button>
+                    </div>
+                    <div class="activity-list" id="activity-list">
+                        <!-- Activity items will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                    <div class="actions-grid">
+                        <div class="action-btn" onclick="switchView('users')">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Add New User</span>
+                        </div>
+                        <div class="action-btn" onclick="switchView('tours')">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Create Tour</span>
+                        </div>
+                        <div class="action-btn" onclick="generateReport()">
+                            <i class="fas fa-file-export"></i>
+                            <span>Generate Report</span>
+                        </div>
+                        <div class="action-btn" onclick="viewAnalytics()">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>View Analytics</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Management View -->
+            <div id="users-view" class="fade-in" style="display: none;">
+                <div class="search-section">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2><i class="fas fa-users"></i> User Management</h2>
+                        <button class="btn btn-primary" onclick="addNewUser()">
+                            <i class="fas fa-user-plus"></i> Add New User
+                        </button>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <input type="text" id="user-search" class="admin-input"
+                            placeholder="Search users by name, email, or role...">
+                        <button onclick="searchUsers()" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        <button onclick="clearUserSearch()" class="btn btn-outline"
+                            style="border-color: var(--border);">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-list">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tours Management View -->
+            <div id="tours-view" class="fade-in" style="display: none;">
+                <div class="search-section">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2><i class="fas fa-map-marked-alt"></i> Tour Management</h2>
+                        <button class="btn btn-primary" onclick="createNewTour()">
+                            <i class="fas fa-plus-circle"></i> Create Tour
+                        </button>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <input type="text" id="tour-search" class="admin-input"
+                            placeholder="Search tours by title, location, or guide...">
+                        <button onclick="searchTours()" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+
+                <div id="tours-management-content">
+                    <!-- Tours will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Bookings Management View -->
+            <div id="bookings-view" class="fade-in" style="display: none;">
+                <div class="search-section">
+                    <div style="margin-bottom: 1.5rem;">
+                        <h2><i class="fas fa-calendar-check"></i> Booking Management</h2>
+                        <p style="color: var(--text-muted);">View and manage all bookings on the platform</p>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <input type="text" id="booking-search" class="admin-input"
+                            placeholder="Search bookings by tourist, tour, or status...">
+                        <button onclick="searchBookings()" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+
+                <div id="bookings-management-content">
+                    <!-- Bookings will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settings-view" class="fade-in" style="display: none;">
+                <div class="search-section">
+                    <h2><i class="fas fa-cog"></i> System Settings</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Configure platform settings and
+                        preferences</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <div
+                        style="background: white; padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
+                        <h3 style="margin-bottom: 1rem; color: var(--dark);">General Settings</h3>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Site Name</label>
+                            <input type="text" class="admin-input" value="TourismPro">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Admin Email</label>
+                            <input type="email" class="admin-input" value="admin@tourismpro.com">
+                        </div>
+                        <button class="btn btn-primary" style="margin-top: 1rem;">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+
+                    <div
+                        style="background: white; padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
+                        <h3 style="margin-bottom: 1rem; color: var(--dark);">Security Settings</h3>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Password
+                                Policy</label>
+                            <select class="admin-select">
+                                <option>Minimum 8 characters</option>
+                                <option>Minimum 12 characters</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" checked>
+                                <span>Enable Two-Factor Authentication</span>
+                            </label>
+                        </div>
+                        <button class="btn btn-primary" style="margin-top: 1rem;">
+                            <i class="fas fa-shield-alt"></i> Update Security
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="js/admin.js"></script>
+</body>
+
+</html>

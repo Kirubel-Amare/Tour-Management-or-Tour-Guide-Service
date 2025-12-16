@@ -61,10 +61,10 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
 
             // Redirect after short delay
             setTimeout(() => {
-                if (role === 'guide') {
-                    window.location.href = 'guide_dashboard.html';
+                if (role === 'manager') {
+                    window.location.href = 'manager_dashboard.html';
                 } else {
-                    window.location.href = 'tourist_dashboard.html';
+                    window.location.href = 'customer_dashboard.html';
                 }
             }, 2000);
         } else {

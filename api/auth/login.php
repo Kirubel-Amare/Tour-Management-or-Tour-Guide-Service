@@ -38,6 +38,7 @@ if (!empty($data->email) && !empty($data->password)) {
             'role' => $user->role
         ));
     } else {
+        error_log("Login failed for email: " . $user->email);
         http_response_code(401);
         echo json_encode(array('message' => 'Login Failed'));
     }

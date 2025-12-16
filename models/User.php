@@ -12,66 +12,67 @@ class User
 
     public $role;
 
-    public function __construct()
+    public function __construct($db)
     {
-        require_once __DIR__ . '/../config/Database.php';
-        $database = new Database();
-        $this->conn = $database->connect();
-
-        if (!$this->conn) {
-            die("Database connection failed!");
-        }
+        $this->conn = $db;
     }
 
-public function register()
-{
-    $query = "INSERT INTO " . $this->table_name . " 
-              (`name`, `email`, `password`, `role`) 
-              VALUES (:name, :email, :password, :role)";
-              
-    $stmt = $this->conn->prepare($query);
+    public function register()
+    {
+        // Validate Role
+        $valid_roles = ['admin', 'manager', 'customer'];
+        if (!in_array($this->role, $valid_roles)) {
+            // Default to customer if invalid
+            $this->role = 'customer';
+        }
 
-    $this->name = htmlspecialchars(strip_tags($this->name));
-    $this->email = htmlspecialchars(strip_tags($this->email));
-    $this->password = password_hash($this->password, PASSWORD_BCRYPT);
-    $this->role = htmlspecialchars(strip_tags($this->role));
+        $query = "INSERT INTO " . $this->table_name . " 
+                  (`name`, `email`, `password`, `role`) 
+                  VALUES (:name, :email, :password, :role)";
 
-    $stmt->bindParam(":name", $this->name);
-    $stmt->bindParam(":email", $this->email);
-    $stmt->bindParam(":password", $this->password);
-    $stmt->bindParam(":role", $this->role);
+        $stmt = $this->conn->prepare($query);
 
-    try {
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            print_r($stmt->errorInfo()); // <-- show SQL errors
+        $this->name = htmlspecialchars(strip_tags($this->name));
+        $this->email = htmlspecialchars(strip_tags($this->email));
+        $this->password = password_hash($this->password, PASSWORD_BCRYPT);
+        $this->role = htmlspecialchars(strip_tags($this->role));
+
+        $stmt->bindParam(":name", $this->name);
+        $stmt->bindParam(":email", $this->email);
+        $stmt->bindParam(":password", $this->password);
+        $stmt->bindParam(":role", $this->role);
+
+        try {
+            if ($stmt->execute()) {
+                return true;
+            } else {
+                print_r($stmt->errorInfo()); // <-- show SQL errors
+                return false;
+            }
+        } catch (PDOException $e) {
+            echo "Error: " . $e->getMessage();
             return false;
         }
-    } catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
+    }
+
+    public function login()
+    {
+        $query = "SELECT id, name, password, role FROM " . $this->table_name . " WHERE email = ? LIMIT 0,1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->email);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (password_verify($this->password, $row['password'])) {
+                $this->id = $row['id'];
+                $this->name = $row['name'];
+                $this->role = $row['role']; // <-- add this
+                return true;
+            }
+        }
         return false;
     }
-}
-
-public function login()
-{
-    $query = "SELECT id, name, password, role FROM " . $this->table_name . " WHERE email = ? LIMIT 0,1";
-    $stmt = $this->conn->prepare($query);
-    $stmt->bindParam(1, $this->email);
-    $stmt->execute();
-
-    if ($stmt->rowCount() > 0) {
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (password_verify($this->password, $row['password'])) {
-            $this->id = $row['id'];
-            $this->name = $row['name'];
-            $this->role = $row['role']; // <-- add this
-            return true;
-        }
-    }
-    return false;
-}
 
 
     public function emailExists()
@@ -96,6 +97,7 @@ public function login()
         if ($row) {
             $this->name = $row['name'];
             $this->email = $row['email'];
+            $this->role = $row['role'];
             return true;
         }
         return false;

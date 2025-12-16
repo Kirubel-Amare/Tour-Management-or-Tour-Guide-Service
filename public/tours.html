@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Tours | TourismPro</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/tours.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 </head>
 
 <body>
@@ -13,24 +16,129 @@
         <a href="index.html" class="logo">TourismPro</a>
         <div class="nav-links">
             <a href="index.html">Home</a>
-            <a href="tours.html" style="color: var(--primary);">Tours</a>
+            <a href="tours.html" style="color: var(--primary); font-weight: 600; position: relative;">
+                Tours
+                <span
+                    style="position: absolute; bottom: -5px; left: 0; right: 0; height: 2px; background: var(--primary);"></span>
+            </a>
             <a href="about.html">About</a>
             <a href="login.html">Login</a>
-            <a href="register.html">Register</a>
+            <a href="register.html" class="btn btn-outline"
+                style="color: white; border-color: rgba(255,255,255,0.3); margin-left: 0.5rem;">Register</a>
         </div>
     </nav>
 
-    <div style="text-align: center; padding: 8rem 1rem 2rem;">
-        <h1 class="section-title" style="margin-bottom: 1rem;">Explore Our Tours</h1>
-        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">
-            Find your next adventure from our wide selection of curated trips.
-        </p>
+    <!-- Hero Section -->
+    <div class="tours-hero">
+        <h1>Discover Amazing Tours</h1>
+        <p>Find your perfect adventure from our curated collection of unforgettable experiences</p>
     </div>
 
+    <!-- Search and Filters -->
+    <div class="search-filters">
+        <div class="search-container">
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="search-input" class="search-input"
+                    placeholder="Search tours by name, location, or guide...">
+            </div>
+            <button id="search-btn" class="btn btn-primary">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </div>
+
+        <div class="filters-container">
+            <div class="filter-group">
+                <label><i class="fas fa-map-marker-alt"></i> Destination</label>
+                <select id="destination-filter" class="filter-select">
+                    <option value="">All Destinations</option>
+                    <option value="Paris">Paris, France</option>
+                    <option value="Tokyo">Tokyo, Japan</option>
+                    <option value="New York">New York, USA</option>
+                    <option value="Rome">Rome, Italy</option>
+                    <option value="Bali">Bali, Indonesia</option>
+                    <option value="Sydney">Sydney, Australia</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label><i class="fas fa-dollar-sign"></i> Price Range</label>
+                <select id="price-filter" class="filter-select">
+                    <option value="">Any Price</option>
+                    <option value="0-100">Under $100</option>
+                    <option value="100-200">$100 - $200</option>
+                    <option value="200-500">$200 - $500</option>
+                    <option value="500+">$500+</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label><i class="fas fa-calendar-alt"></i> Date</label>
+                <select id="date-filter" class="filter-select">
+                    <option value="">Any Date</option>
+                    <option value="this-month">This Month</option>
+                    <option value="next-month">Next Month</option>
+                    <option value="next-3-months">Next 3 Months</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label><i class="fas fa-tag"></i> Category</label>
+                <select id="category-filter" class="filter-select">
+                    <option value="">All Categories</option>
+                    <option value="Adventure">Adventure</option>
+                    <option value="Cultural">Cultural</option>
+                    <option value="Food">Food & Wine</option>
+                    <option value="Historical">Historical</option>
+                    <option value="Nature">Nature & Wildlife</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filter-actions">
+            <div class="results-count" id="results-count">Loading tours...</div>
+            <div>
+                <button id="clear-filters" class="btn btn-outline" style="border-color: var(--border);">
+                    <i class="fas fa-times"></i> Clear Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tours Grid -->
     <section>
-        <div id="tours-container" class="grid-3">
-            <!-- Loading State -->
-            <p style="grid-column: span 3; text-align: center; color: var(--text-muted);">Loading tours...</p>
+        <div id="tours-container" class="tours-grid">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading amazing tours for you...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Tours -->
+    <section class="featured-tours">
+        <div class="section-header">
+            <h2>Featured Tours</h2>
+            <p>Our most popular experiences, handpicked by our travel experts</p>
+        </div>
+        <div id="featured-tours" class="tours-grid">
+            <!-- Featured tours will be loaded here -->
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section style="padding: 4rem 2rem; text-align: center; background: var(--dark); color: white;">
+        <div style="max-width: 600px; margin: 0 auto;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Ready for Your Next Adventure?</h2>
+            <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2rem;">
+                Sign up now to get exclusive deals and personalized tour recommendations
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="register.html" class="btn btn-primary">Sign Up Free</a>
+                <a href="login.html" class="btn btn-outline" style="color: white; border-color: rgba(255,255,255,0.3);">
+                    Already have an account?
+                </a>
+            </div>
         </div>
     </section>
 
@@ -55,69 +163,20 @@
             </div>
             <div class="footer-col">
                 <h4>Connect</h4>
-                <a href="#">Twitter</a>
-                <a href="#">Instagram</a>
-                <a href="#">Facebook</a>
+                <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
+                <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
+                <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
             </div>
         </div>
         <div class="copyright">
             <p>&copy; 2025 TourismPro. All rights reserved.</p>
         </div>
     </footer>
+    <script src="js/tours.js"></script>
 
-    <script src="js/utils.js"></script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const container = document.getElementById('tours-container');
 
-            try {
-                // Try to fetch real tours
-                const response = await fetch('/api/tours/read.php');
-                const tours = await response.json();
 
-                if (Array.isArray(tours) && tours.length > 0) {
-                    container.innerHTML = tours.map(tour => createTourCard(tour)).join('');
-                } else {
-                    // Fallback to demo tours if API is empty
-                    showDemoTours(container);
-                }
-            } catch (error) {
-                console.error('Failed to fetch tours:', error);
-                showDemoTours(container);
-            }
-        });
 
-        function showDemoTours(container) {
-            const demoTours = [
-                {
-                    id: 1,
-                    title: "Paris City Tour",
-                    location: "Paris, France",
-                    schedule_date: "2023-12-25",
-                    description: "Explore the Eiffel Tower, Louvre, and more.",
-                    price: 150
-                },
-                {
-                    id: 2,
-                    title: "Tokyo Night Walk",
-                    location: "Tokyo, Japan",
-                    schedule_date: "2024-01-10",
-                    description: "Experience the neon lights of Shinjuku and Shibuya.",
-                    price: 120
-                },
-                {
-                    id: 3,
-                    title: "NY Central Park",
-                    location: "New York, USA",
-                    schedule_date: "2024-03-15",
-                    description: "A relaxing guided walk through Central Park.",
-                    price: 80
-                }
-            ];
-            container.innerHTML = demoTours.map(tour => createTourCard(tour)).join('');
-        }
-    </script>
 </body>
 
 </html>

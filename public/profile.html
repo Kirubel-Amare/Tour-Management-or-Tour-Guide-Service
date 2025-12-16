@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | TourismPro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .profile-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .profile-header {
+            background: var(--primary);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            background: white;
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 0 auto 1rem;
+        }
+
+        .profile-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-family: inherit;
+        }
+
+        .btn-save {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-save:hover {
+            opacity: 0.9;
+        }
+
+        .nav-link-back {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+
+        .nav-link-back:hover {
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">TourismPro</a>
+        <div class="nav-links">
+            <a href="#" id="dashboard-link">Dashboard</a>
+            <a href="#" id="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <div class="profile-container">
+        <a href="#" id="back-link" class="nav-link-back">← Back to Dashboard</a>
+
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="profile-avatar" id="profile-avatar">U</div>
+                <h2 id="profile-name-display">User Name</h2>
+                <p id="profile-role-display">Role</p>
+            </div>
+
+            <div class="profile-body">
+                <div id="message-container"></div>
+
+                <form id="profile-form">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">New Password (leave blank to keep current)</label>
+                        <input type="password" id="password" placeholder="••••••••">
+                    </div>
+
+                    <button type="submit" class="btn-save">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/profile.js"></script>
+</body>
+
+</html>

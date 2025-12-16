@@ -45,7 +45,7 @@ if (empty($data->name) || empty($data->email) || empty($data->password)) {
 $user->name = $data->name;
 $user->email = $data->email;
 $user->password = $data->password;
-$user->role = !empty($data->role) ? $data->role : 'tourist';
+$user->role = !empty($data->role) ? $data->role : 'customer';
 
 // Check if email exists
 if ($user->emailExists()) {
@@ -62,7 +62,7 @@ if ($user->register()) {   // <-- use create() instead of register()
         'user' => [
             'name' => $user->name,
             'email' => $user->email,
-            'password'=> $user->password,
+            'password' => $user->password,
             'role' => $user->role
         ]
     ]);
