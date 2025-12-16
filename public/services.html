@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tourist Services | TourismPro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/service.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">TourismPro</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="tours.html">Tours</a>
+            <a href="services.html" style="color: var(--primary); font-weight: 600; position: relative;">
+                Services
+                <span style="position: absolute; bottom: -5px; left: 0; right: 0; height: 2px; background: var(--primary);"></span>
+            </a>
+            <a href="about.html">About</a>
+            <div id="auth-links">
+                <a href="login.html">Login</a>
+                <a href="register.html" class="btn btn-outline" style="color: white; border-color: rgba(255,255,255,0.3); margin-left: 0.5rem;">Register</a>
+            </div>
+            <div id="user-links" style="display: none;">
+                <a href="#" id="dashboard-link" class="btn btn-primary"
+                    style="padding: 0.5rem 1rem; border-radius: 5px; color: white; text-decoration: none;">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="services-hero">
+        <h1>All-in-One Travel Services</h1>
+        <p>Everything you need for your perfect trip in one place</p>
+    </div>
+
+    <!-- Services Navigation -->
+    <div class="services-nav">
+        <div class="service-tab active" onclick="switchService('places')">
+            <i class="fas fa-map-marked-alt"></i> Places
+        </div>
+        <div class="service-tab" onclick="switchService('tours')">
+            <i class="fas fa-ticket-alt"></i> Tours & Tickets
+        </div>
+        <div class="service-tab" onclick="switchService('hotels')">
+            <i class="fas fa-hotel"></i> Hotels
+        </div>
+        <div class="service-tab" onclick="switchService('restaurants')">
+            <i class="fas fa-utensils"></i> Restaurants
+        </div>
+        <div class="service-tab" onclick="switchService('taxis')">
+            <i class="fas fa-taxi"></i> Taxis
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="container">
+        <!-- Places Section -->
+        <section id="places-section" class="service-section active">
+            <div class="section-header">
+                <h2>Browse Destinations</h2>
+                <p>Explore popular cities and countries around the world</p>
+            </div>
+
+            <div class="search-filters">
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="places-search" class="search-input" placeholder="Search destinations...">
+                    </div>
+                    <button onclick="searchPlaces()" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label><i class="fas fa-globe"></i> Continent</label>
+                        <select id="continent-filter" class="filter-select" onchange="filterPlaces()">
+                            <option value="">All Continents</option>
+                            <option value="Europe">Europe</option>
+                            <option value="Asia">Asia</option>
+                            <option value="North America">North America</option>
+                            <option value="South America">South America</option>
+                            <option value="Africa">Africa</option>
+                            <option value="Australia">Australia</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-mountain"></i> Type</label>
+                        <select id="type-filter" class="filter-select" onchange="filterPlaces()">
+                            <option value="">All Types</option>
+                            <option value="City">City</option>
+                            <option value="Beach">Beach</option>
+                            <option value="Mountain">Mountain</option>
+                            <option value="Historical">Historical</option>
+                            <option value="Nature">Nature</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-thermometer-half"></i> Climate</label>
+                        <select id="climate-filter" class="filter-select" onchange="filterPlaces()">
+                            <option value="">Any Climate</option>
+                            <option value="Tropical">Tropical</option>
+                            <option value="Temperate">Temperate</option>
+                            <option value="Mediterranean">Mediterranean</option>
+                            <option value="Desert">Desert</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="places-list" class="services-grid">
+                <!-- Places will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Tours & Tickets Section -->
+        <section id="tours-section" class="service-section">
+            <div class="section-header">
+                <h2>Travel Tickets & Tours</h2>
+                <p>Book your next adventure with our verified providers</p>
+            </div>
+
+            <div class="search-filters">
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="tours-search" class="search-input" placeholder="Search tours...">
+                    </div>
+                    <button onclick="searchTours()" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label><i class="fas fa-dollar-sign"></i> Price Range</label>
+                        <select id="tours-price-filter" class="filter-select" onchange="filterTours()">
+                            <option value="">Any Price</option>
+                            <option value="0-50">Under $50</option>
+                            <option value="50-100">$50 - $100</option>
+                            <option value="100-200">$100 - $200</option>
+                            <option value="200+">$200+</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-clock"></i> Duration</label>
+                        <select id="duration-filter" class="filter-select" onchange="filterTours()">
+                            <option value="">Any Duration</option>
+                            <option value="0-2">Under 2 hours</option>
+                            <option value="2-4">2-4 hours</option>
+                            <option value="4-8">Half day</option>
+                            <option value="8+">Full day</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-star"></i> Rating</label>
+                        <select id="rating-filter" class="filter-select" onchange="filterTours()">
+                            <option value="">Any Rating</option>
+                            <option value="4">4+ Stars</option>
+                            <option value="4.5">4.5+ Stars</option>
+                            <option value="5">5 Stars</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tours-list" class="services-grid">
+                <!-- Tours will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Hotels Section -->
+        <section id="hotels-section" class="service-section">
+            <div class="section-header">
+                <h2>Reserve Hotel Rooms</h2>
+                <p>Comfortable stays at the best prices worldwide</p>
+            </div>
+
+            <div class="search-filters">
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="hotels-search" class="search-input" placeholder="Search hotels by city, name...">
+                    </div>
+                    <button onclick="searchHotels()" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label><i class="fas fa-bed"></i> Room Type</label>
+                        <select id="room-type-filter" class="filter-select" onchange="filterHotels()">
+                            <option value="">Any Room</option>
+                            <option value="Single">Single</option>
+                            <option value="Double">Double</option>
+                            <option value="Suite">Suite</option>
+                            <option value="Family">Family</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-star"></i> Hotel Rating</label>
+                        <select id="hotel-rating-filter" class="filter-select" onchange="filterHotels()">
+                            <option value="">Any Rating</option>
+                            <option value="3">3 Stars</option>
+                            <option value="4">4 Stars</option>
+                            <option value="5">5 Stars</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-dollar-sign"></i> Price per Night</label>
+                        <select id="hotel-price-filter" class="filter-select" onchange="filterHotels()">
+                            <option value="">Any Price</option>
+                            <option value="0-100">Under $100</option>
+                            <option value="100-200">$100 - $200</option>
+                            <option value="200-500">$200 - $500</option>
+                            <option value="500+">$500+</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="hotels-list" class="services-grid">
+                <!-- Hotels will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Restaurants Section -->
+        <section id="restaurants-section" class="service-section">
+            <div class="section-header">
+                <h2>Book Restaurant Seats</h2>
+                <p>Savor local cuisines and fine dining experiences</p>
+            </div>
+
+            <div class="search-filters">
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="restaurants-search" class="search-input" placeholder="Search restaurants...">
+                    </div>
+                    <button onclick="searchRestaurants()" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label><i class="fas fa-utensils"></i> Cuisine</label>
+                        <select id="cuisine-filter" class="filter-select" onchange="filterRestaurants()">
+                            <option value="">All Cuisines</option>
+                            <option value="Italian">Italian</option>
+                            <option value="Japanese">Japanese</option>
+                            <option value="Indian">Indian</option>
+                            <option value="Mexican">Mexican</option>
+                            <option value="French">French</option>
+                            <option value="Chinese">Chinese</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-dollar-sign"></i> Price Range</label>
+                        <select id="restaurant-price-filter" class="filter-select" onchange="filterRestaurants()">
+                            <option value="">Any Price</option>
+                            <option value="$">$ (Budget)</option>
+                            <option value="$$">$$ (Moderate)</option>
+                            <option value="$$$">$$$ (Expensive)</option>
+                            <option value="$$$$">$$$$ (Luxury)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-star"></i> Rating</label>
+                        <select id="restaurant-rating-filter" class="filter-select" onchange="filterRestaurants()">
+                            <option value="">Any Rating</option>
+                            <option value="4">4+ Stars</option>
+                            <option value="4.5">4.5+ Stars</option>
+                            <option value="5">5 Stars</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="restaurants-list" class="services-grid">
+                <!-- Restaurants will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Taxis Section -->
+        <section id="taxis-section" class="service-section">
+            <div class="section-header">
+                <h2>Order Taxis</h2>
+                <p>Reliable transportation at your fingertips</p>
+            </div>
+
+            <div class="taxi-booking">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <i class="fas fa-map-marker-alt" style="color: var(--primary); font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <h3 style="margin-bottom: 0.5rem; color: var(--dark);">Where would you like to go?</h3>
+                    <p style="color: var(--text-muted);">Book a taxi in seconds</p>
+                </div>
+
+                <form class="booking-form" onsubmit="orderTaxi(event)">
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                            <i class="fas fa-map-pin"></i> Pickup Location
+                        </label>
+                        <input type="text" id="pickup-location" class="search-input" placeholder="Enter your current location" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                            <i class="fas fa-flag-checkered"></i> Destination
+                        </label>
+                        <input type="text" id="destination" class="search-input" placeholder="Where to?" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                                <i class="fas fa-car"></i> Vehicle Type
+                            </label>
+                            <select id="vehicle-type" class="filter-select" required>
+                                <option value="">Select vehicle type</option>
+                                <option value="standard">Standard (4 seats) - $2.50/km</option>
+                                <option value="premium">Premium (4 seats) - $3.50/km</option>
+                                <option value="van">Van (6+ seats) - $4.50/km</option>
+                                <option value="luxury">Luxury (4 seats) - $6.00/km</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                                <i class="fas fa-clock"></i> Schedule
+                            </label>
+                            <select id="schedule" class="filter-select" required>
+                                <option value="now">Book Now</option>
+                                <option value="30min">In 30 minutes</option>
+                                <option value="1hour">In 1 hour</option>
+                                <option value="custom">Schedule for later</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="custom-time" style="display: none;">
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                                <i class="fas fa-calendar-alt"></i> Date & Time
+                            </label>
+                            <input type="datetime-local" id="scheduled-time" class="search-input">
+                        </div>
+                    </div>
+
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--text-muted);">Estimated Distance:</span>
+                            <span style="font-weight: 600;" id="estimated-distance">-- km</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--text-muted);">Estimated Time:</span>
+                            <span style="font-weight: 600;" id="estimated-time">-- minutes</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 1.25rem;">
+                            <span style="font-weight: 600; color: var(--dark);">Estimated Fare:</span>
+                            <span style="font-weight: 700; color: var(--primary);" id="estimated-fare">$--</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem; padding: 1rem;">
+                        <i class="fas fa-taxi"></i> Book Taxi Now
+                    </button>
+                </form>
+
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+                    <h4 style="margin-bottom: 1rem; color: var(--dark);">
+                        <i class="fas fa-shield-alt"></i> Why Choose Our Taxi Service?
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                        <div style="text-align: center;">
+                            <i class="fas fa-clock" style="color: var(--primary); font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">5-min pickup time</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <i class="fas fa-dollar-sign" style="color: var(--primary); font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">Fixed prices</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <i class="fas fa-user-check" style="color: var(--primary); font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">Verified drivers</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <i class="fas fa-star" style="color: var(--primary); font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">4.8★ rating</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-col">
+                <a href="#" class="logo" style="margin-bottom: 1rem; display: inline-block;">TourismPro</a>
+                <p style="color: var(--text-muted);">Your gateway to world-class travel services since 2023.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <a href="index.html">Home</a>
+                <a href="tours.html">Tours</a>
+                <a href="services.html">Services</a>
+                <a href="about.html">About Us</a>
+            </div>
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Cookie Policy</a>
+            </div>
+            <div class="footer-col">
+                <h4>Connect</h4>
+                <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
+                <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
+                <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2025 TourismPro. All rights reserved.</p>
+        </div>
+    </footer>
+
+   <script src="js/services.js"></script>
+</body>
+</html>
