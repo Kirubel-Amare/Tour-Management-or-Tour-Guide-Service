@@ -8,7 +8,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup links
     const dashboardLink = document.getElementById('dashboard-link');
     const backLink = document.getElementById('back-link');
-    const targetDashboard = user.role === 'manager' ? 'manager_dashboard.html' : 'customer_dashboard.html';
+    const targetDashboard = user.role === 'manager'
+        ? 'manager_dashboard.html'
+        : user.role === 'admin'
+            ? 'admin_dashboard.html'
+            : 'customer_dashboard.html';
 
     dashboardLink.href = targetDashboard;
     backLink.href = targetDashboard;
@@ -16,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Logout handler
     document.getElementById('logout-btn').addEventListener('click', (e) => {
         e.preventDefault();
-        fetch('/api/auth/index.php', { method: 'POST' }).finally(() => {
+        fetch('/api/auth/logout.php', { method: 'POST' }).finally(() => {
             localStorage.removeItem('user');
             sessionStorage.removeItem('isLoggedIn');
             window.location.href = 'login.html';
