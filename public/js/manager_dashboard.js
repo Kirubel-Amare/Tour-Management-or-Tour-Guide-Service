@@ -441,8 +441,10 @@ function sendNewsletter() {
 // Logout
 function logout() {
     if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('user');
-        window.location.href = 'login.html';
+        fetch('/api/auth/logout.php', { method: 'POST' }).finally(() => {
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        });
     }
 }
 
