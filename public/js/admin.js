@@ -20,9 +20,47 @@
             }
         };
 
+        const controlFilters = {
+            query: '',
+            role: 'all'
+        };
+
+        const notify = (message, type = 'info') => {
+            if (window.Popup && Popup.toast) {
+                Popup.toast({ message, type });
+            } else {
+                // Fallback if popup helper not loaded
+                alert(message);
+            }
+        };
+
+        const askConfirm = async (title, message) => {
+            if (window.Popup && Popup.confirm) {
+                return Popup.confirm({ title, message });
+            }
+            return confirm(message || title);
+        };
+
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboardData();
+
+            const searchInput = document.getElementById('control-search');
+            const roleFilter = document.getElementById('control-role-filter');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    controlFilters.query = e.target.value.toLowerCase();
+                    renderControlTable();
+                });
+            }
+
+            if (roleFilter) {
+                roleFilter.addEventListener('change', (e) => {
+                    controlFilters.role = e.target.value;
+                    renderControlTable();
+                });
+            }
         });
 
         // Switch between views
@@ -46,6 +84,8 @@
                 loadTours();
             } else if (viewName === 'bookings') {
                 loadBookings();
+            } else if (viewName === 'control') {
+                renderControlCenter();
             }
         }
 
@@ -79,12 +119,14 @@
                 loadUsers();
                 loadTours();
                 loadBookings();
+                renderControlCenter();
 
                 if (loading) {
                     loading.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 }
             } catch (error) {
                 console.error('Error loading admin overview', error);
+                notify('Failed to load overview', 'error');
                 if (loading) {
                     loading.textContent = 'Failed to refresh';
                 }
@@ -380,7 +422,7 @@
                                         <td>${new Date(booking.booking_date).toLocaleDateString()}</td>
                                         <td>
                                             <span class="status-badge ${booking.status === 'confirmed' ? 'status-active' : booking.status === 'pending' ? 'status-pending' : 'status-inactive'}">
-                                                ${booking.status.toUpperCase()}
+                                                ${(booking.status || '').toString().toUpperCase()}
                                             </span>
                                         </td>
                                         <td><strong>$${booking.price}</strong></td>
@@ -410,58 +452,397 @@
 
         // User actions
         function addNewUser() {
-            alert('Add New User form would open here');
+            openProfileDrawer(null);
         }
 
-        function editUser(userId) {
+        async function editUser(userId) {
             const user = overview.users.find(u => u.id === userId);
-            if (user) {
-                alert(`Edit user: ${user.name}\nEmail: ${user.email}\nRole: ${user.role}`);
+            if (!user) return;
+            const newRole = prompt(`Set role for ${user.name} (admin/manager/customer):`, user.role);
+            if (!newRole) return;
+            if (!['admin','manager','customer'].includes(newRole)) {
+                return notify('Invalid role', 'error');
+            }
+            try {
+                const res = await fetch('/api/admin/users/update_role.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: userId, role: newRole })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed');
+                notify('Role updated', 'success');
+                loadDashboardData();
+            } catch (e) {
+                notify(e.message, 'error');
             }
         }
 
-        function deleteUser(userId) {
-            if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-                alert('User deletion is not implemented yet.');
+        async function deleteUser(userId) {
+            const ok = await askConfirm('Delete user', 'Delete this user? This will also remove related tours/bookings.');
+            if (!ok) return;
+            try {
+                const res = await fetch('/api/admin/users/delete.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: userId })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed');
+                notify('User deleted', 'success');
+                loadDashboardData();
+            } catch (e) {
+                notify(e.message, 'error');
             }
         }
 
         // Tour actions
         function createNewTour() {
-            alert('Create New Tour form would open here');
+            openTourDrawer(null);
         }
 
         function editTour(tourId) {
             const tour = overview.tours.find(t => t.id === tourId);
             if (tour) {
-                alert(`Edit tour: ${tour.title}\nLocation: ${tour.location}\nPrice: $${tour.price}`);
+                openTourDrawer(tourId);
             }
         }
 
-        function deleteTour(tourId) {
-            if (confirm('Are you sure you want to delete this tour? This action cannot be undone.')) {
-                alert('Tour deletion is not implemented yet.');
+        async function deleteTour(tourId) {
+            const ok = await askConfirm('Delete tour', 'Delete this tour? This action cannot be undone.');
+            if (!ok) return;
+            try {
+                const res = await fetch('/api/admin/tours/delete.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: tourId })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed');
+                notify('Tour deleted', 'success');
+                loadDashboardData();
+            } catch (e) {
+                notify(e.message, 'error');
             }
         }
 
-        // Booking actions
+        // Booking actions (drawer, no alerts/prompts)
         function viewBooking(bookingId) {
-            const booking = overview.bookings.find(b => b.id === bookingId);
-            if (booking) {
-                alert(`Booking Details:\n\nTourist: ${booking.tourist_name}\nTour: ${booking.tour_title}\nBooked: ${new Date(booking.booking_date).toLocaleString()}\nStatus: ${booking.status}\nAmount: $${booking.price}`);
-            }
+            openBookingDrawer(bookingId, 'view');
         }
 
         function updateBooking(bookingId) {
+            openBookingDrawer(bookingId, 'edit');
+        }
+
+        function openBookingDrawer(bookingId, mode = 'view') {
             const booking = overview.bookings.find(b => b.id === bookingId);
-            if (booking) {
-                alert(`Update booking status for: ${booking.tour_title}`);
+            if (!booking) return;
+            const editable = mode === 'edit';
+
+            document.getElementById('booking-id').value = booking.id;
+            document.getElementById('booking-tourist').value = booking.tourist_name || 'Unknown';
+            document.getElementById('booking-tour').value = booking.tour_title || 'Unknown tour';
+            document.getElementById('booking-date').value = new Date(booking.booking_date).toLocaleString();
+            document.getElementById('booking-status').value = (booking.status || 'pending').toLowerCase();
+            document.getElementById('booking-status').disabled = !editable;
+            document.getElementById('booking-amount').value = `$${booking.price}`;
+
+            const title = editable ? `Edit Booking #${booking.id}` : `Booking #${booking.id}`;
+            const saveBtn = document.getElementById('booking-save-btn');
+            if (saveBtn) saveBtn.style.display = editable ? 'inline-flex' : 'none';
+            document.getElementById('booking-drawer-title').textContent = title;
+
+            const drawer = document.getElementById('booking-drawer');
+            if (drawer) drawer.classList.remove('hidden');
+        }
+
+        function closeBookingDrawer() {
+            const drawer = document.getElementById('booking-drawer');
+            if (drawer) drawer.classList.add('hidden');
+        }
+
+        async function submitBookingUpdate(event) {
+            event.preventDefault();
+            const bookingId = parseInt(document.getElementById('booking-id').value, 10);
+            const status = document.getElementById('booking-status').value;
+
+            if (!['pending','confirmed','cancelled'].includes(status)) {
+                return notify('Invalid status', 'error');
+            }
+
+            try {
+                const res = await fetch('/api/admin/bookings/update_status.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: bookingId, status })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed');
+                notify('Booking updated', 'success');
+                closeBookingDrawer();
+                loadDashboardData();
+            } catch (e) {
+                notify(e.message, 'error');
+            }
+        }
+
+        // Control Center
+        function renderControlCenter() {
+            renderControlStats();
+            renderControlTable();
+            renderControlActivity();
+        }
+
+        function renderControlStats() {
+            const totalUsers = overview.users.length;
+            const managers = overview.users.filter(u => u.role === 'manager').length;
+            const admins = overview.users.filter(u => u.role === 'admin').length;
+            const customers = overview.users.filter(u => u.role === 'customer').length;
+            const confirmed = overview.bookings.filter(b => (b.status || '').toLowerCase() === 'confirmed').length;
+
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value;
+            };
+
+            setText('control-total-users', totalUsers);
+            setText('control-managers', managers);
+            setText('control-customers', customers);
+            setText('control-bookings', overview.bookings.length);
+            setText('control-admin-count', `${admins} Admin${admins === 1 ? '' : 's'}`);
+            setText('control-manager-share', `${totalUsers ? Math.round((managers / totalUsers) * 100) : 0}% of users`);
+            setText('control-customer-share', `${totalUsers ? Math.round((customers / totalUsers) * 100) : 0}% share`);
+            setText('control-booking-confirmed', `${confirmed} confirmed`);
+        }
+
+        function renderControlTable() {
+            const body = document.getElementById('control-user-body');
+            if (!body) return;
+
+            const filtered = overview.users.filter(user => {
+                const matchesQuery = `${user.name} ${user.email} ${user.role}`.toLowerCase().includes(controlFilters.query);
+                const matchesRole = controlFilters.role === 'all' ? true : user.role === controlFilters.role;
+                return matchesQuery && matchesRole;
+            });
+
+            if (filtered.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1rem; color: var(--text-muted);">No users match the current filters</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = filtered.map(user => `
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div style="width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; background: ${user.role === 'admin' ? 'rgba(79,70,229,0.15)' : user.role === 'manager' ? 'rgba(245,158,11,0.18)' : 'rgba(59,130,246,0.15)'}; color: var(--dark); font-weight:700;">${user.name.charAt(0).toUpperCase()}</div>
+                            <div>
+                                <strong>${user.name}</strong>
+                                <div style="color: var(--text-muted); font-size:0.9rem;">ID #${user.id}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="pill pill-${user.role}">${user.role.toUpperCase()}</span></td>
+                    <td>${user.email}</td>
+                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td style="text-align:right;">
+                        <div class="row-actions">
+                            <button class="btn-chip" onclick="openProfileDrawer(${user.id})"><i class="fas fa-user"></i> Profile</button>
+                            <button class="btn-chip ghost" onclick="editUser(${user.id})"><i class="fas fa-user-shield"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderControlActivity() {
+            const container = document.getElementById('control-activity');
+            if (!container) return;
+            const recent = overview.bookings.slice(0, 6);
+
+            if (recent.length === 0) {
+                container.innerHTML = '<div class="activity-chip" style="background:#fff;">No recent activity</div>';
+            } else {
+                container.innerHTML = recent.map(item => `
+                    <div class="activity-chip">
+                        <div class="icon" style="background: ${item.status === 'confirmed' ? 'linear-gradient(135deg, #10b981 0%, #047857 100%)' : item.status === 'pending' ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'};"><i class="fas fa-bolt"></i></div>
+                        <div>
+                            <div><strong>${item.tour_title}</strong> • ${item.tourist_name}</div>
+                            <div class="meta">${new Date(item.booking_date).toLocaleString()} — ${item.status}</div>
+                        </div>
+                        <span class="pill" style="margin-left:auto;">$${item.price}</span>
+                    </div>
+                `).join('');
+            }
+
+            const reports = document.getElementById('control-reports');
+            if (reports) {
+                const pending = overview.bookings.filter(b => (b.status || '').toLowerCase() === 'pending').length;
+                const cancelled = overview.bookings.filter(b => (b.status || '').toLowerCase() === 'cancelled').length;
+                const managers = overview.users.filter(u => u.role === 'manager').length;
+                const toursPerManager = managers ? Math.round((overview.tours.length / managers) * 10) / 10 : 0;
+
+                reports.innerHTML = `
+                    <div class="report-pill"><strong>Pending</strong><span>${pending} booking(s)</span></div>
+                    <div class="report-pill"><strong>Cancelled</strong><span>${cancelled} booking(s)</span></div>
+                    <div class="report-pill"><strong>Tours/Manager</strong><span>${toursPerManager}</span></div>
+                    <div class="report-pill"><strong>Admins</strong><span>${overview.users.filter(u => u.role === 'admin').length}</span></div>
+                `;
+            }
+        }
+
+        function openProfileDrawer(userId) {
+            const userData = overview.users.find(u => u.id === userId);
+            const creating = !userData;
+
+            document.getElementById('profile-id').value = userData ? userData.id : '';
+            document.getElementById('profile-name').value = userData ? userData.name : '';
+            document.getElementById('profile-email').value = userData ? userData.email : '';
+            document.getElementById('profile-role').value = userData ? userData.role : 'customer';
+            document.getElementById('profile-password').value = '';
+            document.getElementById('profile-mode').value = creating ? 'create' : 'edit';
+            document.getElementById('drawer-title').textContent = creating ? 'Add User' : `Edit ${userData.name}`;
+            const passHint = document.getElementById('profile-pass-hint');
+            if (passHint) {
+                passHint.textContent = creating ? '(required)' : '(optional)';
+            }
+            const passInput = document.getElementById('profile-password');
+            if (passInput) {
+                passInput.required = creating;
+                passInput.placeholder = creating ? 'Set initial password' : 'Leave blank to keep current';
+            }
+
+            const drawer = document.getElementById('profile-drawer');
+            if (drawer) drawer.classList.remove('hidden');
+        }
+
+        function closeProfileDrawer() {
+            const drawer = document.getElementById('profile-drawer');
+            if (drawer) drawer.classList.add('hidden');
+        }
+
+        async function submitProfileUpdate(event) {
+            event.preventDefault();
+            const mode = document.getElementById('profile-mode').value;
+            const payload = {
+                id: document.getElementById('profile-id').value ? parseInt(document.getElementById('profile-id').value, 10) : undefined,
+                name: document.getElementById('profile-name').value,
+                email: document.getElementById('profile-email').value,
+                role: document.getElementById('profile-role').value
+            };
+
+            const password = document.getElementById('profile-password').value;
+            if (password) {
+                payload.password = password;
+            }
+
+            try {
+                let endpoint = '/api/admin/users/update_profile.php';
+                let method = 'POST';
+                if (mode === 'create') {
+                    endpoint = '/api/auth/register.php';
+                    method = 'POST';
+                }
+
+                const res = await fetch(endpoint, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to save user');
+                notify(mode === 'create' ? 'User created' : 'Profile updated', 'success');
+                closeProfileDrawer();
+                loadDashboardData();
+            } catch (error) {
+                notify(error.message, 'error');
+            }
+        }
+
+        function exportControlReport() {
+            if (!overview.users.length) return notify('No data to export.', 'info');
+            const headers = ['ID','Name','Email','Role','Joined'];
+            const rows = overview.users.map(u => [u.id, u.name, u.email, u.role, new Date(u.created_at).toLocaleDateString()]);
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `control-report-${Date.now()}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Tour drawer helpers
+        function openTourDrawer(tourId) {
+            const tour = overview.tours.find(t => t.id === tourId);
+            const creating = !tour;
+            document.getElementById('tour-mode').value = creating ? 'create' : 'edit';
+            document.getElementById('tour-id').value = tour ? tour.id : '';
+            document.getElementById('tour-title').value = tour ? tour.title : '';
+            document.getElementById('tour-location').value = tour ? tour.location : '';
+            document.getElementById('tour-price').value = tour ? tour.price : '';
+            document.getElementById('tour-date').value = tour ? (tour.schedule_date || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+            document.getElementById('tour-drawer-title').textContent = creating ? 'Create Tour' : `Edit ${tour.title}`;
+
+            const guideSelect = document.getElementById('tour-guide');
+            if (guideSelect) {
+                const guides = overview.users.filter(u => ['manager','admin'].includes(u.role));
+                guideSelect.innerHTML = guides.length ? guides.map(g => `<option value="${g.id}">${g.name} (${g.role})</option>`).join('') : '<option value="">No managers/admins available</option>';
+                const defaultGuide = tour ? tour.guide_id : (guides[0]?.id || '');
+                guideSelect.value = defaultGuide;
+            }
+
+            const drawer = document.getElementById('tour-drawer');
+            if (drawer) drawer.classList.remove('hidden');
+        }
+
+        function closeTourDrawer() {
+            const drawer = document.getElementById('tour-drawer');
+            if (drawer) drawer.classList.add('hidden');
+        }
+
+        async function submitTour(event) {
+            event.preventDefault();
+            const mode = document.getElementById('tour-mode').value;
+            const payload = {
+                id: document.getElementById('tour-id').value ? parseInt(document.getElementById('tour-id').value, 10) : undefined,
+                guide_id: parseInt(document.getElementById('tour-guide').value, 10),
+                title: document.getElementById('tour-title').value,
+                location: document.getElementById('tour-location').value,
+                price: parseFloat(document.getElementById('tour-price').value),
+                schedule_date: document.getElementById('tour-date').value
+            };
+
+            if (!Number.isFinite(payload.guide_id)) {
+                return notify('Select a guide/manager before saving the tour.', 'error');
+            }
+            if (!Number.isFinite(payload.price)) {
+                return notify('Enter a valid price.', 'error');
+            }
+
+            try {
+                const endpoint = mode === 'edit' ? '/api/tours/update.php' : '/api/tours/create.php';
+                const method = mode === 'edit' ? 'PUT' : 'POST';
+                const res = await fetch(endpoint, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to save tour');
+                notify(mode === 'edit' ? 'Tour updated' : 'Tour created', 'success');
+                closeTourDrawer();
+                loadDashboardData();
+            } catch (error) {
+                notify(error.message, 'error');
             }
         }
 
         // Quick actions
         function generateReport() {
-            alert('Generating monthly report... This would download a PDF report with platform statistics.');
+            notify('Generating monthly report... This would download a PDF report with platform statistics.', 'info');
         }
 
         function viewAnalytics() {

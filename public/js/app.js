@@ -1,5 +1,63 @@
 // app.js - Interactive features for TourismPro website
 
+// Lightweight popup helper shared across pages
+(function setupPopup() {
+    if (window.Popup) return;
+
+    const styleId = 'popup-styles';
+    if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+            .popup-modal { background: #fff; border-radius: 12px; padding: 1.25rem; width: min(420px, 90vw); box-shadow: 0 20px 60px rgba(0,0,0,0.18); border: 1px solid #e5e7eb; }
+            .popup-modal h3 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+            .popup-modal p { margin: 0 0 1rem; color: #4b5563; }
+            .popup-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+            .popup-btn { padding: 0.55rem 0.9rem; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; font-weight: 600; }
+            .popup-btn.primary { background: linear-gradient(135deg, var(--primary, #4f46e5) 0%, var(--primary-dark, #4338ca) 100%); color: #fff; border-color: transparent; }
+            .popup-toast { position: fixed; bottom: 1.25rem; right: 1.25rem; background: #111827; color: #fff; padding: 0.85rem 1rem; border-radius: 10px; box-shadow: 0 10px 35px rgba(0,0,0,0.22); z-index: 9999; min-width: 220px; display: flex; align-items: center; gap: 0.6rem; }
+            .popup-toast.success { background: #065f46; }
+            .popup-toast.error { background: #991b1b; }
+            .popup-toast.info { background: #1f2937; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const toast = ({ message, type = 'info', timeout = 2800 }) => {
+        const el = document.createElement('div');
+        el.className = `popup-toast ${type}`;
+        el.innerHTML = `<span>${message}</span>`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), timeout);
+    };
+
+    const confirm = ({ title = 'Confirm', message = 'Proceed?', okText = 'Yes', cancelText = 'Cancel' }) => {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'popup-overlay';
+            overlay.innerHTML = `
+                <div class="popup-modal">
+                    <h3>${title}</h3>
+                    <p>${message}</p>
+                    <div class="popup-actions">
+                        <button class="popup-btn" data-action="cancel">${cancelText}</button>
+                        <button class="popup-btn primary" data-action="ok">${okText}</button>
+                    </div>
+                </div>
+            `;
+            overlay.addEventListener('click', (e) => {
+                const action = e.target.getAttribute('data-action');
+                if (action === 'ok') { resolve(true); overlay.remove(); }
+                if (action === 'cancel' || e.target === overlay) { resolve(false); overlay.remove(); }
+            });
+            document.body.appendChild(overlay);
+        });
+    };
+
+    window.Popup = { toast, confirm };
+})();
+
 document.addEventListener('DOMContentLoaded', function () {
     // Load shared header/footer into placeholders
     const loadLayout = async () => {

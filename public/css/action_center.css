@@ -1,0 +1,28 @@
+.action-shell { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+.action-hero { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(79,70,229,0.08) 0%, rgba(59,130,246,0.08) 100%); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); }
+.action-hero h1 { margin: 0.25rem 0; }
+.muted { color: var(--text-muted); max-width: 720px; }
+.hero-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.action-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-tile { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; display: flex; gap: 0.75rem; align-items: center; box-shadow: var(--shadow-sm); }
+.tile-icon { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+.tile-icon.users { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); }
+.tile-icon.managers { background: linear-gradient(135deg, var(--secondary) 0%, #d97706 100%); }
+.tile-icon.tours { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+.tile-icon.bookings { background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
+.label { margin: 0; color: var(--text-muted); font-size: 0.95rem; }
+.value { margin: 0; font-size: 1.5rem; font-weight: 700; }
+.panel { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); margin-bottom: 1.25rem; padding: 1rem; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
+.panel-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.table-wrapper { overflow-x: auto; }
+.loading { text-align: center; padding: 1.25rem; color: var(--text-muted); }
+.row-actions { display: flex; gap: 0.35rem; justify-content: flex-end; }
+.btn-chip { border: 1px solid var(--border); background: #fff; padding: 0.4rem 0.6rem; border-radius: var(--radius); cursor: pointer; }
+.btn-chip.danger { color: #b91c1c; border-color: rgba(185,28,28,0.25); }
+.btn-chip.primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #fff; border-color: transparent; }
+.status-pill { padding: 0.35rem 0.6rem; border-radius: 999px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; }
+.status-pill.pending { background: rgba(245,158,11,0.12); color: #b45309; }
+.status-pill.confirmed { background: rgba(16,185,129,0.15); color: #047857; }
+.status-pill.cancelled { background: rgba(239,68,68,0.15); color: #b91c1c; }
+@media (max-width: 768px) { .action-hero { flex-direction: column; align-items: flex-start; } .panel-head { flex-direction: column; align-items: flex-start; } }

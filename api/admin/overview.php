@@ -33,8 +33,8 @@ try {
     $overview['tours'] = $tourStmt->fetchAll(PDO::FETCH_ASSOC);
     $overview['stats']['total_tours'] = count($overview['tours']);
 
-    // Bookings with tourist + tour
-    $bookingStmt = $db->prepare('SELECT b.id, b.booking_date, b.status, t.title AS tour_title, t.price, u.name AS tourist_name, u.email AS tourist_email FROM bookings b JOIN tours t ON b.tour_id = t.id JOIN users u ON b.tourist_id = u.id ORDER BY b.booking_date DESC');
+    // Bookings with customer + tour (schema uses user_id)
+    $bookingStmt = $db->prepare('SELECT b.id, b.booking_date, b.status, t.title AS tour_title, t.price, u.name AS tourist_name, u.email AS tourist_email FROM bookings b JOIN tours t ON b.tour_id = t.id JOIN users u ON b.user_id = u.id ORDER BY b.booking_date DESC');
     $bookingStmt->execute();
     $overview['bookings'] = $bookingStmt->fetchAll(PDO::FETCH_ASSOC);
     $overview['stats']['total_bookings'] = count($overview['bookings']);

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Action Center | TourismPro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin_dashboard.css">
+    <link rel="stylesheet" href="css/action_center.css">
+</head>
+<body>
+    <div id="header-placeholder"></div>
+
+    <main class="action-shell">
+        <section class="action-hero">
+            <div>
+                <p class="eyebrow">System Actions</p>
+                <h1>Update, Edit, Delete with Confidence</h1>
+                <p class="muted">Central hub for admin-level changes with confirmations and live feedback.</p>
+            </div>
+            <div class="hero-actions">
+                <button class="btn btn-primary" id="refresh-btn"><i class="fas fa-sync"></i> Refresh</button>
+                <a class="btn" href="admin_dashboard.html"><i class="fas fa-tachometer-alt"></i> Back to Dashboard</a>
+            </div>
+        </section>
+
+        <section class="action-stats" id="action-stats">
+            <div class="stat-tile">
+                <div class="tile-icon users"><i class="fas fa-users"></i></div>
+                <div>
+                    <p class="label">Users</p>
+                    <p class="value" id="stat-users">0</p>
+                </div>
+            </div>
+            <div class="stat-tile">
+                <div class="tile-icon managers"><i class="fas fa-user-tie"></i></div>
+                <div>
+                    <p class="label">Managers</p>
+                    <p class="value" id="stat-managers">0</p>
+                </div>
+            </div>
+            <div class="stat-tile">
+                <div class="tile-icon tours"><i class="fas fa-map-marked-alt"></i></div>
+                <div>
+                    <p class="label">Tours</p>
+                    <p class="value" id="stat-tours">0</p>
+                </div>
+            </div>
+            <div class="stat-tile">
+                <div class="tile-icon bookings"><i class="fas fa-calendar-check"></i></div>
+                <div>
+                    <p class="label">Bookings</p>
+                    <p class="value" id="stat-bookings">0</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">People</p>
+                    <h2>User &amp; Manager Control</h2>
+                </div>
+                <div class="panel-actions">
+                    <input id="user-search" class="admin-input" type="text" placeholder="Search by name or email">
+                    <select id="role-filter" class="admin-select">
+                        <option value="all">All roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="manager">Manager</option>
+                        <option value="customer">Customer</option>
+                    </select>
+                </div>
+            </header>
+            <div class="table-wrapper">
+                <table class="data-table" id="user-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-tbody">
+                        <tr><td colspan="5" class="loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Tours</p>
+                    <h2>Manage Tours</h2>
+                </div>
+                <button class="btn btn-primary" data-ac-create-tour><i class="fas fa-plus-circle"></i> Create Tour</button>
+            </header>
+            <div class="table-wrapper">
+                <table class="data-table" id="tour-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Location</th>
+                            <th>Price</th>
+                            <th>Guide</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tour-tbody">
+                        <tr><td colspan="5" class="loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Hotels</p>
+                    <h2>Manage Hotels</h2>
+                </div>
+            </header>
+            <div class="table-wrapper">
+                <table class="data-table" id="hotel-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Location</th>
+                            <th>Price</th>
+                            <th>Rating</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hotel-tbody">
+                        <tr><td colspan="5" class="loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Restaurants</p>
+                    <h2>Manage Restaurants</h2>
+                </div>
+            </header>
+            <div class="table-wrapper">
+                <table class="data-table" id="restaurant-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Location</th>
+                            <th>Cuisine</th>
+                            <th>Price</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="restaurant-tbody">
+                        <tr><td colspan="5" class="loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Bookings</p>
+                    <h2>Booking Status</h2>
+                </div>
+            </header>
+            <div class="table-wrapper">
+                <table class="data-table" id="booking-table">
+                    <thead>
+                        <tr>
+                            <th>Tour</th>
+                            <th>Tourist</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booking-tbody">
+                        <tr><td colspan="5" class="loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <!-- User Drawer -->
+    <div id="ac-user-drawer" class="control-drawer hidden">
+        <div class="drawer-overlay" onclick="closeAcUserDrawer()"></div>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <div>
+                    <p class="eyebrow">User</p>
+                    <h3 id="ac-user-title">Edit User</h3>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="closeAcUserDrawer()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="ac-user-form" onsubmit="submitAcUser(event)">
+                <input type="hidden" id="ac-user-id">
+                <input type="hidden" id="ac-user-mode" value="edit">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input class="admin-input" id="ac-user-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="admin-input" id="ac-user-email" required>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="ac-user-role" class="admin-select" required>
+                        <option value="admin">Admin</option>
+                        <option value="manager">Manager</option>
+                        <option value="customer">Customer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Password <span id="ac-user-pass-hint" style="color: var(--text-muted); font-weight:400;">(optional)</span></label>
+                    <input type="password" class="admin-input" id="ac-user-pass" placeholder="Leave blank to keep current">
+                </div>
+                <div class="drawer-footer" style="justify-content: space-between;">
+                    <button type="button" class="btn btn-danger" onclick="deleteAcUser()"><i class="fas fa-trash"></i> Delete</button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button type="button" class="btn btn-outline" onclick="closeAcUserDrawer()">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tour Drawer -->
+    <div id="ac-tour-drawer" class="control-drawer hidden">
+        <div class="drawer-overlay" onclick="closeAcTourDrawer()"></div>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <div>
+                    <p class="eyebrow">Tour</p>
+                    <h3 id="ac-tour-title">Create Tour</h3>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="closeAcTourDrawer()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="ac-tour-form" onsubmit="submitAcTour(event)">
+                <input type="hidden" id="ac-tour-id">
+                <input type="hidden" id="ac-tour-mode" value="create">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input class="admin-input" id="ac-tour-title-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input class="admin-input" id="ac-tour-location" required>
+                </div>
+                <div class="form-group">
+                    <label>Price</label>
+                    <input type="number" step="0.01" class="admin-input" id="ac-tour-price" required>
+                </div>
+                <div class="form-group">
+                    <label>Schedule Date</label>
+                    <input type="date" class="admin-input" id="ac-tour-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Guide</label>
+                    <select id="ac-tour-guide" class="admin-select" required></select>
+                </div>
+                <div class="drawer-footer" style="justify-content: space-between;">
+                    <button type="button" class="btn btn-danger" onclick="deleteAcTour()"><i class="fas fa-trash"></i> Delete</button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button type="button" class="btn btn-outline" onclick="closeAcTourDrawer()">Cancel</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Booking Drawer -->
+    <div id="ac-booking-drawer" class="control-drawer hidden">
+        <div class="drawer-overlay" onclick="closeAcBookingDrawer()"></div>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <div>
+                    <p class="eyebrow">Booking</p>
+                    <h3 id="ac-booking-title">Update Booking</h3>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="closeAcBookingDrawer()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="ac-booking-form" onsubmit="submitAcBooking(event)">
+                <input type="hidden" id="ac-booking-id">
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="ac-booking-status" class="admin-select" required>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="drawer-footer" style="justify-content: flex-end; gap: 0.5rem;">
+                    <button type="button" class="btn btn-outline" onclick="closeAcBookingDrawer()">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/action_center.js"></script>
+</body>
+</html>

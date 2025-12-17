@@ -496,15 +496,90 @@ function createNewTour() {
 }
 
 function viewCalendar() {
-    alert('Calendar view would open here.');
+    const modal = document.getElementById('calendar-modal');
+    const content = document.getElementById('calendar-content');
+    if (!modal || !content) return;
+
+    // Group bookings by date
+    const groups = managerBookings.reduce((acc, b) => {
+        const key = new Date(b.schedule_date).toLocaleDateString();
+        acc[key] = acc[key] || [];
+        acc[key].push(b);
+        return acc;
+    }, {});
+
+    const dates = Object.keys(groups).sort((a, b) => new Date(a) - new Date(b));
+    if (dates.length === 0) {
+        content.innerHTML = '<div style="text-align:center; color:var(--text-muted);">No upcoming bookings.</div>';
+    } else {
+        content.innerHTML = dates.map(date => `
+            <div style="margin-bottom:1rem;">
+                <h4 style="margin:0 0 .5rem 0; color:var(--dark);"><i class="fas fa-calendar-alt"></i> ${date}</h4>
+                <div style="overflow-x:auto;">
+                    <table class="bookings-table">
+                        <thead>
+                            <tr><th>Customer</th><th>Tour</th><th>Status</th><th>Amount</th></tr>
+                        </thead>
+                        <tbody>
+                            ${groups[date].map(b => `
+                                <tr>
+                                    <td><strong>${b.customer_name}</strong><br><small style="color:var(--text-muted)">${b.customer_email}</small></td>
+                                    <td>${b.tour_title}</td>
+                                    <td>${b.status}</td>
+                                    <td>$${b.price}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    modal.style.display = 'flex';
 }
 
 function exportReports() {
-    alert('Exporting reports...');
+    if (!managerBookings || managerBookings.length === 0) {
+        return alert('No bookings to export.');
+    }
+    const header = ['Customer','Email','Tour','Date','Status','Amount'];
+    const rows = managerBookings.map(b => [
+        b.customer_name,
+        b.customer_email,
+        b.tour_title,
+        new Date(b.schedule_date).toISOString().split('T')[0],
+        b.status,
+        b.price
+    ]);
+    const csv = [header, ...rows].map(r => r.map(v => '"' + String(v).replaceAll('"','""') + '"').join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bookings_report.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 function sendNewsletter() {
-    alert('Newsletter modal would open here.');
+    // Collect unique participant emails from bookings
+    const set = new Set((managerBookings || []).map(b => b.customer_email).filter(Boolean));
+    if (set.size === 0) return alert('No recipient emails found.');
+    const subject = prompt('Newsletter subject:', 'Update from your guide');
+    if (subject === null) return;
+    const body = prompt('Message body:', 'Hello everyone, here are the latest updates...');
+    if (body === null) return;
+    const bcc = encodeURIComponent(Array.from(set).join(','));
+    const mailto = `mailto:?bcc=${bcc}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+}
+
+function closeCalendarModal() {
+    const modal = document.getElementById('calendar-modal');
+    if (modal) modal.style.display = 'none';
 }
 
 // Logout

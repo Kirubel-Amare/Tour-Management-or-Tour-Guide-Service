@@ -2,8 +2,13 @@
 // Headers
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Access-Control-Allow-Headers,Content-Type,Access-Control-Allow-Methods, Authorization, X-Requested-With');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
 
 include_once '../../config/Database.php';
 include_once '../../models/Tour.php';
@@ -18,7 +23,7 @@ if (
     !empty($data->guide_id) &&
     !empty($data->title) &&
     !empty($data->location) &&
-    !empty($data->price)
+    isset($data->price)
 ) {
     $tour->guide_id = $data->guide_id;
     $tour->title = $data->title;

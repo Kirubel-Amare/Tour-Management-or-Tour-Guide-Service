@@ -390,6 +390,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="js/manager_dashboard.js"></script>
+
+    <!-- Calendar Modal -->
+    <div id="calendar-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:1rem; width:95%; max-width:800px; max-height:85vh; overflow:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3 style="margin:0;">Upcoming Schedule</h3>
+                <button class="btn btn-outline" onclick="closeCalendarModal()" style="border-color:var(--border)"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="calendar-content"></div>
+        </div>
+    </div>
 </body>
 
 </html>
