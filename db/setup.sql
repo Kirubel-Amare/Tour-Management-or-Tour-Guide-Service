@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS tours (
     guide_id INT NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
+    image TEXT,
     location VARCHAR(255) NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     schedule_date DATE NOT NULL,

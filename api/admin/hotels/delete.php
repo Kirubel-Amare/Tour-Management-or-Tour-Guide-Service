@@ -20,28 +20,18 @@ $database = new Database();
 $db = $database->connect();
 
 $data = json_decode(file_get_contents('php://input'), true);
-if (!$data || empty($data['id']) || empty($data['status'])) {
+if (!$data || empty($data['id'])) {
     http_response_code(400);
-    echo json_encode(['message' => 'Missing id or status']);
-    exit;
-}
-
-$valid_status = ['pending','confirmed','cancelled'];
-if (!in_array(strtolower($data['status']), $valid_status)) {
-    http_response_code(400);
-    echo json_encode(['message' => 'Invalid status']);
+    echo json_encode(['message' => 'Missing id']);
     exit;
 }
 
 try {
-    $stmt = $db->prepare('UPDATE bookings SET status = :status WHERE id = :id');
-    $status = strtolower($data['status']);
-    $stmt->bindParam(':status', $status);
+    $stmt = $db->prepare('DELETE FROM hotels WHERE id = :id');
     $stmt->bindParam(':id', $data['id']);
     $stmt->execute();
-    echo json_encode(['message' => 'Booking status updated']);
+    echo json_encode(['message' => 'Hotel deleted']);
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['message' => 'Failed to update booking', 'error' => $e->getMessage()]);
+    echo json_encode(['message' => 'Failed to delete hotel', 'error' => $e->getMessage()]);
 }
-

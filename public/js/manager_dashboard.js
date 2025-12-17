@@ -391,7 +391,7 @@ document.getElementById('create-tour-form').addEventListener('submit', async fun
     const price = parseFloat(document.getElementById('tour-price').value);
     const date = document.getElementById('tour-date').value;
     const desc = document.getElementById('tour-desc').value;
-    // Image, maxParticipants, duration are not in backend yet, ignore for now
+    const image = document.getElementById('tour-image')?.value;
 
     const editId = this.dataset.editId;
 
@@ -401,7 +401,8 @@ document.getElementById('create-tour-form').addEventListener('submit', async fun
         location: location,
         price: price,
         schedule_date: date,
-        description: desc
+        description: desc,
+        image: image || null
     };
 
     let url = '/api/tours/create.php';
@@ -444,7 +445,9 @@ function editTour(id) {
         document.getElementById('tour-price').value = tour.price;
         document.getElementById('tour-date').value = tour.schedule_date;
         document.getElementById('tour-desc').value = tour.description;
-        // document.getElementById('tour-image').value = tour.image;
+        if (document.getElementById('tour-image')) {
+            document.getElementById('tour-image').value = tour.image || '';
+        }
         // document.getElementById('tour-max-participants').value = tour.maxParticipants;
         // document.getElementById('tour-duration').value = tour.duration;
 

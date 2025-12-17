@@ -8,6 +8,7 @@ class Tour
     public $guide_id;
     public $title;
     public $description;
+    public $image;
     public $location;
     public $price;
     public $schedule_date;
@@ -25,6 +26,7 @@ class Tour
                   SET guide_id = :guide_id, 
                       title = :title, 
                       description = :description, 
+                      image = :image,
                       location = :location, 
                       price = :price, 
                       schedule_date = :schedule_date";
@@ -37,11 +39,13 @@ class Tour
         $this->location = htmlspecialchars(strip_tags($this->location));
         $this->price = htmlspecialchars(strip_tags($this->price));
         $this->schedule_date = htmlspecialchars(strip_tags($this->schedule_date));
+        $this->image = htmlspecialchars(strip_tags($this->image));
 
         // Bind data
         $stmt->bindParam(':guide_id', $this->guide_id);
         $stmt->bindParam(':title', $this->title);
         $stmt->bindParam(':description', $this->description);
+        $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':location', $this->location);
         $stmt->bindParam(':price', $this->price);
         $stmt->bindParam(':schedule_date', $this->schedule_date);
@@ -60,7 +64,7 @@ class Tour
     {
         // Select query
         $query = "SELECT 
-                    t.id, t.guide_id, t.title, t.description, t.location, t.price, t.schedule_date, t.created_at,
+                    t.id, t.guide_id, t.title, t.description, t.image, t.location, t.price, t.schedule_date, t.created_at,
                     u.name as guide_name
                   FROM " . $this->table_name . " t
                   LEFT JOIN users u ON t.guide_id = u.id";
@@ -86,7 +90,7 @@ class Tour
     public function read_single()
     {
         $query = "SELECT 
-                    t.id, t.guide_id, t.title, t.description, t.location, t.price, t.schedule_date, t.created_at,
+                    t.id, t.guide_id, t.title, t.description, t.image, t.location, t.price, t.schedule_date, t.created_at,
                     u.name as guide_name
                   FROM " . $this->table_name . " t
                   LEFT JOIN users u ON t.guide_id = u.id
@@ -103,6 +107,7 @@ class Tour
             $this->guide_id = $row['guide_id'];
             $this->title = $row['title'];
             $this->description = $row['description'];
+            $this->image = $row['image'];
             $this->location = $row['location'];
             $this->price = $row['price'];
             $this->schedule_date = $row['schedule_date'];
@@ -118,6 +123,7 @@ class Tour
         $query = "UPDATE " . $this->table_name . "
                   SET title = :title, 
                       description = :description, 
+                      image = :image,
                       location = :location, 
                       price = :price, 
                       schedule_date = :schedule_date
@@ -131,10 +137,12 @@ class Tour
         $this->location = htmlspecialchars(strip_tags($this->location));
         $this->price = htmlspecialchars(strip_tags($this->price));
         $this->schedule_date = htmlspecialchars(strip_tags($this->schedule_date));
+        $this->image = htmlspecialchars(strip_tags($this->image));
 
         // Bind data
         $stmt->bindParam(':title', $this->title);
         $stmt->bindParam(':description', $this->description);
+        $stmt->bindParam(':image', $this->image);
         $stmt->bindParam(':location', $this->location);
         $stmt->bindParam(':price', $this->price);
         $stmt->bindParam(':schedule_date', $this->schedule_date);

@@ -12,6 +12,11 @@
             users: [],
             tours: [],
             bookings: [],
+            hotels: [],
+            restaurants: [],
+            taxiOrders: [],
+            hotelReservations: [],
+            restaurantReservations: [],
             stats: {
                 total_users: 0,
                 total_tours: 0,
@@ -20,7 +25,7 @@
             }
         };
 
-        const controlFilters = {
+        const userFilters = {
             query: '',
             role: 'all'
         };
@@ -45,20 +50,20 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboardData();
 
-            const searchInput = document.getElementById('control-search');
-            const roleFilter = document.getElementById('control-role-filter');
+            const searchInput = document.getElementById('user-search');
+            const roleFilter = document.getElementById('user-role-filter');
 
             if (searchInput) {
                 searchInput.addEventListener('input', (e) => {
-                    controlFilters.query = e.target.value.toLowerCase();
-                    renderControlTable();
+                    userFilters.query = e.target.value.toLowerCase();
+                    loadUsers();
                 });
             }
 
             if (roleFilter) {
                 roleFilter.addEventListener('change', (e) => {
-                    controlFilters.role = e.target.value;
-                    renderControlTable();
+                    userFilters.role = e.target.value;
+                    loadUsers();
                 });
             }
         });
@@ -84,8 +89,16 @@
                 loadTours();
             } else if (viewName === 'bookings') {
                 loadBookings();
-            } else if (viewName === 'control') {
-                renderControlCenter();
+            } else if (viewName === 'hotels') {
+                loadHotels();
+            } else if (viewName === 'restaurants') {
+                loadRestaurants();
+            } else if (viewName === 'taxi') {
+                loadTaxiOrders();
+            } else if (viewName === 'hotel-reservations') {
+                loadHotelReservations();
+            } else if (viewName === 'restaurant-reservations') {
+                loadRestaurantReservations();
             }
         }
 
@@ -103,6 +116,9 @@
                 overview.users = data.users || [];
                 overview.tours = data.tours || [];
                 overview.bookings = data.bookings || [];
+                overview.taxiOrders = data.taxi_orders || [];
+                overview.hotelReservations = data.hotel_reservations || [];
+                overview.restaurantReservations = data.restaurant_reservations || [];
                 overview.stats = data.stats || overview.stats;
 
                 document.getElementById('total-users').textContent = overview.stats.total_users;
@@ -113,13 +129,21 @@
                 document.getElementById('user-count').textContent = overview.stats.total_users;
                 document.getElementById('tour-count').textContent = overview.stats.total_tours;
                 document.getElementById('booking-count').textContent = overview.stats.total_bookings;
+                const taxiBadge = document.getElementById('taxi-count');
+                if (taxiBadge) taxiBadge.textContent = overview.taxiOrders.length || 0;
+                const hotelResBadge = document.getElementById('hotel-res-count');
+                if (hotelResBadge) hotelResBadge.textContent = overview.hotelReservations.length || 0;
+                const restResBadge = document.getElementById('rest-res-count');
+                if (restResBadge) restResBadge.textContent = overview.restaurantReservations.length || 0;
 
                 initializeCharts();
                 loadActivity();
                 loadUsers();
                 loadTours();
                 loadBookings();
-                renderControlCenter();
+                loadTaxiOrders();
+                loadHotelReservations();
+                loadRestaurantReservations();
 
                 if (loading) {
                     loading.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -238,7 +262,28 @@
         // Load users
         function loadUsers() {
             const container = document.getElementById('users-list');
-            container.innerHTML = overview.users.map(user => `
+            if (!container) return;
+
+            const filtered = overview.users.filter(u => {
+                const matchesRole = userFilters.role === 'all' ? true : (u.role === userFilters.role);
+                const q = (userFilters.query || '').toLowerCase();
+                const matchesQuery = !q ? true : (`${u.name} ${u.email} ${u.role}`.toLowerCase().includes(q));
+                return matchesRole && matchesQuery;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                            <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <div>No users found</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(user => `
                 <tr>
                     <td>#${user.id}</td>
                     <td>
@@ -261,10 +306,13 @@
                     <td>${new Date(user.created_at).toLocaleDateString()}</td>
                     <td>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button onclick="editUser(${user.id})" class="btn btn-outline btn-sm" style="border-color: var(--border);">
+                            <button onclick="viewUser(${user.id})" class="btn btn-outline btn-sm" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="editUser(${user.id})" class="btn btn-outline btn-sm" style="border-color: var(--border);" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button onclick="deleteUser(${user.id})" class="btn btn-danger btn-sm">
+                            <button onclick="deleteUser(${user.id})" class="btn btn-danger btn-sm" title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -275,49 +323,14 @@
 
         // Search users
         function searchUsers() {
-            const query = document.getElementById('user-search').value.toLowerCase();
-            const filtered = overview.users.filter(user => 
-                user.name.toLowerCase().includes(query) ||
-                user.email.toLowerCase().includes(query) ||
-                user.role.toLowerCase().includes(query)
-            );
-            
-            const container = document.getElementById('users-list');
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <tr>
-                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                            <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                            <div>No users found</div>
-                        </td>
-                    </tr>
-                `;
-            } else {
-                container.innerHTML = filtered.map(user => `
-                    <tr>
-                        <td>#${user.id}</td>
-                        <td>${user.name}</td>
-                        <td>${user.email}</td>
-                        <td>${user.role.toUpperCase()}</td>
-                        <td>ACTIVE</td>
-                        <td>${new Date(user.created_at).toLocaleDateString()}</td>
-                        <td>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button onclick="editUser(${user.id})" class="btn btn-outline btn-sm">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="deleteUser(${user.id})" class="btn btn-danger btn-sm">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `).join('');
-            }
+            userFilters.query = (document.getElementById('user-search')?.value || '').toLowerCase();
+            loadUsers();
         }
 
         function clearUserSearch() {
-            document.getElementById('user-search').value = '';
+            const input = document.getElementById('user-search');
+            if (input) input.value = '';
+            userFilters.query = '';
             loadUsers();
         }
 
@@ -445,37 +458,224 @@
             }
         }
 
+        // Taxi orders
+        async function loadTaxiOrders() {
+            const body = document.getElementById('taxi-list');
+            if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
+            try {
+                const res = await fetch('/api/admin/taxis/read.php');
+                const data = await res.json();
+                overview.taxiOrders = data || [];
+                if (body) {
+                    if (!overview.taxiOrders.length) {
+                        body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">No taxi orders</td></tr>`;
+                    } else {
+                        body.innerHTML = overview.taxiOrders.map(t => `
+                            <tr>
+                                <td>#${t.id}</td>
+                                <td>${t.user_name || 'N/A'}<br><small>${t.user_email || ''}</small></td>
+                                <td>${t.pickup}</td>
+                                <td>${t.destination}</td>
+                                <td>${t.vehicle_type}</td>
+                                <td>$${(t.fare ?? 0).toFixed(2)}</td>
+                                <td><span class="status-badge status-active">${(t.status || 'accepted').toUpperCase()}</span></td>
+                                <td>${new Date(t.created_at).toLocaleString()}</td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+                const badge = document.getElementById('taxi-count');
+                if (badge) badge.textContent = overview.taxiOrders.length || 0;
+            } catch (e) {
+                if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--danger);">Failed to load taxi orders</td></tr>`;
+            }
+        }
+
+        // Hotel reservations
+        async function loadHotelReservations() {
+            const body = document.getElementById('hotel-res-list');
+            if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
+            try {
+                const res = await fetch('/api/admin/hotels/reservations.php');
+                const data = await res.json();
+                overview.hotelReservations = data || [];
+                if (body) {
+                    if (!overview.hotelReservations.length) {
+                        body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">No hotel reservations</td></tr>`;
+                    } else {
+                        body.innerHTML = overview.hotelReservations.map(r => `
+                            <tr>
+                                <td>#${r.id}</td>
+                                <td>${r.user_name || 'N/A'}<br><small>${r.user_email || ''}</small></td>
+                                <td>${r.hotel_name || 'Hotel #' + r.hotel_id}</td>
+                                <td>${r.check_in}</td>
+                                <td>${r.check_out}</td>
+                                <td>${r.guests || 1}</td>
+                                <td><span class="status-badge status-active">${(r.status || '').toUpperCase()}</span></td>
+                                <td>${new Date(r.created_at).toLocaleString()}</td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+                const badge = document.getElementById('hotel-res-count');
+                if (badge) badge.textContent = overview.hotelReservations.length || 0;
+            } catch (e) {
+                if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--danger);">Failed to load hotel reservations</td></tr>`;
+            }
+        }
+
+        // Restaurant reservations
+        async function loadRestaurantReservations() {
+            const body = document.getElementById('rest-res-list');
+            if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
+            try {
+                const res = await fetch('/api/admin/restaurants/reservations.php');
+                const data = await res.json();
+                overview.restaurantReservations = data || [];
+                if (body) {
+                    if (!overview.restaurantReservations.length) {
+                        body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">No restaurant reservations</td></tr>`;
+                    } else {
+                        body.innerHTML = overview.restaurantReservations.map(r => `
+                            <tr>
+                                <td>#${r.id}</td>
+                                <td>${r.user_name || 'N/A'}<br><small>${r.user_email || ''}</small></td>
+                                <td>${r.restaurant_name || 'Restaurant #' + r.restaurant_id}</td>
+                                <td>${r.date}</td>
+                                <td>${r.time}</td>
+                                <td>${r.guests || 0}</td>
+                                <td><span class="status-badge status-active">${(r.status || '').toUpperCase()}</span></td>
+                                <td>${new Date(r.created_at).toLocaleString()}</td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+                const badge = document.getElementById('rest-res-count');
+                if (badge) badge.textContent = overview.restaurantReservations.length || 0;
+            } catch (e) {
+                if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--danger);">Failed to load restaurant reservations</td></tr>`;
+            }
+        }
+
         function searchBookings() {
             const query = document.getElementById('booking-search').value.toLowerCase();
             alert(`Searching bookings for: ${query}\nThis would filter the bookings table.`);
         }
 
-        // User actions
-        function addNewUser() {
-            openProfileDrawer(null);
+        // Load hotels from services API
+        async function loadHotels() {
+            const body = document.getElementById('hotels-list');
+            if (body) body.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
+            try {
+                const res = await fetch('/api/services/hotels.php');
+                const json = await res.json();
+                overview.hotels = json.data || [];
+                renderHotels();
+                const badge = document.getElementById('hotel-count');
+                if (badge) badge.textContent = (overview.hotels || []).length;
+            } catch (e) {
+                if (body) body.innerHTML = `<tr><td colspan=\"5\" style=\"text-align:center; padding:1rem; color: var(--danger);\">Failed to load hotels</td></tr>`;
+            }
         }
 
-        async function editUser(userId) {
-            const user = overview.users.find(u => u.id === userId);
-            if (!user) return;
-            const newRole = prompt(`Set role for ${user.name} (admin/manager/customer):`, user.role);
-            if (!newRole) return;
-            if (!['admin','manager','customer'].includes(newRole)) {
-                return notify('Invalid role', 'error');
+        function renderHotels() {
+            const body = document.getElementById('hotels-list');
+            if (!body) return;
+            const items = overview.hotels || [];
+            if (!items.length) {
+                body.innerHTML = `<tr><td colspan=\"5\" style=\"text-align:center; padding:1rem; color: var(--text-muted);\">No hotels found</td></tr>`;
+                return;
             }
+            body.innerHTML = items.map(h => `
+                <tr>
+                    <td>${h.name}</td>
+                    <td>${h.location}</td>
+                    <td>$${h.price}</td>
+                    <td>${(h.rating ?? '-') + '★'}</td>
+                    <td style="text-align:right;">
+                        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                            <button class="btn btn-outline btn-sm" onclick="viewHotel(${h.id})" title="View"><i class="fas fa-eye"></i></button>
+                            <button class="btn btn-outline btn-sm" onclick="editHotel(${h.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteHotel(${h.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function viewHotel(id) {
+            const h = (overview.hotels || []).find(x => x.id == id);
+            if (!h) return;
+            const details = Object.entries(h).map(([k,v]) => `<div><strong>${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}</div>`).join('');
+            if (window.Popup && Popup.modal) {
+                Popup.modal({ title: 'Hotel Details', content: details });
+            } else {
+                alert(`Hotel Details\n\n${details.replace(/<[^>]+>/g,'')}`);
+            }
+        }
+
+        // Load restaurants from services API
+        async function loadRestaurants() {
+            const body = document.getElementById('restaurants-list');
+            if (body) body.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
             try {
-                const res = await fetch('/api/admin/users/update_role.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: userId, role: newRole })
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message || 'Failed');
-                notify('Role updated', 'success');
-                loadDashboardData();
+                const res = await fetch('/api/services/restaurants.php');
+                const json = await res.json();
+                overview.restaurants = json.data || [];
+                renderRestaurants();
+                const badge = document.getElementById('restaurant-count');
+                if (badge) badge.textContent = (overview.restaurants || []).length;
             } catch (e) {
-                notify(e.message, 'error');
+                if (body) body.innerHTML = `<tr><td colspan=\"5\" style=\"text-align:center; padding:1rem; color: var(--danger);\">Failed to load restaurants</td></tr>`;
             }
+        }
+
+        function renderRestaurants() {
+            const body = document.getElementById('restaurants-list');
+            if (!body) return;
+            const items = overview.restaurants || [];
+            if (!items.length) {
+                body.innerHTML = `<tr><td colspan=\"5\" style=\"text-align:center; padding:1rem; color: var(--text-muted);\">No restaurants found</td></tr>`;
+                return;
+            }
+            body.innerHTML = items.map(r => `
+                <tr>
+                    <td>${r.name}</td>
+                    <td>${r.location}</td>
+                    <td>${r.cuisine || '-'}</td>
+                    <td>${r.priceRange || r.price_range || '-'}</td>
+                    <td style="text-align:right;">
+                        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                            <button class="btn btn-outline btn-sm" onclick="viewRestaurant(${r.id})" title="View"><i class="fas fa-eye"></i></button>
+                            <button class="btn btn-outline btn-sm" onclick="editRestaurant(${r.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteRestaurant(${r.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function viewRestaurant(id) {
+            const r = (overview.restaurants || []).find(x => x.id == id);
+            if (!r) return;
+            const details = Object.entries(r).map(([k,v]) => `<div><strong>${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}</div>`).join('');
+            if (window.Popup && Popup.modal) {
+                Popup.modal({ title: 'Restaurant Details', content: details });
+            } else {
+                alert(`Restaurant Details\n\n${details.replace(/<[^>]+>/g,'')}`);
+            }
+        }
+        // User actions
+        function addNewUser() {
+            openProfileDrawer(null, 'create');
+        }
+
+        function editUser(userId) {
+            openProfileDrawer(userId, 'edit');
+        }
+
+        function viewUser(userId) {
+            openProfileDrawer(userId, 'view');
         }
 
         async function deleteUser(userId) {
@@ -535,6 +735,10 @@
             openBookingDrawer(bookingId, 'edit');
         }
 
+        function createNewBooking() {
+            openBookingCreateDrawer();
+        }
+
         function openBookingDrawer(bookingId, mode = 'view') {
             const booking = overview.bookings.find(b => b.id === bookingId);
             if (!booking) return;
@@ -587,130 +791,66 @@
             }
         }
 
-        // Control Center
-        function renderControlCenter() {
-            renderControlStats();
-            renderControlTable();
-            renderControlActivity();
-        }
-
-        function renderControlStats() {
-            const totalUsers = overview.users.length;
-            const managers = overview.users.filter(u => u.role === 'manager').length;
-            const admins = overview.users.filter(u => u.role === 'admin').length;
-            const customers = overview.users.filter(u => u.role === 'customer').length;
-            const confirmed = overview.bookings.filter(b => (b.status || '').toLowerCase() === 'confirmed').length;
-
-            const setText = (id, value) => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = value;
-            };
-
-            setText('control-total-users', totalUsers);
-            setText('control-managers', managers);
-            setText('control-customers', customers);
-            setText('control-bookings', overview.bookings.length);
-            setText('control-admin-count', `${admins} Admin${admins === 1 ? '' : 's'}`);
-            setText('control-manager-share', `${totalUsers ? Math.round((managers / totalUsers) * 100) : 0}% of users`);
-            setText('control-customer-share', `${totalUsers ? Math.round((customers / totalUsers) * 100) : 0}% share`);
-            setText('control-booking-confirmed', `${confirmed} confirmed`);
-        }
-
-        function renderControlTable() {
-            const body = document.getElementById('control-user-body');
-            if (!body) return;
-
-            const filtered = overview.users.filter(user => {
-                const matchesQuery = `${user.name} ${user.email} ${user.role}`.toLowerCase().includes(controlFilters.query);
-                const matchesRole = controlFilters.role === 'all' ? true : user.role === controlFilters.role;
-                return matchesQuery && matchesRole;
-            });
-
-            if (filtered.length === 0) {
-                body.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1rem; color: var(--text-muted);">No users match the current filters</td></tr>`;
-                return;
-            }
-
-            body.innerHTML = filtered.map(user => `
-                <tr>
-                    <td>
-                        <div style="display:flex; align-items:center; gap:0.75rem;">
-                            <div style="width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; background: ${user.role === 'admin' ? 'rgba(79,70,229,0.15)' : user.role === 'manager' ? 'rgba(245,158,11,0.18)' : 'rgba(59,130,246,0.15)'}; color: var(--dark); font-weight:700;">${user.name.charAt(0).toUpperCase()}</div>
-                            <div>
-                                <strong>${user.name}</strong>
-                                <div style="color: var(--text-muted); font-size:0.9rem;">ID #${user.id}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="pill pill-${user.role}">${user.role.toUpperCase()}</span></td>
-                    <td>${user.email}</td>
-                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
-                    <td style="text-align:right;">
-                        <div class="row-actions">
-                            <button class="btn-chip" onclick="openProfileDrawer(${user.id})"><i class="fas fa-user"></i> Profile</button>
-                            <button class="btn-chip ghost" onclick="editUser(${user.id})"><i class="fas fa-user-shield"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function renderControlActivity() {
-            const container = document.getElementById('control-activity');
-            if (!container) return;
-            const recent = overview.bookings.slice(0, 6);
-
-            if (recent.length === 0) {
-                container.innerHTML = '<div class="activity-chip" style="background:#fff;">No recent activity</div>';
-            } else {
-                container.innerHTML = recent.map(item => `
-                    <div class="activity-chip">
-                        <div class="icon" style="background: ${item.status === 'confirmed' ? 'linear-gradient(135deg, #10b981 0%, #047857 100%)' : item.status === 'pending' ? 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)' : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'};"><i class="fas fa-bolt"></i></div>
-                        <div>
-                            <div><strong>${item.tour_title}</strong> • ${item.tourist_name}</div>
-                            <div class="meta">${new Date(item.booking_date).toLocaleString()} — ${item.status}</div>
-                        </div>
-                        <span class="pill" style="margin-left:auto;">$${item.price}</span>
-                    </div>
-                `).join('');
-            }
-
-            const reports = document.getElementById('control-reports');
-            if (reports) {
-                const pending = overview.bookings.filter(b => (b.status || '').toLowerCase() === 'pending').length;
-                const cancelled = overview.bookings.filter(b => (b.status || '').toLowerCase() === 'cancelled').length;
-                const managers = overview.users.filter(u => u.role === 'manager').length;
-                const toursPerManager = managers ? Math.round((overview.tours.length / managers) * 10) / 10 : 0;
-
-                reports.innerHTML = `
-                    <div class="report-pill"><strong>Pending</strong><span>${pending} booking(s)</span></div>
-                    <div class="report-pill"><strong>Cancelled</strong><span>${cancelled} booking(s)</span></div>
-                    <div class="report-pill"><strong>Tours/Manager</strong><span>${toursPerManager}</span></div>
-                    <div class="report-pill"><strong>Admins</strong><span>${overview.users.filter(u => u.role === 'admin').length}</span></div>
-                `;
+        async function deleteBooking(bookingId) {
+            const ok = await askConfirm('Delete booking', 'Delete this booking?');
+            if (!ok) return;
+            try {
+                const res = await fetch('/api/admin/bookings/delete.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: bookingId })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed');
+                notify('Booking deleted', 'success');
+                loadDashboardData();
+            } catch (e) {
+                notify(e.message, 'error');
             }
         }
 
-        function openProfileDrawer(userId) {
+        // Control Center removed. Unified under Users view filtering and export.
+
+        function openProfileDrawer(userId, mode = null) {
             const userData = overview.users.find(u => u.id === userId);
-            const creating = !userData;
+            let effectiveMode = mode;
+            if (!effectiveMode) {
+                effectiveMode = userData ? 'edit' : 'create';
+            }
+            const creating = effectiveMode === 'create';
+            const viewing = effectiveMode === 'view';
 
-            document.getElementById('profile-id').value = userData ? userData.id : '';
-            document.getElementById('profile-name').value = userData ? userData.name : '';
-            document.getElementById('profile-email').value = userData ? userData.email : '';
-            document.getElementById('profile-role').value = userData ? userData.role : 'customer';
-            document.getElementById('profile-password').value = '';
-            document.getElementById('profile-mode').value = creating ? 'create' : 'edit';
-            document.getElementById('drawer-title').textContent = creating ? 'Add User' : `Edit ${userData.name}`;
+            const idEl = document.getElementById('profile-id');
+            const nameEl = document.getElementById('profile-name');
+            const emailEl = document.getElementById('profile-email');
+            const roleEl = document.getElementById('profile-role');
+            const passEl = document.getElementById('profile-password');
+            const modeEl = document.getElementById('profile-mode');
+            const titleEl = document.getElementById('drawer-title');
             const passHint = document.getElementById('profile-pass-hint');
+            const saveBtn = document.querySelector('#profile-drawer .drawer-footer button[type="submit"]');
+
+            if (idEl) idEl.value = userData ? userData.id : '';
+            if (nameEl) nameEl.value = userData ? userData.name : '';
+            if (emailEl) emailEl.value = userData ? userData.email : '';
+            if (roleEl) roleEl.value = userData ? userData.role : 'customer';
+            if (passEl) passEl.value = '';
+            if (modeEl) modeEl.value = creating ? 'create' : (viewing ? 'view' : 'edit');
+
+            if (titleEl) titleEl.textContent = creating ? 'Add User' : (viewing ? `View ${userData?.name || ''}` : `Edit ${userData?.name || ''}`);
+
             if (passHint) {
                 passHint.textContent = creating ? '(required)' : '(optional)';
             }
-            const passInput = document.getElementById('profile-password');
-            if (passInput) {
-                passInput.required = creating;
-                passInput.placeholder = creating ? 'Set initial password' : 'Leave blank to keep current';
+            if (passEl) {
+                passEl.required = creating;
+                passEl.placeholder = creating ? 'Set initial password' : 'Leave blank to keep current';
+                passEl.disabled = viewing;
             }
+
+            // Toggle readonly/disabled for view mode
+            [nameEl, emailEl, roleEl].forEach(el => { if (el) el.disabled = viewing; });
+            if (saveBtn) saveBtn.style.display = viewing ? 'none' : 'inline-flex';
 
             const drawer = document.getElementById('profile-drawer');
             if (drawer) drawer.classList.remove('hidden');
@@ -759,7 +899,7 @@
             }
         }
 
-        function exportControlReport() {
+        function exportUsersReport() {
             if (!overview.users.length) return notify('No data to export.', 'info');
             const headers = ['ID','Name','Email','Role','Joined'];
             const rows = overview.users.map(u => [u.id, u.name, u.email, u.role, new Date(u.created_at).toLocaleDateString()]);
@@ -768,7 +908,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `control-report-${Date.now()}.csv`;
+            link.download = `users-report-${Date.now()}.csv`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -784,6 +924,7 @@
             document.getElementById('tour-location').value = tour ? tour.location : '';
             document.getElementById('tour-price').value = tour ? tour.price : '';
             document.getElementById('tour-date').value = tour ? (tour.schedule_date || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
+            document.getElementById('tour-image').value = tour ? (tour.image || '') : '';
             document.getElementById('tour-drawer-title').textContent = creating ? 'Create Tour' : `Edit ${tour.title}`;
 
             const guideSelect = document.getElementById('tour-guide');
@@ -814,6 +955,8 @@
                 price: parseFloat(document.getElementById('tour-price').value),
                 schedule_date: document.getElementById('tour-date').value
             };
+            const imageVal = document.getElementById('tour-image').value;
+            if (imageVal) payload.image = imageVal;
 
             if (!Number.isFinite(payload.guide_id)) {
                 return notify('Select a guide/manager before saving the tour.', 'error');
@@ -837,6 +980,210 @@
                 loadDashboardData();
             } catch (error) {
                 notify(error.message, 'error');
+            }
+        }
+
+        // Hotel actions & drawer
+        function createNewHotel() {
+            openHotelDrawer(null);
+        }
+
+        function editHotel(id) {
+            openHotelDrawer(id);
+        }
+
+        function openHotelDrawer(hotelId) {
+            const h = (overview.hotels || []).find(x => x.id == hotelId);
+            const creating = !h;
+            document.getElementById('hotel-mode').value = creating ? 'create' : 'edit';
+            document.getElementById('hotel-id').value = h ? h.id : '';
+            document.getElementById('hotel-name').value = h ? (h.name || '') : '';
+            document.getElementById('hotel-location').value = h ? (h.location || '') : '';
+            document.getElementById('hotel-image').value = h ? (h.image || '') : '';
+            document.getElementById('hotel-price').value = h ? (h.price || '') : '';
+            document.getElementById('hotel-rating').value = h ? (h.rating || '') : '';
+            document.getElementById('hotel-room-type').value = h ? (h.room_type || '') : '';
+            document.getElementById('hotel-stars').value = h ? (h.hotel_rating || '') : '';
+            document.getElementById('hotel-description').value = h ? (h.description || '') : '';
+            document.getElementById('hotel-drawer-title').textContent = creating ? 'Add Hotel' : `Edit ${h?.name || ''}`;
+            document.getElementById('hotel-drawer').classList.remove('hidden');
+        }
+
+        function closeHotelDrawer() {
+            document.getElementById('hotel-drawer').classList.add('hidden');
+        }
+
+        async function submitHotel(event) {
+            event.preventDefault();
+            const mode = document.getElementById('hotel-mode').value;
+            const payload = {
+                id: document.getElementById('hotel-id').value ? parseInt(document.getElementById('hotel-id').value, 10) : undefined,
+                name: document.getElementById('hotel-name').value,
+                location: document.getElementById('hotel-location').value,
+                image: document.getElementById('hotel-image').value || null,
+                price: parseFloat(document.getElementById('hotel-price').value),
+                rating: document.getElementById('hotel-rating').value ? parseFloat(document.getElementById('hotel-rating').value) : null,
+                room_type: document.getElementById('hotel-room-type').value || null,
+                hotel_rating: document.getElementById('hotel-stars').value ? parseInt(document.getElementById('hotel-stars').value, 10) : null,
+                description: document.getElementById('hotel-description').value || null
+            };
+            if (!payload.name || !payload.location || !Number.isFinite(payload.price)) {
+                return notify('Name, location and valid price are required.', 'error');
+            }
+            try {
+                const endpoint = mode === 'edit' ? '/api/admin/hotels/update.php' : '/api/admin/hotels/create.php';
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to save hotel');
+                notify(mode === 'edit' ? 'Hotel updated' : 'Hotel created', 'success');
+                closeHotelDrawer();
+                loadHotels();
+            } catch (e) {
+                notify(e.message, 'error');
+            }
+        }
+
+        async function deleteHotel(id) {
+            const ok = await askConfirm('Delete hotel', 'Delete this hotel?');
+            if (!ok) return;
+            try {
+                const res = await fetch('/api/admin/hotels/delete.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed');
+                notify('Hotel deleted', 'success');
+                loadHotels();
+            } catch (e) {
+                notify(e.message, 'error');
+            }
+        }
+
+        // Restaurant actions & drawer
+        function createNewRestaurant() {
+            openRestaurantDrawer(null);
+        }
+
+        function editRestaurant(id) {
+            openRestaurantDrawer(id);
+        }
+
+        function openRestaurantDrawer(restaurantId) {
+            const r = (overview.restaurants || []).find(x => x.id == restaurantId);
+            const creating = !r;
+            document.getElementById('restaurant-mode').value = creating ? 'create' : 'edit';
+            document.getElementById('restaurant-id').value = r ? r.id : '';
+            document.getElementById('restaurant-name').value = r ? (r.name || '') : '';
+            document.getElementById('restaurant-location').value = r ? (r.location || '') : '';
+            document.getElementById('restaurant-cuisine').value = r ? (r.cuisine || '') : '';
+            document.getElementById('restaurant-image').value = r ? (r.image || '') : '';
+            document.getElementById('restaurant-price-range').value = r ? (r.priceRange || r.price_range || '') : '';
+            document.getElementById('restaurant-rating').value = r ? (r.rating || '') : '';
+            document.getElementById('restaurant-description').value = r ? (r.description || '') : '';
+            document.getElementById('restaurant-drawer-title').textContent = creating ? 'Add Restaurant' : `Edit ${r?.name || ''}`;
+            document.getElementById('restaurant-drawer').classList.remove('hidden');
+        }
+
+        function closeRestaurantDrawer() {
+            document.getElementById('restaurant-drawer').classList.add('hidden');
+        }
+
+        async function submitRestaurant(event) {
+            event.preventDefault();
+            const mode = document.getElementById('restaurant-mode').value;
+            const payload = {
+                id: document.getElementById('restaurant-id').value ? parseInt(document.getElementById('restaurant-id').value, 10) : undefined,
+                name: document.getElementById('restaurant-name').value,
+                location: document.getElementById('restaurant-location').value,
+                cuisine: document.getElementById('restaurant-cuisine').value,
+                image: document.getElementById('restaurant-image').value || null,
+                price_range: document.getElementById('restaurant-price-range').value || null,
+                rating: document.getElementById('restaurant-rating').value ? parseFloat(document.getElementById('restaurant-rating').value) : null,
+                description: document.getElementById('restaurant-description').value || null
+            };
+            if (!payload.name || !payload.location || !payload.cuisine) {
+                return notify('Name, location and cuisine are required.', 'error');
+            }
+            try {
+                const endpoint = mode === 'edit' ? '/api/admin/restaurants/update.php' : '/api/admin/restaurants/create.php';
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to save restaurant');
+                notify(mode === 'edit' ? 'Restaurant updated' : 'Restaurant created', 'success');
+                closeRestaurantDrawer();
+                loadRestaurants();
+            } catch (e) {
+                notify(e.message, 'error');
+            }
+        }
+
+        async function deleteRestaurant(id) {
+            const ok = await askConfirm('Delete restaurant', 'Delete this restaurant?');
+            if (!ok) return;
+            try {
+                const res = await fetch('/api/admin/restaurants/delete.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed');
+                notify('Restaurant deleted', 'success');
+                loadRestaurants();
+            } catch (e) {
+                notify(e.message, 'error');
+            }
+        }
+
+        // Booking create drawer
+        function openBookingCreateDrawer() {
+            // populate selects
+            const tourSelect = document.getElementById('create-booking-tour');
+            const userSelect = document.getElementById('create-booking-user');
+            if (tourSelect) {
+                tourSelect.innerHTML = (overview.tours || []).map(t => `<option value="${t.id}">${t.title} (${t.location})</option>`).join('');
+            }
+            if (userSelect) {
+                const customers = (overview.users || []).filter(u => u.role === 'customer');
+                userSelect.innerHTML = customers.length ? customers.map(u => `<option value="${u.id}">${u.name} (${u.email})</option>`).join('') : '<option value="">No customers</option>';
+            }
+            document.getElementById('booking-create-drawer').classList.remove('hidden');
+        }
+
+        function closeBookingCreateDrawer() {
+            document.getElementById('booking-create-drawer').classList.add('hidden');
+        }
+
+        async function submitBookingCreate(event) {
+            event.preventDefault();
+            const tour_id = parseInt(document.getElementById('create-booking-tour').value, 10);
+            const user_id = parseInt(document.getElementById('create-booking-user').value, 10);
+            if (!Number.isFinite(tour_id) || !Number.isFinite(user_id)) {
+                return notify('Select valid tour and customer.', 'error');
+            }
+            try {
+                const res = await fetch('/api/bookings/create.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tour_id, user_id })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to create booking');
+                notify('Booking created', 'success');
+                closeBookingCreateDrawer();
+                loadDashboardData();
+            } catch (e) {
+                notify(e.message, 'error');
             }
         }
 

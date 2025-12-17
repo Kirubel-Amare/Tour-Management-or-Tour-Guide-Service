@@ -24,6 +24,7 @@ if ($num > 0) {
             'title' => $title,
             'description' => html_entity_decode($description),
             'location' => $location,
+            'image' => $image,
             'price' => $price,
             'schedule_date' => $schedule_date,
             'guide_id' => $guide_id,

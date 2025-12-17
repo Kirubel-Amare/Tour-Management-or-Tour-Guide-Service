@@ -28,6 +28,7 @@ if (
     $tour->guide_id = $data->guide_id;
     $tour->title = $data->title;
     $tour->description = $data->description ?? '';
+    $tour->image = $data->image ?? null;
     $tour->location = $data->location;
     $tour->price = $data->price;
     $tour->schedule_date = $data->schedule_date ?? date('Y-m-d');

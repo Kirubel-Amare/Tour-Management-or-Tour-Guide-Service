@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/admin_dashboard.css">
-    <link rel="stylesheet" href="css/action_center.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
@@ -70,16 +69,56 @@
                     <a href="#tours" class="nav-item" onclick="switchView('tours')">
                         <i class="fas fa-map-marked-alt"></i>
                         <span>Tours</span>
+                        
                         <span
                             style="margin-left: auto; background: var(--secondary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
                             id="tour-count">0</span>
                     </a>
+
+                    <a href="#hotels" class="nav-item" onclick="switchView('hotels')">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Hotels</span>
+                        
+                        <span
+                            style="margin-left: auto; background: var(--secondary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
+                            id="hotel-count">0</span>
+                    </a>
+                        <a href="#restaurants" class="nav-item" onclick="switchView('restaurants')">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Restaurants</span>
+                        
+                        <span
+                            style="margin-left: auto; background: var(--secondary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
+                            id="restaurant-count">0</span>
+                    </a>
+                    
                     <a href="#bookings" class="nav-item" onclick="switchView('bookings')">
                         <i class="fas fa-calendar-check"></i>
                         <span>Bookings</span>
                         <span
                             style="margin-left: auto; background: #8b5cf6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
                             id="booking-count">0</span>
+                    </a>
+                    <a href="#taxi-orders" class="nav-item" onclick="switchView('taxi')">
+                        <i class="fas fa-taxi"></i>
+                        <span>Taxi Orders</span>
+                        <span
+                            style="margin-left: auto; background: #10b981; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
+                            id="taxi-count">0</span>
+                    </a>
+                    <a href="#hotel-reservations" class="nav-item" onclick="switchView('hotel-reservations')">
+                        <i class="fas fa-bed"></i>
+                        <span>Hotel Reservations</span>
+                        <span
+                            style="margin-left: auto; background: #0ea5e9; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
+                            id="hotel-res-count">0</span>
+                    </a>
+                    <a href="#restaurant-reservations" class="nav-item" onclick="switchView('restaurant-reservations')">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span>Restaurant Reservations</span>
+                        <span
+                            style="margin-left: auto; background: #f97316; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
+                            id="rest-res-count">0</span>
                     </a>
                     <a href="#reviews" class="nav-item" onclick="switchView('reviews')">
                         <i class="fas fa-star"></i>
@@ -91,14 +130,6 @@
 
                 <div class="nav-group">
                     <h4>System</h4>
-                    <a href="#control" class="nav-item" onclick="switchView('control')">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>Control Center</span>
-                    </a>
-                    <a href="action_center.html" class="nav-item">
-                        <i class="fas fa-edit"></i>
-                        <span>Action Center</span>
-                    </a>
                     <a href="#reports" class="nav-item" onclick="switchView('reports')">
                         <i class="fas fa-chart-bar"></i>
                         <span>Reports</span>
@@ -234,22 +265,27 @@
             <!-- Users Management View -->
             <div id="users-view" class="fade-in" style="display: none;">
                 <div class="search-section">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                         <h2><i class="fas fa-users"></i> User Management</h2>
-                        <button class="btn btn-primary" onclick="addNewUser()">
-                            <i class="fas fa-user-plus"></i> Add New User
-                        </button>
+                        <div style="display:flex; gap:0.5rem;">
+                            <button class="btn btn-primary" onclick="addNewUser()">
+                                <i class="fas fa-user-plus"></i> Add New User
+                            </button>
+                        </div>
                     </div>
 
-                    <div style="display: flex; gap: 1rem;">
-                        <input type="text" id="user-search" class="admin-input"
-                            placeholder="Search users by name, email, or role...">
+                    <div style="display: flex; gap: 1rem; align-items:center;">
+                        <input type="text" id="user-search" class="admin-input" placeholder="Search users by name or email...">
+                        <select id="user-role-filter" class="admin-select" aria-label="Filter by role">
+                            <option value="all">All roles</option>
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="customer">Customer</option>
+                        </select>
                         <button onclick="searchUsers()" class="btn btn-primary">
                             <i class="fas fa-search"></i> Search
                         </button>
-                        <button onclick="clearUserSearch()" class="btn btn-outline"
-                            style="border-color: var(--border);">
+                        <button onclick="clearUserSearch()" class="btn btn-outline" style="border-color: var(--border);">
                             <i class="fas fa-times"></i> Clear
                         </button>
                     </div>
@@ -300,12 +336,77 @@
                 </div>
             </div>
 
+            <!-- Hotels Management View -->
+            <div id="hotels-view" class="fade-in" style="display: none;">
+                <div class="search-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2><i class="fas fa-hotel"></i> Hotel Management</h2>
+                        <button class="btn btn-primary" onclick="createNewHotel()">
+                            <i class="fas fa-plus-circle"></i> Add Hotel
+                        </button>
+                    </div>
+                </div>
+                <div id="hotels-management-content">
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="hotels-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Location</th>
+                                    <th>Price</th>
+                                    <th>Rating</th>
+                                    <th style="text-align:right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hotels-list">
+                                <tr><td colspan="5" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Restaurants Management View -->
+            <div id="restaurants-view" class="fade-in" style="display: none;">
+                <div class="search-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2><i class="fas fa-utensils"></i> Restaurant Management</h2>
+                        <button class="btn btn-primary" onclick="createNewRestaurant()">
+                            <i class="fas fa-plus-circle"></i> Add Restaurant
+                        </button>
+                    </div>
+                </div>
+                <div id="restaurants-management-content">
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="restaurants-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Location</th>
+                                    <th>Cuisine</th>
+                                    <th>Price</th>
+                                    <th style="text-align:right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="restaurants-list">
+                                <tr><td colspan="5" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Bookings Management View -->
             <div id="bookings-view" class="fade-in" style="display: none;">
                 <div class="search-section">
-                    <div style="margin-bottom: 1.5rem;">
-                        <h2><i class="fas fa-calendar-check"></i> Booking Management</h2>
-                        <p style="color: var(--text-muted);">View and manage all bookings on the platform</p>
+                    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 1.5rem;">
+                        <div>
+                            <h2><i class="fas fa-calendar-check"></i> Booking Management</h2>
+                            <p style="color: var(--text-muted);">View and manage all bookings on the platform</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="createNewBooking()">
+                            <i class="fas fa-plus-circle"></i> Create Booking
+                        </button>
                     </div>
 
                     <div style="display: flex; gap: 1rem;">
@@ -322,120 +423,100 @@
                 </div>
             </div>
 
-            <!-- Control Center View -->
-            <div id="control-view" class="fade-in" style="display: none;">
-                <div class="control-header">
-                    <div>
-                        <p class="eyebrow">System Oversight</p>
-                        <h2 class="control-title">Control Center</h2>
-                        <p class="control-subtitle">Monitor user and manager activity, update profiles, and run quick reports from one place.</p>
-                    </div>
-                    <div class="control-actions">
-                        <button class="btn btn-outline" onclick="renderControlCenter()">
-                            <i class="fas fa-sync"></i> Refresh data
-                        </button>
-                        <span class="pill live-pill"><i class="fas fa-circle"></i> Live</span>
+            <!-- Taxi Orders View -->
+            <div id="taxi-view" class="fade-in" style="display: none;">
+                <div class="search-section">
+                    <div style="margin-bottom: 1.5rem;">
+                        <h2><i class="fas fa-taxi"></i> Taxi Orders</h2>
+                        <p style="color: var(--text-muted);">Monitor taxi requests placed by users</p>
                     </div>
                 </div>
-
-                <div class="control-metrics" id="control-metrics">
-                    <div class="metric-card">
-                        <div class="metric-icon users"><i class="fas fa-users"></i></div>
-                        <div>
-                            <p class="metric-label">Total Users</p>
-                            <p class="metric-value" id="control-total-users">0</p>
-                        </div>
-                        <span class="metric-mini" id="control-admin-count">0 Admins</span>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-icon managers"><i class="fas fa-user-tie"></i></div>
-                        <div>
-                            <p class="metric-label">Managers</p>
-                            <p class="metric-value" id="control-managers">0</p>
-                        </div>
-                        <span class="metric-mini" id="control-manager-share">0% of users</span>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-icon customers"><i class="fas fa-user-friends"></i></div>
-                        <div>
-                            <p class="metric-label">Customers</p>
-                            <p class="metric-value" id="control-customers">0</p>
-                        </div>
-                        <span class="metric-mini" id="control-customer-share">0% share</span>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-icon bookings"><i class="fas fa-clipboard-list"></i></div>
-                        <div>
-                            <p class="metric-label">Bookings</p>
-                            <p class="metric-value" id="control-bookings">0</p>
-                        </div>
-                        <span class="metric-mini" id="control-booking-confirmed">0 confirmed</span>
-                    </div>
-                </div>
-
-                <div class="control-toolbar">
-                    <div class="control-search">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="control-search" placeholder="Search by name, email, or role" aria-label="Search users">
-                    </div>
-                    <div class="control-filters">
-                        <select id="control-role-filter" class="admin-select" aria-label="Filter by role">
-                            <option value="all">All roles</option>
-                            <option value="admin">Admin</option>
-                            <option value="manager">Manager</option>
-                            <option value="customer">Customer</option>
-                        </select>
-                        <button class="btn btn-primary" onclick="exportControlReport()">
-                            <i class="fas fa-file-export"></i> Export report
-                        </button>
-                    </div>
-                </div>
-
-                <div class="control-grid">
-                    <div class="control-panel">
-                        <div class="panel-head">
-                            <div>
-                                <p class="eyebrow">Directory</p>
-                                <h3>User &amp; Manager Directory</h3>
-                            </div>
-                            <div class="panel-actions">
-                                <button class="btn btn-sm" onclick="addNewUser()"><i class="fas fa-user-plus"></i> New</button>
-                            </div>
-                        </div>
-                        <div class="table-wrapper">
-                            <table class="data-table compact">
-                                <thead>
-                                    <tr>
-                                        <th>User</th>
-                                        <th>Role</th>
-                                        <th>Email</th>
-                                        <th>Joined</th>
-                                        <th style="text-align: right;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="control-user-body">
-                                    <tr><td colspan="5" style="text-align:center; padding:1rem;">Loading...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="control-panel">
-                        <div class="panel-head">
-                            <div>
-                                <p class="eyebrow">Live Signals</p>
-                                <h3>Activity &amp; Reports</h3>
-                            </div>
-                        </div>
-                        <div class="control-activity" id="control-activity">
-                            <!-- Activity items injected by JS -->
-                        </div>
-                        <div class="control-reports" id="control-reports">
-                            <!-- Report badges injected by JS -->
-                        </div>
+                <div id="taxi-management-content">
+                    <div style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Pickup</th>
+                                    <th>Destination</th>
+                                    <th>Vehicle</th>
+                                    <th>Fare</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taxi-list">
+                                <tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+
+            <!-- Hotel Reservations View -->
+            <div id="hotel-reservations-view" class="fade-in" style="display: none;">
+                <div class="search-section">
+                    <div style="margin-bottom: 1.5rem;">
+                        <h2><i class="fas fa-bed"></i> Hotel Reservations</h2>
+                        <p style="color: var(--text-muted);">All booked hotel stays</p>
+                    </div>
+                </div>
+                <div id="hotel-res-management-content">
+                    <div style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Hotel</th>
+                                    <th>Check-in</th>
+                                    <th>Check-out</th>
+                                    <th>Guests</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hotel-res-list">
+                                <tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Restaurant Reservations View -->
+            <div id="restaurant-reservations-view" class="fade-in" style="display: none;">
+                <div class="search-section">
+                    <div style="margin-bottom: 1.5rem;">
+                        <h2><i class="fas fa-concierge-bell"></i> Restaurant Reservations</h2>
+                        <p style="color: var(--text-muted);">All booked restaurant tables</p>
+                    </div>
+                </div>
+                <div id="rest-res-management-content">
+                    <div style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Restaurant</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Guests</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rest-res-list">
+                                <tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Center removed: unified under Users view -->
 
             <!-- Settings View -->
             <div id="settings-view" class="fade-in" style="display: none;">
@@ -565,6 +646,10 @@
                     <select id="tour-guide" class="admin-select" required>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="url" class="admin-input" id="tour-image" placeholder="https://example.com/tour.jpg">
+                </div>
                 <div class="drawer-footer">
                     <button type="button" class="btn btn-outline" onclick="closeTourDrawer()">Cancel</button>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save tour</button>
@@ -613,6 +698,138 @@
                 <div class="drawer-footer">
                     <button type="button" class="btn btn-outline" onclick="closeBookingDrawer()">Close</button>
                     <button type="submit" class="btn btn-primary" id="booking-save-btn"><i class="fas fa-save"></i> Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hotel Drawer -->
+    <div id="hotel-drawer" class="control-drawer hidden">
+        <div class="drawer-overlay" onclick="closeHotelDrawer()"></div>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <div>
+                    <p class="eyebrow">Hotel</p>
+                    <h3 id="hotel-drawer-title">Add Hotel</h3>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="closeHotelDrawer()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="hotel-form" onsubmit="submitHotel(event)">
+                <input type="hidden" id="hotel-id">
+                <input type="hidden" id="hotel-mode" value="create">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" class="admin-input" id="hotel-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" class="admin-input" id="hotel-location" required>
+                </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="url" class="admin-input" id="hotel-image" placeholder="https://example.com/hotel.jpg">
+                </div>
+                <div class="form-group">
+                    <label>Price</label>
+                    <input type="number" step="0.01" class="admin-input" id="hotel-price" required>
+                </div>
+                <div class="form-group">
+                    <label>Rating</label>
+                    <input type="number" step="0.1" class="admin-input" id="hotel-rating" placeholder="4.0">
+                </div>
+                <div class="form-group">
+                    <label>Room Type</label>
+                    <input type="text" class="admin-input" id="hotel-room-type" placeholder="Standard">
+                </div>
+                <div class="form-group">
+                    <label>Stars</label>
+                    <input type="number" class="admin-input" id="hotel-stars" placeholder="4">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="admin-input" id="hotel-description" rows="3"></textarea>
+                </div>
+                <div class="drawer-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeHotelDrawer()">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save hotel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Restaurant Drawer -->
+    <div id="restaurant-drawer" class="control-drawer hidden">
+        <div class="drawer-overlay" onclick="closeRestaurantDrawer()"></div>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <div>
+                    <p class="eyebrow">Restaurant</p>
+                    <h3 id="restaurant-drawer-title">Add Restaurant</h3>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="closeRestaurantDrawer()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="restaurant-form" onsubmit="submitRestaurant(event)">
+                <input type="hidden" id="restaurant-id">
+                <input type="hidden" id="restaurant-mode" value="create">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" class="admin-input" id="restaurant-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" class="admin-input" id="restaurant-location" required>
+                </div>
+                <div class="form-group">
+                    <label>Cuisine</label>
+                    <input type="text" class="admin-input" id="restaurant-cuisine" required>
+                </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="url" class="admin-input" id="restaurant-image" placeholder="https://example.com/restaurant.jpg">
+                </div>
+                <div class="form-group">
+                    <label>Price Range</label>
+                    <input type="text" class="admin-input" id="restaurant-price-range" placeholder="$$$">
+                </div>
+                <div class="form-group">
+                    <label>Rating</label>
+                    <input type="number" step="0.1" class="admin-input" id="restaurant-rating" placeholder="4.0">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="admin-input" id="restaurant-description" rows="3"></textarea>
+                </div>
+                <div class="drawer-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeRestaurantDrawer()">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save restaurant</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Booking Drawer -->
+    <div id="booking-create-drawer" class="control-drawer hidden">
+        <div class="drawer-overlay" onclick="closeBookingCreateDrawer()"></div>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <div>
+                    <p class="eyebrow">Booking</p>
+                    <h3>Create Booking</h3>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="closeBookingCreateDrawer()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="booking-create-form" onsubmit="submitBookingCreate(event)">
+                <div class="form-group">
+                    <label>Tour</label>
+                    <select id="create-booking-tour" class="admin-select" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Customer</label>
+                    <select id="create-booking-user" class="admin-select" required></select>
+                </div>
+                <div class="drawer-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeBookingCreateDrawer()">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create booking</button>
                 </div>
             </form>
         </div>
