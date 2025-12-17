@@ -39,6 +39,8 @@ function switchTab(tabName) {
         loadTours();
     } else if (tabName === 'bookings') {
         loadBookings();
+    } else if (tabName === 'revenue') {
+        updateRevenueSnapshot();
     } else if (tabName === 'places') {
         loadPlaces();
     }
@@ -63,6 +65,20 @@ function updateStats() {
     document.getElementById('month-revenue').textContent = (totalRevenue * 0.3).toFixed(2);
     document.getElementById('conversion-rate').textContent = '24%';
     document.getElementById('avg-rating-sidebar').textContent = avgRating.toFixed(1);
+}
+
+function updateRevenueSnapshot() {
+    const totalRevenue = managerBookings.reduce((sum, b) => sum + parseFloat(b.price), 0);
+    const bookingsCount = managerBookings.length;
+    const avg = bookingsCount > 0 ? totalRevenue / bookingsCount : 0;
+
+    const totalEl = document.getElementById('rev-total');
+    const countEl = document.getElementById('rev-bookings');
+    const avgEl = document.getElementById('rev-avg');
+
+    if (totalEl) totalEl.textContent = `$${totalRevenue.toFixed(2)}`;
+    if (countEl) countEl.textContent = bookingsCount;
+    if (avgEl) avgEl.textContent = `$${avg.toFixed(2)}`;
 }
 
 // Load activity timeline
@@ -90,7 +106,11 @@ function loadActivity() {
 // Load recent bookings (Participants)
 async function loadBookings() {
     const container = document.getElementById('recent-bookings');
+    const fullTable = document.getElementById('bookings-table-body');
     container.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading participants...</td></tr>';
+    if (fullTable) {
+        fullTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';
+    }
 
     try {
         const response = await fetch(`/api/bookings/read_manager.php?guide_id=${user.id}`);
@@ -107,8 +127,11 @@ async function loadBookings() {
 
         if (bookings.length === 0) {
             container.innerHTML = '<tr><td colspan="5" style="text-align:center;">No bookings found yet.</td></tr>';
+            if (fullTable) {
+                fullTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">No bookings yet.</td></tr>';
+            }
         } else {
-            container.innerHTML = bookings.map(booking => `
+            const rows = bookings.map(booking => `
                 <tr>
                     <td>
                         <strong>${booking.customer_name}</strong><br>
@@ -120,19 +143,77 @@ async function loadBookings() {
                     <td><strong>$${booking.price}</strong></td>
                 </tr>
             `).join('');
+
+            container.innerHTML = rows;
+            if (fullTable) {
+                fullTable.innerHTML = rows;
+            }
         }
 
         updateStats();
         loadActivity();
+        updateRevenueSnapshot();
     } catch (error) {
         console.error('Error loading bookings:', error);
         container.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Failed to load participants.</td></tr>';
+        if (fullTable) {
+            fullTable.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Failed to load participants.</td></tr>';
+        }
     }
 }
 
 // Load recent bookings alias (for dashboard tab)
 function loadRecentBookings() {
     loadBookings();
+}
+
+function filterBookings() {
+    const term = (document.getElementById('booking-search')?.value || '').toLowerCase();
+    const fullTable = document.getElementById('bookings-table-body');
+    if (!fullTable || managerBookings.length === 0) return;
+
+    const filtered = managerBookings.filter(b =>
+        b.customer_name.toLowerCase().includes(term) ||
+        b.customer_email.toLowerCase().includes(term) ||
+        b.tour_title.toLowerCase().includes(term)
+    );
+
+    fullTable.innerHTML = filtered.map(booking => `
+        <tr>
+            <td>
+                <strong>${booking.customer_name}</strong><br>
+                <small style="color:var(--text-muted)">${booking.customer_email}</small>
+            </td>
+            <td>${booking.tour_title}</td>
+            <td>${new Date(booking.schedule_date).toLocaleDateString()}</td>
+            <td><span class="booking-status status-${booking.status}">${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</span></td>
+            <td><strong>$${booking.price}</strong></td>
+        </tr>
+    `).join('');
+
+    if (filtered.length === 0) {
+        fullTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">No matching bookings.</td></tr>';
+    }
+}
+
+function resetBookingFilters() {
+    const input = document.getElementById('booking-search');
+    if (input) input.value = '';
+    const fullTable = document.getElementById('bookings-table-body');
+    if (fullTable) {
+        fullTable.innerHTML = managerBookings.map(booking => `
+            <tr>
+                <td>
+                    <strong>${booking.customer_name}</strong><br>
+                    <small style="color:var(--text-muted)">${booking.customer_email}</small>
+                </td>
+                <td>${booking.tour_title}</td>
+                <td>${new Date(booking.schedule_date).toLocaleDateString()}</td>
+                <td><span class="booking-status status-${booking.status}">${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</span></td>
+                <td><strong>$${booking.price}</strong></td>
+            </tr>
+        `).join('');
+    }
 }
 
 // Load tours from API
