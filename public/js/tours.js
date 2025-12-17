@@ -23,16 +23,14 @@ async function loadTours() {
     try {
         const response = await fetch('/api/tours/read.php');
         allTours = await response.json();
-
-        // Add random images and category if missing (since backend doesn't store them fully yet)
         allTours = allTours.map(tour => ({
             ...tour,
-            image: tour.image || getRandomImage(tour.title),
-            category: tour.category || getRandomCategory(),
-            rating: (Math.random() * 1.5 + 3.5).toFixed(1), // Mock rating 3.5-5.0
-            reviews: Math.floor(Math.random() * 200) + 10,
-            duration: Math.floor(Math.random() * 6 + 2) + " hours",
-            groupSize: "Small group"
+            image: tour.image || getLocationImage(tour.location),
+            category: tour.category || 'Tour',
+            rating: tour.rating || '4.5',
+            reviews: tour.reviews || 0,
+            duration: tour.duration || 'Flexible schedule',
+            groupSize: tour.groupSize || 'Small group'
         }));
 
         displayFilteredTours(allTours);
@@ -46,27 +44,9 @@ async function loadTours() {
         container.innerHTML = '<div class="no-results"><h3>Failed to load tours</h3><p>Please try again later.</p></div>';
     }
 }
-
-function getRandomImage(title) {
-    const keywords = ['nature', 'city', 'food', 'adventure', 'history', 'travel'];
-    const keyword = keywords[Math.floor(Math.random() * keywords.length)];
-    return `https://source.unsplash.com/800x600/?${keyword},tour`;
-    // Note: source.unsplash might be slow or rate limited, but using unspash directly is better for demo
-    // Let's use fixed URLs for reliability similar to demoTours
-    const images = [
-        "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1552832230-c0197dd311b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-    ];
-    return images[title.length % images.length];
-}
-
-function getRandomCategory() {
-    const categories = ['Cultural', 'Food', 'Adventure', 'Historical', 'Nature'];
-    return categories[Math.floor(Math.random() * categories.length)];
+function getLocationImage(location) {
+    const base = (location || 'travel').split(',')[0].trim() || 'travel';
+    return `https://source.unsplash.com/800x600/?travel,${encodeURIComponent(base)}`;
 }
 
 // Create tour card

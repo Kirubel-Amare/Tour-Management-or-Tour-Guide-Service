@@ -10,6 +10,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once '../../config/ExternalService.php';
+require_once '../../config/Database.php';
+require_once '../../models/TaxiOrder.php';
+
+$database = new Database();
+$db = $database->connect();
+$taxiModel = new TaxiOrder($db);
 
 $payload = json_decode(file_get_contents('php://input'), true);
 if (!$payload) {
@@ -53,7 +59,7 @@ if (!empty($baseUrl)) {
 }
 
 if ($fare === null) {
-    $distanceKm = 10 + rand(0, 10); // simple demo distance
+    $distanceKm = 10 + rand(0, 10);
     $rates = [
         'standard' => 2.5,
         'premium' => 3.5,
@@ -74,5 +80,19 @@ if ($fare === null) {
         'fare' => $fare
     ];
 }
+
+// persist taxi order to DB
+$responseData['user_id'] = $payload['user']['id'] ?? 0;
+$taxiModel->create([
+    'user_id' => $responseData['user_id'],
+    'pickup' => $pickup,
+    'destination' => $destination,
+    'vehicle_type' => $vehicle,
+    'schedule' => $schedule,
+    'custom_time' => $customTime,
+    'distance_km' => $responseData['distance_km'],
+    'fare' => $responseData['fare'],
+    'eta_minutes' => $responseData['eta_minutes']
+]);
 
 echo json_encode(['source' => $source, 'data' => $responseData]);

@@ -1,76 +1,3 @@
-const fallbackPlaces = [
-    {
-        id: 1,
-        name: 'Paris, France',
-        type: 'City',
-        continent: 'Europe',
-        climate: 'Temperate',
-        description: 'The romantic capital of France, known for its art, fashion, and cuisine.',
-        image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80',
-        rating: 4.8,
-        reviews: 1245,
-        features: ['Eiffel Tower', 'Louvre Museum', 'Notre-Dame', 'Champs-Élysées']
-    },
-    {
-        id: 2,
-        name: 'Bali, Indonesia',
-        type: 'Beach',
-        continent: 'Asia',
-        climate: 'Tropical',
-        description: 'Tropical paradise with beaches, reefs, and terraced rice paddies.',
-        image: 'https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?auto=format&fit=crop&w=800&q=80',
-        rating: 4.9,
-        reviews: 892,
-        features: ['Ubud', 'Kuta Beach', 'Tanah Lot', 'Uluwatu Temple']
-    }
-];
-
-const fallbackTours = [
-    {
-        id: 1,
-        title: 'Paris Night Walking Tour',
-        location: 'Paris, France',
-        price: 89.99,
-        duration: '3 hours',
-        rating: 4.8,
-        reviews: 124,
-        description: 'Experience the magic of Paris at night with a guided walk.',
-        image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80',
-        features: ['Eiffel Tower view', 'Local insights', 'Hidden gems', 'Photo opportunities']
-    }
-];
-
-const fallbackHotels = [
-    {
-        id: 1,
-        name: 'Paris Luxury Hotel',
-        location: 'Paris, France',
-        price: 299.99,
-        rating: 4.8,
-        reviews: 456,
-        description: '5-star hotel in central Paris with Eiffel Tower views.',
-        image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-        roomType: 'Suite',
-        hotelRating: 5,
-        amenities: ['Wi-Fi', 'Pool', 'Spa', 'Restaurant', 'Gym']
-    }
-];
-
-const fallbackRestaurants = [
-    {
-        id: 1,
-        name: 'Le Gourmet Paris',
-        location: 'Paris, France',
-        cuisine: 'French',
-        priceRange: '$$$$',
-        rating: 4.9,
-        reviews: 287,
-        description: 'Michelin-starred restaurant offering exquisite French cuisine.',
-        image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-        features: ['Fine dining', 'Wine pairing', 'Romantic ambiance', "Chef's table"]
-    }
-];
-
 let places = [];
 let tours = [];
 let hotels = [];
@@ -125,10 +52,10 @@ async function loadPlaces() {
         const response = await fetch('/api/places/read.php');
         const payload = await response.json();
         const mapped = Array.isArray(payload) ? payload.map(mapPlace) : [];
-        places = mapped.length ? mapped : fallbackPlaces;
+        places = mapped;
     } catch (err) {
         console.error('Failed to load places', err);
-        places = fallbackPlaces;
+        places = [];
     }
     renderPlaces(filterPlacesData());
 }
@@ -138,10 +65,10 @@ async function loadTours() {
         const response = await fetch('/api/tours/read.php');
         const payload = await response.json();
         const mapped = Array.isArray(payload) ? payload.map(mapTour) : [];
-        tours = mapped.length ? mapped : fallbackTours;
+        tours = mapped;
     } catch (err) {
         console.error('Failed to load tours', err);
-        tours = fallbackTours;
+        tours = [];
     }
     renderTours(filterToursData());
 }
@@ -151,10 +78,10 @@ async function loadHotels() {
         const response = await fetch('/api/services/hotels.php');
         const payload = await response.json();
         const incoming = payload?.data || payload || [];
-        hotels = Array.isArray(incoming) && incoming.length ? incoming.map(mapHotel) : fallbackHotels;
+        hotels = Array.isArray(incoming) && incoming.length ? incoming.map(mapHotel) : [];
     } catch (err) {
         console.error('Failed to load hotels', err);
-        hotels = fallbackHotels;
+        hotels = [];
     }
     renderHotels(filterHotelsData());
 }
@@ -164,10 +91,10 @@ async function loadRestaurants() {
         const response = await fetch('/api/services/restaurants.php');
         const payload = await response.json();
         const incoming = payload?.data || payload || [];
-        restaurants = Array.isArray(incoming) && incoming.length ? incoming.map(mapRestaurant) : fallbackRestaurants;
+        restaurants = Array.isArray(incoming) && incoming.length ? incoming.map(mapRestaurant) : [];
     } catch (err) {
         console.error('Failed to load restaurants', err);
-        restaurants = fallbackRestaurants;
+        restaurants = [];
     }
     renderRestaurants(filterRestaurantsData());
 }
@@ -176,8 +103,8 @@ function mapPlace(raw, idx) {
     return {
         id: raw.id || idx || Date.now(),
         name: raw.name || 'Destination',
-        type: raw.category || 'Destination',
-        continent: raw.country || raw.city || 'Unknown',
+        type: raw.type || raw.category || 'Destination',
+        continent: raw.continent || raw.country || raw.city || 'Unknown',
         climate: raw.climate || 'Temperate',
         description: raw.description || 'Explore this amazing place.',
         image: raw.image || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
@@ -212,8 +139,8 @@ function mapHotel(raw, idx) {
         reviews: raw.reviews || 50,
         description: raw.description || 'Comfortable stay provided by partner hotel.',
         image: raw.image || 'https://images.unsplash.com/photo-1501117716987-c8e1ecb210af?auto=format&fit=crop&w=800&q=80',
-        roomType: raw.roomType || 'Standard',
-        hotelRating: raw.hotelRating || 4,
+        roomType: raw.roomType || raw.room_type || 'Standard',
+        hotelRating: raw.hotelRating || raw.hotel_rating || 4,
         amenities: raw.amenities || ['Wi-Fi', 'Breakfast']
     };
 }
@@ -224,7 +151,7 @@ function mapRestaurant(raw, idx) {
         name: raw.name || 'Restaurant',
         location: raw.location || 'Unknown',
         cuisine: raw.cuisine || 'International',
-        priceRange: raw.priceRange || '$$',
+        priceRange: raw.priceRange || raw.price_range || '$$',
         rating: raw.rating || 4.5,
         reviews: raw.reviews || 40,
         description: raw.description || 'Great food from our partner restaurant.',

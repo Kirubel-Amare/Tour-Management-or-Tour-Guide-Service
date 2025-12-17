@@ -29,10 +29,15 @@ async function loadTours() {
 
     try {
         const response = await fetch('/api/tours/read.php');
-        allTours = await response.json();
-
-        // Enhance with mock data for missing fields
-        allTours = allTours.map(enhanceTourData);
+        allTours = (await response.json()).map(tour => ({
+            ...tour,
+            image: tour.image || getLocationImage(tour.location),
+            rating: tour.rating || '4.5',
+            reviews: tour.reviews || 0,
+            duration: tour.duration || 'Flexible schedule',
+            category: tour.category || 'Tour',
+            guide: { name: tour.guide_name || 'Professional Guide', rating: tour.guide_rating || '4.5' }
+        }));
 
         if (allTours.length === 0) {
             container.innerHTML = `
@@ -52,16 +57,9 @@ async function loadTours() {
     }
 }
 
-function enhanceTourData(tour) {
-    return {
-        ...tour,
-        image: tour.image || `https://source.unsplash.com/800x600/?travel,${tour.location.split(',')[0]}`,
-        rating: (Math.random() * 1.5 + 3.5).toFixed(1),
-        reviews: Math.floor(Math.random() * 200) + 10,
-        duration: Math.floor(Math.random() * 6 + 2) + " hours",
-        category: "General",
-        guide: { name: tour.guide_name || "Professional Guide", rating: 4.8 }
-    };
+function getLocationImage(location) {
+    const base = (location || 'travel').split(',')[0].trim() || 'travel';
+    return `https://source.unsplash.com/800x600/?travel,${encodeURIComponent(base)}`;
 }
 
 // Load recommended tours

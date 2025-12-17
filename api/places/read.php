@@ -3,45 +3,22 @@
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
 
-include_once '../../config/Database.php';
+require_once '../../config/Database.php';
+require_once '../../models/Place.php';
 
-// Mock Data for "Places" service
-$places = [
-    [
-        'id' => 101,
-        'name' => 'Eiffel Tower',
-        'city' => 'Paris',
-        'country' => 'France',
-        'category' => 'Landmark'
-    ],
-    [
-        'id' => 102,
-        'name' => 'Great Wall',
-        'city' => 'Beijing',
-        'country' => 'China',
-        'category' => 'Code Item Review Needed' // Joke? No, just category
-    ],
-    [
-        'id' => 103,
-        'name' => 'Grand Canyon',
-        'city' => 'Arizona',
-        'country' => 'USA',
-        'category' => 'Nature'
-    ],
-    [
-        'id' => 104,
-        'name' => 'Machu Picchu',
-        'city' => 'Cusco',
-        'country' => 'Peru',
-        'category' => 'Historic'
-    ],
-    [
-        'id' => 105,
-        'name' => 'Lalibela',
-        'city' => 'Lalibela',
-        'country' => 'Ethiopia',
-        'category' => 'Historic'
-    ]
-];
+$database = new Database();
+$db = $database->connect();
+
+$place = new Place($db);
+$stmt = $place->read();
+$num = $stmt->rowCount();
+
+$places = [];
+if ($num > 0) {
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $row['features'] = $row['features'] ? json_decode($row['features'], true) : [];
+        $places[] = $row;
+    }
+}
 
 echo json_encode($places);

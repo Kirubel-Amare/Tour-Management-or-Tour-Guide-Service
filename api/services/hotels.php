@@ -9,7 +9,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+require_once '../../config/Database.php';
 require_once '../../config/ExternalService.php';
+require_once '../../models/Hotel.php';
+
+$database = new Database();
+$db = $database->connect();
+$hotelModel = new Hotel($db);
 
 $baseUrl = getenv('EXTERNAL_HOTEL_API');
 
@@ -37,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $source = 'fallback';
+    $source = 'db';
     $data = null;
 
     if (!empty($baseUrl)) {
@@ -49,8 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($data === null) {
+        $reservation['user_id'] = $reservation['user']['id'] ?? 0;
+        $reservation['room_type'] = $reservation['roomType'];
+        $insertId = $hotelModel->book($reservation);
         $data = array_merge($reservation, [
-            'confirmation' => uniqid('hotel_', true),
+            'reservation_id' => $insertId,
+            'confirmation' => 'db-' . $insertId,
             'status' => 'confirmed'
         ]);
     }
@@ -66,7 +76,7 @@ $queryParams = [
     'minRating' => $_GET['rating'] ?? ''
 ];
 
-$source = 'fallback';
+$source = 'db';
 $data = [];
 
 if (!empty($baseUrl)) {
@@ -81,34 +91,14 @@ if (!empty($baseUrl)) {
 }
 
 if (!$data) {
-    $data = [
-        [
-            'id' => 1,
-            'name' => 'Paris Luxury Hotel',
-            'location' => 'Paris, France',
-            'price' => 299.99,
-            'rating' => 4.8,
-            'reviews' => 456,
-            'description' => '5-star hotel in the heart of Paris with panoramic views of the Eiffel Tower.',
-            'image' => 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-            'roomType' => 'Suite',
-            'hotelRating' => 5,
-            'amenities' => ['Wi-Fi', 'Pool', 'Spa', 'Restaurant', 'Gym']
-        ],
-        [
-            'id' => 2,
-            'name' => 'Tokyo Central Hotel',
-            'location' => 'Tokyo, Japan',
-            'price' => 199.99,
-            'rating' => 4.6,
-            'reviews' => 321,
-            'description' => 'Modern hotel located in central Tokyo with easy access to major attractions.',
-            'image' => 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-            'roomType' => 'Double',
-            'hotelRating' => 4,
-            'amenities' => ['Wi-Fi', 'Restaurant', 'Concierge', 'Laundry']
-        ]
-    ];
+    $stmt = $hotelModel->read();
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $row['amenities'] = $row['amenities'] ? json_decode($row['amenities'], true) : [];
+        // normalize key names to match frontend expectations
+        $row['roomType'] = $row['room_type'];
+        $row['hotelRating'] = $row['hotel_rating'];
+        $data[] = $row;
+    }
 }
 
 echo json_encode(['source' => $source, 'data' => $data]);

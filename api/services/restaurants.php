@@ -9,7 +9,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+require_once '../../config/Database.php';
 require_once '../../config/ExternalService.php';
+require_once '../../models/Restaurant.php';
+
+$database = new Database();
+$db = $database->connect();
+$restaurantModel = new Restaurant($db);
 
 $baseUrl = getenv('EXTERNAL_RESTAURANT_API');
 
@@ -37,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $source = 'fallback';
+    $source = 'db';
     $data = null;
 
     if (!empty($baseUrl)) {
@@ -49,8 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($data === null) {
+        $reservation['user_id'] = $reservation['user']['id'] ?? 0;
+        $insertId = $restaurantModel->reserve($reservation);
         $data = array_merge($reservation, [
-            'confirmation' => uniqid('restaurant_', true),
+            'reservation_id' => $insertId,
+            'confirmation' => 'db-' . $insertId,
             'status' => 'confirmed'
         ]);
     }
@@ -66,7 +75,7 @@ $queryParams = [
     'priceRange' => $_GET['price'] ?? ''
 ];
 
-$source = 'fallback';
+$source = 'db';
 $data = [];
 
 if (!empty($baseUrl)) {
@@ -81,32 +90,12 @@ if (!empty($baseUrl)) {
 }
 
 if (!$data) {
-    $data = [
-        [
-            'id' => 1,
-            'name' => 'Le Gourmet Paris',
-            'location' => 'Paris, France',
-            'cuisine' => 'French',
-            'priceRange' => '$$$$',
-            'rating' => 4.9,
-            'reviews' => 287,
-            'description' => 'Michelin-starred restaurant offering exquisite French cuisine with a modern twist.',
-            'image' => 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-            'features' => ['Fine dining', 'Wine pairing', 'Romantic ambiance', "Chef's table"]
-        ],
-        [
-            'id' => 2,
-            'name' => 'Tokyo Sushi Master',
-            'location' => 'Tokyo, Japan',
-            'cuisine' => 'Japanese',
-            'priceRange' => '$$$',
-            'rating' => 4.8,
-            'reviews' => 412,
-            'description' => 'Authentic sushi experience with fresh ingredients and master chefs.',
-            'image' => 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-            'features' => ['Omakase', 'Sushi bar', 'Fresh seafood', 'Traditional']
-        ]
-    ];
+    $stmt = $restaurantModel->read();
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $row['features'] = $row['features'] ? json_decode($row['features'], true) : [];
+        $row['priceRange'] = $row['price_range'];
+        $data[] = $row;
+    }
 }
 
 echo json_encode(['source' => $source, 'data' => $data]);

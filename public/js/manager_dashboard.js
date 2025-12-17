@@ -10,27 +10,7 @@ document.getElementById('user-name').textContent = user.name;
 
 // Global state for tours
 let allTours = [];
-
-// Demo bookings and activity (to be replaced later, focusing on Tours now)
-let demoBookings = [
-    {
-        id: 1,
-        customer: "John Smith",
-        tour: "Paris Night Walking Tour",
-        date: "2025-03-15",
-        status: "confirmed",
-        amount: 89.99
-    }
-];
-
-let demoActivity = [
-    {
-        type: "booking",
-        title: "New booking received",
-        description: "John Smith booked Paris Night Tour",
-        time: "2 hours ago"
-    }
-];
+let managerBookings = [];
 
 // Load all data
 function loadDashboardData() {
@@ -70,10 +50,9 @@ function updateStats() {
     const myTours = allTours.filter(t => t.guide_id == user.id);
 
     const totalTours = myTours.length;
-    // Mock bookings count for now as bookings API isn't linked to DB yet
-    const totalBookings = demoBookings.length;
-    const totalRevenue = demoBookings.reduce((sum, b) => sum + b.amount, 0);
-    const avgRating = 4.8; // Mock rating
+    const totalBookings = managerBookings.length;
+    const totalRevenue = managerBookings.reduce((sum, b) => sum + parseFloat(b.price), 0);
+    const avgRating = totalBookings > 0 ? 4.5 : 0;
 
     document.getElementById('total-tours').textContent = totalTours;
     document.getElementById('total-bookings').textContent = totalBookings;
@@ -89,15 +68,20 @@ function updateStats() {
 // Load activity timeline
 function loadActivity() {
     const container = document.getElementById('activity-timeline');
-    container.innerHTML = demoActivity.map(activity => `
+    if (managerBookings.length === 0) {
+        container.innerHTML = '<div class="activity-item">No recent activity yet.</div>';
+        return;
+    }
+
+    container.innerHTML = managerBookings.slice(0, 5).map(activity => `
         <div class="activity-item">
-            <div class="activity-icon ${activity.type}">
-                <i class="fas fa-${activity.type === 'booking' ? 'user-plus' : activity.type === 'tour' ? 'map-marked-alt' : 'star'}"></i>
+            <div class="activity-icon booking">
+                <i class="fas fa-calendar-check"></i>
             </div>
             <div class="activity-content">
-                <div class="activity-title">${activity.title}</div>
-                <div class="activity-description">${activity.description}</div>
-                <div class="activity-time">${activity.time}</div>
+                <div class="activity-title">${activity.customer_name} booked ${activity.tour_title}</div>
+                <div class="activity-description">${new Date(activity.booking_date).toLocaleString()}</div>
+                <div class="activity-time">${activity.status}</div>
             </div>
         </div>
     `).join('');
@@ -111,6 +95,7 @@ async function loadBookings() {
     try {
         const response = await fetch(`/api/bookings/read_manager.php?guide_id=${user.id}`);
         const bookings = await response.json();
+        managerBookings = bookings;
 
         // Update global booking stats
         document.getElementById('total-bookings').textContent = bookings.length;
@@ -136,6 +121,9 @@ async function loadBookings() {
                 </tr>
             `).join('');
         }
+
+        updateStats();
+        loadActivity();
     } catch (error) {
         console.error('Error loading bookings:', error);
         container.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Failed to load participants.</td></tr>';

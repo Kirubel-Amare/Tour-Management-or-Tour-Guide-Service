@@ -8,45 +8,21 @@
         document.getElementById('admin-name').textContent = user.name;
         document.getElementById('admin-greeting').textContent = user.name.split(' ')[0];
 
-        // Demo data
-        let demoUsers = [
-            { id: 1, name: "John Tourist", email: "john@example.com", role: "tourist", status: "active", joined: "2024-01-15" },
-            { id: 2, name: "Sarah Guide", email: "sarah@example.com", role: "guide", status: "active", joined: "2024-01-10" },
-            { id: 3, name: "Mike Johnson", email: "mike@example.com", role: "tourist", status: "pending", joined: "2024-02-01" },
-            { id: 4, name: "Emma Wilson", email: "emma@example.com", role: "guide", status: "active", joined: "2024-01-20" },
-            { id: 5, name: "Admin User", email: "admin@example.com", role: "admin", status: "active", joined: "2024-01-01" }
-        ];
-
-        let demoTours = [
-            { id: 1, title: "Paris Night Tour", location: "Paris, France", guide: "Sarah Guide", price: 89.99, status: "active", bookings: 12, category: "Cultural" },
-            { id: 2, title: "Tokyo Food Adventure", location: "Tokyo, Japan", guide: "Kenji Tanaka", price: 129.99, status: "active", bookings: 8, category: "Food" },
-            { id: 3, title: "New York Helicopter", location: "New York, USA", guide: "Mike Johnson", price: 299.99, status: "pending", bookings: 3, category: "Adventure" },
-            { id: 4, title: "Bali Waterfalls", location: "Bali, Indonesia", guide: "Made Wijaya", price: 79.99, status: "active", bookings: 15, category: "Nature" }
-        ];
-
-        let demoBookings = [
-            { id: 1, tourist: "John Tourist", tour: "Paris Night Tour", date: "2024-03-15", status: "confirmed", amount: 89.99 },
-            { id: 2, tourist: "Emma Wilson", tour: "Tokyo Food Adventure", date: "2024-03-20", status: "pending", amount: 129.99 },
-            { id: 3, tourist: "Mike Johnson", tour: "New York Helicopter", date: "2024-03-25", status: "confirmed", amount: 299.99 },
-            { id: 4, tourist: "Sarah Guide", tour: "Bali Waterfalls", date: "2024-04-05", status: "cancelled", amount: 79.99 }
-        ];
-
-        let demoActivity = [
-            { type: "user", title: "New user registered", description: "Mike Johnson joined as a tourist", time: "2 hours ago" },
-            { type: "tour", title: "Tour published", description: "Paris Night Tour was created", time: "1 day ago" },
-            { type: "booking", title: "New booking", description: "John booked Tokyo Food Adventure", time: "2 days ago" },
-            { type: "review", title: "New review", description: "5-star review for Paris Night Tour", time: "3 days ago" },
-            { type: "user", title: "User role updated", description: "Emma Wilson promoted to guide", time: "4 days ago" }
-        ];
+        const overview = {
+            users: [],
+            tours: [],
+            bookings: [],
+            stats: {
+                total_users: 0,
+                total_tours: 0,
+                total_bookings: 0,
+                revenue: 0
+            }
+        };
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboardData();
-            initializeCharts();
-            loadActivity();
-            
-            // Set last updated time
-            document.getElementById('last-updated').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         });
 
         // Switch between views
@@ -74,22 +50,60 @@
         }
 
         // Load dashboard data
-        function loadDashboardData() {
-            document.getElementById('total-users').textContent = demoUsers.length;
-            document.getElementById('total-tours').textContent = demoTours.length;
-            document.getElementById('total-bookings').textContent = demoBookings.length;
-            
-            const totalRevenue = demoBookings.reduce((sum, booking) => sum + booking.amount, 0);
-            document.getElementById('total-revenue').textContent = `$${totalRevenue.toFixed(2)}`;
-            
-            // Update sidebar counts
-            document.getElementById('user-count').textContent = demoUsers.length;
-            document.getElementById('tour-count').textContent = demoTours.length;
-            document.getElementById('booking-count').textContent = demoBookings.length;
+        async function loadDashboardData() {
+            const loading = document.getElementById('last-updated');
+            if (loading) {
+                loading.textContent = 'Loading...';
+            }
+
+            try {
+                const response = await fetch('/api/admin/overview.php');
+                const data = await response.json();
+
+                overview.users = data.users || [];
+                overview.tours = data.tours || [];
+                overview.bookings = data.bookings || [];
+                overview.stats = data.stats || overview.stats;
+
+                document.getElementById('total-users').textContent = overview.stats.total_users;
+                document.getElementById('total-tours').textContent = overview.stats.total_tours;
+                document.getElementById('total-bookings').textContent = overview.stats.total_bookings;
+                document.getElementById('total-revenue').textContent = `$${(overview.stats.revenue || 0).toFixed(2)}`;
+
+                document.getElementById('user-count').textContent = overview.stats.total_users;
+                document.getElementById('tour-count').textContent = overview.stats.total_tours;
+                document.getElementById('booking-count').textContent = overview.stats.total_bookings;
+
+                initializeCharts();
+                loadActivity();
+                loadUsers();
+                loadTours();
+                loadBookings();
+
+                if (loading) {
+                    loading.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+            } catch (error) {
+                console.error('Error loading admin overview', error);
+                if (loading) {
+                    loading.textContent = 'Failed to refresh';
+                }
+            }
         }
 
         // Initialize charts
         function initializeCharts() {
+            const revenueByMonth = Array(12).fill(0);
+            overview.bookings.forEach(booking => {
+                const month = new Date(booking.booking_date).getMonth();
+                revenueByMonth[month] += parseFloat(booking.price || 0);
+            });
+
+            const roleCounts = overview.users.reduce((acc, user) => {
+                acc[user.role] = (acc[user.role] || 0) + 1;
+                return acc;
+            }, {});
+
             // Revenue Chart
             const revenueCtx = document.getElementById('revenueChart').getContext('2d');
             new Chart(revenueCtx, {
@@ -98,7 +112,7 @@
                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                     datasets: [{
                         label: 'Revenue',
-                        data: [12000, 19000, 15000, 25000, 22000, 30000],
+                        data: revenueByMonth.slice(0, 6),
                         borderColor: 'rgb(79, 70, 229)',
                         backgroundColor: 'rgba(79, 70, 229, 0.1)',
                         borderWidth: 2,
@@ -132,9 +146,9 @@
             new Chart(userCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Tourists', 'Guides', 'Admins'],
+                    labels: ['customer', 'manager', 'admin'],
                     datasets: [{
-                        data: [8, 4, 1],
+                        data: [roleCounts['customer'] || 0, roleCounts['manager'] || 0, roleCounts['admin'] || 0],
                         backgroundColor: [
                             'rgb(59, 130, 246)',
                             'rgb(245, 158, 11)',
@@ -159,15 +173,21 @@
         // Load activity
         function loadActivity() {
             const container = document.getElementById('activity-list');
-            container.innerHTML = demoActivity.map(activity => `
+            const recent = overview.bookings.slice(0, 5);
+            if (recent.length === 0) {
+                container.innerHTML = '<div class="activity-item">No recent activity</div>';
+                return;
+            }
+
+            container.innerHTML = recent.map(activity => `
                 <div class="activity-item">
-                    <div class="activity-icon ${activity.type}">
-                        <i class="fas fa-${activity.type === 'user' ? 'user-plus' : activity.type === 'tour' ? 'map-marked-alt' : activity.type === 'booking' ? 'calendar-plus' : 'star'}"></i>
+                    <div class="activity-icon booking">
+                        <i class="fas fa-calendar-plus"></i>
                     </div>
                     <div class="activity-content">
-                        <div class="activity-title">${activity.title}</div>
-                        <div style="color: var(--text-muted); font-size: 0.9rem;">${activity.description}</div>
-                        <div class="activity-time">${activity.time}</div>
+                        <div class="activity-title">${activity.tour_title}</div>
+                        <div style="color: var(--text-muted); font-size: 0.9rem;">${activity.tourist_name} booked this tour</div>
+                        <div class="activity-time">${new Date(activity.booking_date).toLocaleString()}</div>
                     </div>
                 </div>
             `).join('');
@@ -176,12 +196,12 @@
         // Load users
         function loadUsers() {
             const container = document.getElementById('users-list');
-            container.innerHTML = demoUsers.map(user => `
+            container.innerHTML = overview.users.map(user => `
                 <tr>
                     <td>#${user.id}</td>
                     <td>
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <div style="width: 36px; height: 36px; background: ${user.role === 'admin' ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)' : user.role === 'guide' ? 'linear-gradient(135deg, var(--secondary) 0%, #d97706 100%)' : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                            <div style="width: 36px; height: 36px; background: ${user.role === 'admin' ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)' : user.role === 'manager' ? 'linear-gradient(135deg, var(--secondary) 0%, #d97706 100%)' : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
                                 ${user.name.charAt(0)}
                             </div>
                             <span style="font-weight: 500;">${user.name}</span>
@@ -189,16 +209,14 @@
                     </td>
                     <td>${user.email}</td>
                     <td>
-                        <span class="status-badge ${user.role === 'admin' ? 'status-active' : user.role === 'guide' ? 'status-pending' : 'status-inactive'}">
+                        <span class="status-badge ${user.role === 'admin' ? 'status-active' : user.role === 'manager' ? 'status-pending' : 'status-inactive'}">
                             ${user.role.toUpperCase()}
                         </span>
                     </td>
                     <td>
-                        <span class="status-badge ${user.status === 'active' ? 'status-active' : 'status-pending'}">
-                            ${user.status.toUpperCase()}
-                        </span>
+                        <span class="status-badge status-active">ACTIVE</span>
                     </td>
-                    <td>${new Date(user.joined).toLocaleDateString()}</td>
+                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
                     <td>
                         <div style="display: flex; gap: 0.5rem;">
                             <button onclick="editUser(${user.id})" class="btn btn-outline btn-sm" style="border-color: var(--border);">
@@ -216,7 +234,7 @@
         // Search users
         function searchUsers() {
             const query = document.getElementById('user-search').value.toLowerCase();
-            const filtered = demoUsers.filter(user => 
+            const filtered = overview.users.filter(user => 
                 user.name.toLowerCase().includes(query) ||
                 user.email.toLowerCase().includes(query) ||
                 user.role.toLowerCase().includes(query)
@@ -239,8 +257,8 @@
                         <td>${user.name}</td>
                         <td>${user.email}</td>
                         <td>${user.role.toUpperCase()}</td>
-                        <td>${user.status.toUpperCase()}</td>
-                        <td>${new Date(user.joined).toLocaleDateString()}</td>
+                        <td>ACTIVE</td>
+                        <td>${new Date(user.created_at).toLocaleDateString()}</td>
                         <td>
                             <div style="display: flex; gap: 0.5rem;">
                                 <button onclick="editUser(${user.id})" class="btn btn-outline btn-sm">
@@ -264,7 +282,7 @@
         // Load tours
         function loadTours() {
             const container = document.getElementById('tours-management-content');
-            if (demoTours.length === 0) {
+            if (overview.tours.length === 0) {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
                         <i class="fas fa-map-marked-alt" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
@@ -290,22 +308,20 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${demoTours.map(tour => `
+                                ${overview.tours.map(tour => `
                                     <tr>
                                         <td>#${tour.id}</td>
                                         <td><strong>${tour.title}</strong></td>
                                         <td>${tour.location}</td>
-                                        <td>${tour.guide}</td>
+                                        <td>${tour.guide_name || 'N/A'}</td>
                                         <td>
-                                            <span class="status-badge" style="background: ${tour.category === 'Cultural' ? 'rgba(79, 70, 229, 0.1)' : tour.category === 'Food' ? 'rgba(245, 158, 11, 0.1)' : tour.category === 'Adventure' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; color: ${tour.category === 'Cultural' ? 'var(--primary)' : tour.category === 'Food' ? 'var(--secondary)' : tour.category === 'Adventure' ? '#3b82f6' : '#10b981'};">${tour.category}</span>
+                                            <span class="status-badge">${tour.location.split(',')[0]}</span>
                                         </td>
                                         <td><strong>$${tour.price}</strong></td>
                                         <td>
-                                            <span class="status-badge ${tour.status === 'active' ? 'status-active' : 'status-pending'}">
-                                                ${tour.status.toUpperCase()}
-                                            </span>
+                                            <span class="status-badge status-active">ACTIVE</span>
                                         </td>
-                                        <td>${tour.bookings}</td>
+                                        <td>${overview.bookings.filter(b => b.tour_title === tour.title).length}</td>
                                         <td>
                                             <div style="display: flex; gap: 0.5rem;">
                                                 <button onclick="editTour(${tour.id})" class="btn btn-outline btn-sm">
@@ -333,7 +349,7 @@
         // Load bookings
         function loadBookings() {
             const container = document.getElementById('bookings-management-content');
-            if (demoBookings.length === 0) {
+            if (overview.bookings.length === 0) {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
                         <i class="fas fa-calendar-check" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
@@ -356,18 +372,18 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${demoBookings.map(booking => `
+                                ${overview.bookings.map(booking => `
                                     <tr>
                                         <td>#${booking.id}</td>
-                                        <td>${booking.tourist}</td>
-                                        <td>${booking.tour}</td>
-                                        <td>${new Date(booking.date).toLocaleDateString()}</td>
+                                        <td>${booking.tourist_name}</td>
+                                        <td>${booking.tour_title}</td>
+                                        <td>${new Date(booking.booking_date).toLocaleDateString()}</td>
                                         <td>
                                             <span class="status-badge ${booking.status === 'confirmed' ? 'status-active' : booking.status === 'pending' ? 'status-pending' : 'status-inactive'}">
                                                 ${booking.status.toUpperCase()}
                                             </span>
                                         </td>
-                                        <td><strong>$${booking.amount}</strong></td>
+                                        <td><strong>$${booking.price}</strong></td>
                                         <td>
                                             <div style="display: flex; gap: 0.5rem;">
                                                 <button onclick="viewBooking(${booking.id})" class="btn btn-outline btn-sm">
@@ -398,17 +414,15 @@
         }
 
         function editUser(userId) {
-            const user = demoUsers.find(u => u.id === userId);
+            const user = overview.users.find(u => u.id === userId);
             if (user) {
-                alert(`Edit user: ${user.name}\nEmail: ${user.email}\nRole: ${user.role}\nStatus: ${user.status}`);
+                alert(`Edit user: ${user.name}\nEmail: ${user.email}\nRole: ${user.role}`);
             }
         }
 
         function deleteUser(userId) {
             if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-                demoUsers = demoUsers.filter(u => u.id !== userId);
-                loadUsers();
-                loadDashboardData();
+                alert('User deletion is not implemented yet.');
             }
         }
 
@@ -418,32 +432,30 @@
         }
 
         function editTour(tourId) {
-            const tour = demoTours.find(t => t.id === tourId);
+            const tour = overview.tours.find(t => t.id === tourId);
             if (tour) {
-                alert(`Edit tour: ${tour.title}\nLocation: ${tour.location}\nPrice: $${tour.price}\nStatus: ${tour.status}`);
+                alert(`Edit tour: ${tour.title}\nLocation: ${tour.location}\nPrice: $${tour.price}`);
             }
         }
 
         function deleteTour(tourId) {
             if (confirm('Are you sure you want to delete this tour? This action cannot be undone.')) {
-                demoTours = demoTours.filter(t => t.id !== tourId);
-                loadTours();
-                loadDashboardData();
+                alert('Tour deletion is not implemented yet.');
             }
         }
 
         // Booking actions
         function viewBooking(bookingId) {
-            const booking = demoBookings.find(b => b.id === bookingId);
+            const booking = overview.bookings.find(b => b.id === bookingId);
             if (booking) {
-                alert(`Booking Details:\n\nTourist: ${booking.tourist}\nTour: ${booking.tour}\nDate: ${booking.date}\nStatus: ${booking.status}\nAmount: $${booking.amount}`);
+                alert(`Booking Details:\n\nTourist: ${booking.tourist_name}\nTour: ${booking.tour_title}\nBooked: ${new Date(booking.booking_date).toLocaleString()}\nStatus: ${booking.status}\nAmount: $${booking.price}`);
             }
         }
 
         function updateBooking(bookingId) {
-            const booking = demoBookings.find(b => b.id === bookingId);
+            const booking = overview.bookings.find(b => b.id === bookingId);
             if (booking) {
-                alert(`Update booking status for: ${booking.tour}`);
+                alert(`Update booking status for: ${booking.tour_title}`);
             }
         }
 
