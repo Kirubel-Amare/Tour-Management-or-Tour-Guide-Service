@@ -36,6 +36,18 @@ CREATE TABLE IF NOT EXISTS bookings (
     FOREIGN KEY (tourist_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Tour reviews
+CREATE TABLE IF NOT EXISTS tour_reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tour_id INT NOT NULL,
+    user_id INT NOT NULL,
+    rating DECIMAL(2,1) NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tour_id) REFERENCES tours(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Places table
 CREATE TABLE IF NOT EXISTS places (
     id INT AUTO_INCREMENT PRIMARY KEY,

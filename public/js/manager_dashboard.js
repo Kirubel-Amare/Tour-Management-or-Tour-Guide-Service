@@ -11,6 +11,7 @@ document.getElementById('user-name').textContent = user.name;
 // Global state for tours
 let allTours = [];
 let managerBookings = [];
+let managerReviews = [];
 
 // Load all data
 function loadDashboardData() {
@@ -18,6 +19,7 @@ function loadDashboardData() {
     loadActivity();
     loadRecentBookings();
     loadPlaces();
+    loadReviewsStats();
 }
 
 // Tab switching
@@ -43,6 +45,9 @@ function switchTab(tabName) {
         updateRevenueSnapshot();
     } else if (tabName === 'places') {
         loadPlaces();
+    } else if (tabName === 'reviews') {
+        loadReviews();
+        loadReviewsStats();
     }
 }
 
@@ -54,7 +59,8 @@ function updateStats() {
     const totalTours = myTours.length;
     const totalBookings = managerBookings.length;
     const totalRevenue = managerBookings.reduce((sum, b) => sum + parseFloat(b.price), 0);
-    const avgRating = totalBookings > 0 ? 4.5 : 0;
+    // avg rating will be set by loadReviewsStats(); keep a default until stats arrive
+    const avgRating = parseFloat(document.getElementById('avg-rating').textContent) || 0;
 
     document.getElementById('total-tours').textContent = totalTours;
     document.getElementById('total-bookings').textContent = totalBookings;
@@ -65,6 +71,60 @@ function updateStats() {
     document.getElementById('month-revenue').textContent = (totalRevenue * 0.3).toFixed(2);
     document.getElementById('conversion-rate').textContent = '24%';
     document.getElementById('avg-rating-sidebar').textContent = avgRating.toFixed(1);
+}
+// Load reviews list for this manager
+async function loadReviews() {
+    const container = document.getElementById('reviews-list');
+    if (!container) return;
+    container.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading reviews...</td></tr>';
+
+    try {
+        const response = await fetch(`/api/reviews/read.php?guide_id=${user.id}`);
+        const reviews = await response.json();
+        managerReviews = reviews || [];
+
+        if (!reviews || reviews.length === 0) {
+            container.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No reviews yet.</td></tr>';
+            document.getElementById('review-count').textContent = 0;
+            return;
+        }
+
+        document.getElementById('review-count').textContent = reviews.length;
+
+        container.innerHTML = reviews.map(r => `
+            <tr>
+                <td>${r.tour_title || r.tour_id}</td>
+                <td>${r.reviewer_name || 'Anonymous'}</td>
+                <td><i class="fas fa-star" style="color:var(--warning);"></i> ${parseFloat(r.rating).toFixed(1)}</td>
+                <td>${(r.comment || '').slice(0, 120)}${(r.comment || '').length > 120 ? '…' : ''}</td>
+                <td>${new Date(r.created_at).toLocaleDateString()}</td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading reviews:', error);
+        container.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Failed to load reviews.</td></tr>';
+    }
+}
+
+// Load review stats (avg rating, total)
+async function loadReviewsStats() {
+    try {
+        const response = await fetch(`/api/reviews/stats.php?guide_id=${user.id}`);
+        const stats = await response.json();
+        const avg = parseFloat(stats.avg_rating || 0);
+        const total = parseInt(stats.total_reviews || 0, 10);
+
+        const avgRatingEl = document.getElementById('avg-rating');
+        const avgSidebarEl = document.getElementById('avg-rating-sidebar');
+        const reviewCountEl = document.getElementById('review-count');
+
+        if (avgRatingEl) avgRatingEl.textContent = avg.toFixed(1);
+        if (avgSidebarEl) avgSidebarEl.textContent = avg.toFixed(1);
+        if (reviewCountEl) reviewCountEl.textContent = total;
+    } catch (error) {
+        console.error('Error loading review stats:', error);
+        // Leave defaults; no UI disruption
+    }
 }
 
 function updateRevenueSnapshot() {
