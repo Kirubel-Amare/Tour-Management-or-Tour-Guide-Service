@@ -1,6 +1,25 @@
 // app.js - Interactive features for TourismPro website
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Load shared header/footer into placeholders
+    const loadLayout = async () => {
+        const header = document.getElementById('header-placeholder');
+        const footer = document.getElementById('footer-placeholder');
+
+        try {
+            if (header) {
+                const headerResp = await fetch('components/header.html');
+                header.innerHTML = await headerResp.text();
+            }
+
+            if (footer) {
+                const footerResp = await fetch('components/footer.html');
+                footer.innerHTML = await footerResp.text();
+            }
+        } catch (err) {
+            console.error('Failed to load shared layout:', err);
+        }
+    };
     // Mobile menu toggle (if we add a hamburger menu in the future)
     const setupMobileMenu = () => {
         // This is a placeholder for future mobile menu functionality
@@ -86,43 +105,104 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
 
-    // Dynamic Navbar
+    // Dynamic Navbar and Footer
     const updateNavbar = () => {
         const user = JSON.parse(localStorage.getItem('user'));
         const authLinks = document.getElementById('auth-links');
         const userLinks = document.getElementById('user-links');
         const dashboardLink = document.getElementById('dashboard-link');
 
+        // Select main navigation links (direct children of .nav-links)
+        const navLinks = document.querySelectorAll('.nav-links > a');
+        // Select footer links
+        const footerLinks = document.querySelectorAll('footer a');
+
+        // Page protection: only redirect dashboards/profile. Tours/Services stay readable.
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        const protectedPages = ['customer_dashboard.html', 'manager_dashboard.html', 'admin_dashboard.html', 'profile.html'];
+
+        if (!user && protectedPages.includes(currentPage)) {
+            window.location.href = 'login.html';
+            return;
+        }
+
         if (authLinks && userLinks) {
             if (user) {
                 authLinks.style.display = 'none';
                 userLinks.style.display = 'inline-block';
 
-                // Update dashboard link based on role
+                navLinks.forEach(link => {
+                    link.style.display = 'inline-block';
+                });
+
+                footerLinks.forEach(link => {
+                    link.style.display = 'inline-block';
+                });
+
                 if (dashboardLink) {
-                    if (user.role === 'manager' || user.role === 'guide') {
-                        dashboardLink.href = 'manager_dashboard.html';
-                    } else if (user.role === 'admin') {
-                        dashboardLink.href = 'admin_dashboard.html';
-                    } else {
-                        dashboardLink.href = 'customer_dashboard.html';
-                    }
+                    const role = (user.role || '').toLowerCase();
+                    let target = 'customer_dashboard.html';
+                    if (role === 'manager' || role === 'guide') target = 'manager_dashboard.html';
+                    if (role === 'admin') target = 'admin_dashboard.html';
+                    dashboardLink.href = target;
                 }
             } else {
                 authLinks.style.display = 'inline-block';
                 userLinks.style.display = 'none';
+
+                navLinks.forEach(link => {
+                    link.style.display = 'inline-block';
+                });
+
+                footerLinks.forEach(link => {
+                    link.style.display = 'inline-block';
+                });
+
+                if (dashboardLink) {
+                    dashboardLink.href = 'login.html'; // fallback when logged out
+                }
             }
         }
     };
 
+    // Gate interactions for read-only pages; allow viewing but redirect clicks to auth
+    const gateContentAccess = (selectors) => {
+        selectors.forEach(sel => {
+            const el = document.querySelector(sel);
+            if (!el) return;
+            el.addEventListener('click', (e) => {
+                const currentUser = JSON.parse(localStorage.getItem('user'));
+                if (currentUser) return; // allow once logged in
+
+                const anchor = e.target.closest('a');
+                const href = anchor ? anchor.getAttribute('href') || '' : '';
+                if (href.includes('login.html') || href.includes('register.html')) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = 'login.html';
+            });
+        });
+    };
+
     // Initialize all functions
-    const init = () => {
+    const init = async () => {
+        await loadLayout();
         setupMobileMenu();
         smoothScroll();
         animateOnScroll();
         setActiveNavLink();
         setupFormValidation();
-        updateNavbar(); // Run navbar check
+        updateNavbar(); // Run navbar check after layout injection
+
+        // Allow reading services/tours but redirect any interaction to login/register when logged out
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        if (currentPage === 'services.html') {
+            gateContentAccess(['.services-hero', '.services-nav', '.container']);
+        }
+        if (currentPage === 'tours.html') {
+            gateContentAccess(['.tours-hero', '.search-filters', '.tours-grid', '.featured-tours']);
+        }
 
         // Add CSS for animations
         const style = document.createElement('style');

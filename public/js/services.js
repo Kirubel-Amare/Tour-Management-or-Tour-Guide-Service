@@ -133,9 +133,12 @@
             
             // Check login status
             const user = JSON.parse(localStorage.getItem('user'));
-            if (user) {
-                document.getElementById('auth-links').style.display = 'none';
-                document.getElementById('user-links').style.display = 'inline-block';
+            const authLinks = document.getElementById('auth-links');
+            const userLinks = document.getElementById('user-links');
+
+            if (user && authLinks && userLinks) {
+                authLinks.style.display = 'none';
+                userLinks.style.display = 'inline-block';
             }
         });
 
