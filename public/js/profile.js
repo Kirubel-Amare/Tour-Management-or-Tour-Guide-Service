@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Logout handler
     document.getElementById('logout-btn').addEventListener('click', (e) => {
         e.preventDefault();
-        fetch('/api/auth/logout.php', { method: 'POST' }).finally(() => {
+        fetch('/api/auth/index.php', { method: 'POST' }).finally(() => {
             localStorage.removeItem('user');
             sessionStorage.removeItem('isLoggedIn');
             window.location.href = 'login.html';
