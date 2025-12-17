@@ -126,6 +126,17 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        const setDashboardHref = () => {
+            if (!dashboardLink) return;
+            const role = ((user && user.role) || '').toString().trim().toLowerCase();
+            let target = 'customer_dashboard.html';
+            if (role === 'manager' || role === 'guide') target = 'manager_dashboard.html';
+            if (role === 'admin') target = 'admin_dashboard.html';
+            if (!user) target = 'login.html';
+            dashboardLink.href = target;
+            dashboardLink.onclick = () => { window.location.href = target; };
+        };
+
         if (authLinks && userLinks) {
             if (user) {
                 authLinks.style.display = 'none';
@@ -138,14 +149,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 footerLinks.forEach(link => {
                     link.style.display = 'inline-block';
                 });
-
-                if (dashboardLink) {
-                    const role = (user.role || '').toLowerCase();
-                    let target = 'customer_dashboard.html';
-                    if (role === 'manager' || role === 'guide') target = 'manager_dashboard.html';
-                    if (role === 'admin') target = 'admin_dashboard.html';
-                    dashboardLink.href = target;
-                }
             } else {
                 authLinks.style.display = 'inline-block';
                 userLinks.style.display = 'none';
@@ -157,12 +160,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 footerLinks.forEach(link => {
                     link.style.display = 'inline-block';
                 });
-
-                if (dashboardLink) {
-                    dashboardLink.href = 'login.html'; // fallback when logged out
-                }
             }
         }
+
+        setDashboardHref();
     };
 
     // Gate interactions for read-only pages; allow viewing but redirect clicks to auth
