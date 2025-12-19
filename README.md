@@ -76,6 +76,29 @@ This repo includes a `render.yaml` blueprint and `Dockerfile` so you can deploy 
     ```
     This creates tables and seeds demo data. Re-run safely; it uses `IF NOT EXISTS`.
 
+4) **Seed demo users & tours**:
+     - From the web service shell or locally (with `DATABASE_URL` set):
+         ```bash
+         php db/seed.php
+         ```
+     - Demo accounts:
+         - admin: `admin@demo.com` / `demopass123`
+         - manager: `manager@demo.com` / `demopass123`
+         - customer: `customer@demo.com` / `demopass123`
+
+### Using External Postgres URL (local machine)
+
+- From the Render Postgres service, copy the **External Database URL** (will look like `postgresql://...virginia-postgres.render.com/...`).
+- Append `?sslmode=require` and run:
+    ```bash
+    export DATABASE_URL='postgresql://<user>:<pass>@<external-host>:5432/<db>?sslmode=require'
+    psql "$DATABASE_URL" -f db/setup_postgres.sql
+    ```
+- If you created `bookings` earlier with `tourist_id`, align the schema:
+    ```bash
+    psql "$DATABASE_URL" -f db/migrations/fix_bookings_user_id.sql
+    ```
+
 4) **Accessing the app**: After deploy, Render gives a web URL. The frontend is served by Apache from the container; API endpoints live under `/api`. Example health: `GET /api/v1/hotels.php`.
 
 Notes:

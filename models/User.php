@@ -57,7 +57,7 @@ class User
 
     public function login()
     {
-        $query = "SELECT id, name, password, role FROM " . $this->table_name . " WHERE email = ? LIMIT 0,1";
+        $query = "SELECT id, name, password, role FROM " . $this->table_name . " WHERE email = ? LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->email);
         $stmt->execute();
@@ -77,7 +77,7 @@ class User
 
     public function emailExists()
     {
-        $query = "SELECT id FROM " . $this->table_name . " WHERE email = ? LIMIT 0,1";
+        $query = "SELECT id FROM " . $this->table_name . " WHERE email = ? LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->email);
         $stmt->execute();
@@ -88,7 +88,7 @@ class User
     }
     public function readOne()
     {
-        $query = "SELECT * FROM " . $this->table_name . " WHERE id = ? LIMIT 0,1";
+        $query = "SELECT * FROM " . $this->table_name . " WHERE id = ? LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->id);
         $stmt->execute();

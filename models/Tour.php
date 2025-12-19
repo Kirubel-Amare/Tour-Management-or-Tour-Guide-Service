@@ -83,13 +83,13 @@ class Tour
     // Read single tour
     public function read_single()
     {
-        $query = "SELECT 
-                    t.id, t.guide_id, t.title, t.description, t.image, t.location, t.price, t.schedule_date, t.created_at,
-                    u.name as guide_name
-                  FROM " . $this->table_name . " t
-                  LEFT JOIN users u ON t.guide_id = u.id
-                  WHERE t.id = ?
-                  LIMIT 0,1";
+                $query = "SELECT 
+                                        t.id, t.guide_id, t.title, t.description, t.image, t.location, t.price, t.schedule_date, t.created_at,
+                                        u.name as guide_name
+                                    FROM " . $this->table_name . " t
+                                    LEFT JOIN users u ON t.guide_id = u.id
+                                    WHERE t.id = ?
+                                    LIMIT 1";
 
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->id);
