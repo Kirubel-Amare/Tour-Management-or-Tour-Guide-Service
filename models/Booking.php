@@ -18,10 +18,8 @@ class Booking
     // Create Booking
     public function create()
     {
-        $query = "INSERT INTO " . $this->table_name . " 
-                  SET tour_id = :tour_id, 
-                      user_id = :user_id,
-                      status = 'confirmed'"; // Auto confirm for now
+        $query = "INSERT INTO " . $this->table_name . " (tour_id, user_id, status)
+                  VALUES (:tour_id, :user_id, 'confirmed')"; // Auto confirm for now
 
         $stmt = $this->conn->prepare($query);
 

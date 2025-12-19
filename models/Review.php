@@ -18,11 +18,8 @@ class Review
 
     public function create()
     {
-        $query = "INSERT INTO " . $this->table_name . "
-                  SET tour_id = :tour_id,
-                      user_id = :user_id,
-                      rating = :rating,
-                      comment = :comment";
+        $query = "INSERT INTO " . $this->table_name . " (tour_id, user_id, rating, comment)
+                  VALUES (:tour_id, :user_id, :rating, :comment)";
 
         $stmt = $this->conn->prepare($query);
 

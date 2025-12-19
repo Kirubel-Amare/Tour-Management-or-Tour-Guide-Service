@@ -24,7 +24,12 @@ class Database
         if ($databaseUrl) {
             $parts = parse_url($databaseUrl);
             if ($parts) {
-                $this->driver = $parts['scheme'] ?? $this->driver;
+                $scheme = $parts['scheme'] ?? $this->driver;
+                // Normalize common postgres schemes
+                if (in_array($scheme, ['postgres', 'postgresql'])) {
+                    $scheme = 'pgsql';
+                }
+                $this->driver = $scheme;
                 $this->host = $parts['host'] ?? $this->host;
                 $this->port = $parts['port'] ?? ($this->driver === 'pgsql' ? '5432' : '3306');
                 $this->db_name = isset($parts['path']) ? ltrim($parts['path'], '/') : $this->db_name;

@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS tours (
 CREATE TABLE IF NOT EXISTS bookings (
     id SERIAL PRIMARY KEY,
     tour_id INTEGER NOT NULL REFERENCES tours(id) ON DELETE CASCADE,
-    tourist_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     booking_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled'))
 );

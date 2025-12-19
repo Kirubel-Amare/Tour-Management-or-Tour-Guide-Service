@@ -22,14 +22,8 @@ class Tour
     // Create Tour
     public function create()
     {
-        $query = "INSERT INTO " . $this->table_name . " 
-                  SET guide_id = :guide_id, 
-                      title = :title, 
-                      description = :description, 
-                      image = :image,
-                      location = :location, 
-                      price = :price, 
-                      schedule_date = :schedule_date";
+        $query = "INSERT INTO " . $this->table_name . " (guide_id, title, description, image, location, price, schedule_date)
+                  VALUES (:guide_id, :title, :description, :image, :location, :price, :schedule_date)";
 
         $stmt = $this->conn->prepare($query);
 
