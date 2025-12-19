@@ -59,3 +59,25 @@ You can use the built-in "Try Demo Accounts" feature on the login page, or use:
 
 -   **Tourist**: `tourist@demo.com` / `demopass123`
 -   **Guide**: `guide@demo.com` / `demopass123`
+
+## ☁️ Deploying on Render (free tier)
+
+This repo includes a `render.yaml` blueprint and `Dockerfile` so you can deploy the PHP API, static frontend, and Postgres database together on Render's free tier.
+
+1) **Repo connected to Render**: Push this repo to GitHub and create a new Blueprint on Render. Render will auto-detect `render.yaml` and provision:
+    - `tour-management-db` (Postgres, free plan)
+    - `tour-management-web` (Docker web service running Apache/PHP)
+
+2) **Environment variables**: Render injects `DATABASE_URL` from the Postgres service into the web service automatically. For local dev, copy `.env.example` to `.env` and set `DB_*` values.
+
+3) **Database migration**: Once the Postgres service is ready, run the migration from the web service shell (or Render dashboard):
+    ```bash
+    psql "$DATABASE_URL" -f db/setup_postgres.sql
+    ```
+    This creates tables and seeds demo data. Re-run safely; it uses `IF NOT EXISTS`.
+
+4) **Accessing the app**: After deploy, Render gives a web URL. The frontend is served by Apache from the container; API endpoints live under `/api`. Example health: `GET /api/v1/hotels.php`.
+
+Notes:
+- Apache is configured to respect the Render-assigned `PORT`. No extra config is needed.
+- If you prefer MySQL locally, set `DB_DRIVER=mysql` and run `db/setup.sql` on your MySQL instance.

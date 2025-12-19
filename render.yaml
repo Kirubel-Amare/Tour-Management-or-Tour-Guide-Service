@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: tour-management-web
+    runtime: docker
+    plan: free
+    region: oregon
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          type: pserv
+          name: tour-management-db
+          property: connectionString
+      - key: DB_DRIVER
+        value: pgsql
+      - key: DB_PORT
+        value: "5432"
+    healthCheckPath: /
+    disk:
+      name: cache
+      mountPath: /var/www/html/storage
+      sizeGB: 1
+
+  - type: pserv
+    name: tour-management-db
+    plan: free
+    postgresMajorVersion: 15
