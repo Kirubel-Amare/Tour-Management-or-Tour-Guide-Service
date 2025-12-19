@@ -2,13 +2,14 @@
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-KEY');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
 }
 
+require_once 'middleware/Auth.php';
 require_once '../../config/ExternalService.php';
 
 $payload = json_decode(file_get_contents('php://input'), true);
@@ -62,7 +63,6 @@ if ($fare === null) {
 }
 
 // Persist order logic REMOVED.
-// We do not save to local DB anymore.
 
 $confirmation = is_array($responseData) ? ($responseData['confirmation'] ?? null) : null;
 $finalMessage = $confirmation ? 'Taxi dispatched successfully' : 'Taxi request submitted';

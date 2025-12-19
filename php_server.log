@@ -1,0 +1,184 @@
+[Fri Dec 19 02:07:44 2025] PHP 8.3.6 Development Server (http://127.0.0.1:8080) started
+[Fri Dec 19 02:07:54 2025] 127.0.0.1:53772 Accepted
+[Fri Dec 19 02:07:54 2025] PHP Fatal error:  Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/Hotel.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/hotels.php(102): Hotel->read()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/Hotel.php on line 17
+[Fri Dec 19 02:07:54 2025] 127.0.0.1:53772 [500]: GET /tour_management/api/v1/hotels.php?city=Paris - Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/Hotel.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/hotels.php(102): Hotel->read()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/Hotel.php on line 17
+[Fri Dec 19 02:07:54 2025] 127.0.0.1:53772 Closing
+[Fri Dec 19 02:07:54 2025] 127.0.0.1:53778 Accepted
+[Fri Dec 19 02:07:54 2025] 127.0.0.1:53778 [200]: POST /tour_management/api/v1/hotels.php
+[Fri Dec 19 02:07:54 2025] 127.0.0.1:53778 Closing
+[Fri Dec 19 02:07:54 2025] 127.0.0.1:53794 Accepted
+[Fri Dec 19 02:07:55 2025] PHP Fatal error:  Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/Restaurant.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/restaurants.php(96): Restaurant->read()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/Restaurant.php on line 17
+[Fri Dec 19 02:07:55 2025] 127.0.0.1:53794 [500]: GET /tour_management/api/v1/restaurants.php?cuisine=Italian - Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/Restaurant.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/restaurants.php(96): Restaurant->read()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/Restaurant.php on line 17
+[Fri Dec 19 02:07:55 2025] 127.0.0.1:53794 Closing
+[Fri Dec 19 02:07:55 2025] 127.0.0.1:53808 Accepted
+[Fri Dec 19 02:07:55 2025] PHP Fatal error:  Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/taxis.php(90): TaxiOrder->create()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php on line 17
+[Fri Dec 19 02:07:55 2025] 127.0.0.1:53808 [500]: POST /tour_management/api/v1/taxis.php - Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/taxis.php(90): TaxiOrder->create()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php on line 17
+[Fri Dec 19 02:07:55 2025] 127.0.0.1:53808 Closing
+[Fri Dec 19 02:08:26 2025] 127.0.0.1:53906 Accepted
+[Fri Dec 19 02:08:26 2025] ExternalService: Checking Mock Mode. Env=mock URL=?city=Paris
+[Fri Dec 19 02:08:27 2025] PHP Fatal error:  Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/Hotel.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/hotels.php(102): Hotel->read()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/Hotel.php on line 17
+[Fri Dec 19 02:08:27 2025] 127.0.0.1:53906 [500]: GET /tour_management/api/v1/hotels.php?city=Paris - Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/Hotel.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/hotels.php(102): Hotel->read()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/Hotel.php on line 17
+[Fri Dec 19 02:08:27 2025] 127.0.0.1:53906 Closing
+[Fri Dec 19 02:08:27 2025] 127.0.0.1:53908 Accepted
+[Fri Dec 19 02:08:27 2025] ExternalService: Checking Mock Mode. Env=mock URL=
+[Fri Dec 19 02:08:27 2025] 127.0.0.1:53908 [200]: POST /tour_management/api/v1/hotels.php
+[Fri Dec 19 02:08:27 2025] 127.0.0.1:53908 Closing
+[Fri Dec 19 02:08:27 2025] 127.0.0.1:53922 Accepted
+[Fri Dec 19 02:08:27 2025] ExternalService: Checking Mock Mode. Env=mock URL=?cuisine=Italian
+[Fri Dec 19 02:08:27 2025] PHP Fatal error:  Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/Restaurant.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/restaurants.php(96): Restaurant->read()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/Restaurant.php on line 17
+[Fri Dec 19 02:08:27 2025] 127.0.0.1:53922 [500]: GET /tour_management/api/v1/restaurants.php?cuisine=Italian - Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/Restaurant.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/restaurants.php(96): Restaurant->read()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/Restaurant.php on line 17
+[Fri Dec 19 02:08:27 2025] 127.0.0.1:53922 Closing
+[Fri Dec 19 02:08:27 2025] 127.0.0.1:53926 Accepted
+[Fri Dec 19 02:08:27 2025] ExternalService: Checking Mock Mode. Env=mock URL=
+[Fri Dec 19 02:08:27 2025] PHP Fatal error:  Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/taxis.php(90): TaxiOrder->create()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php on line 17
+[Fri Dec 19 02:08:27 2025] 127.0.0.1:53926 [500]: POST /tour_management/api/v1/taxis.php - Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/taxis.php(90): TaxiOrder->create()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php on line 17
+[Fri Dec 19 02:08:27 2025] 127.0.0.1:53926 Closing
+[Fri Dec 19 02:09:05 2025] 127.0.0.1:59154 Accepted
+[Fri Dec 19 02:09:05 2025] ExternalService: Checking Mock Mode. Env=mock URL=http://mock-service/hotels?city=Paris
+[Fri Dec 19 02:09:05 2025] 127.0.0.1:59154 [200]: GET /tour_management/api/v1/hotels.php?city=Paris
+[Fri Dec 19 02:09:05 2025] 127.0.0.1:59154 Closing
+[Fri Dec 19 02:09:05 2025] 127.0.0.1:59160 Accepted
+[Fri Dec 19 02:09:05 2025] ExternalService: Checking Mock Mode. Env=mock URL=http://mock-service/hotels
+[Fri Dec 19 02:09:05 2025] 127.0.0.1:59160 [200]: POST /tour_management/api/v1/hotels.php
+[Fri Dec 19 02:09:05 2025] 127.0.0.1:59160 Closing
+[Fri Dec 19 02:09:05 2025] 127.0.0.1:59168 Accepted
+[Fri Dec 19 02:09:05 2025] ExternalService: Checking Mock Mode. Env=mock URL=http://mock-service/restaurants?cuisine=Italian
+[Fri Dec 19 02:09:05 2025] 127.0.0.1:59168 [200]: GET /tour_management/api/v1/restaurants.php?cuisine=Italian
+[Fri Dec 19 02:09:05 2025] 127.0.0.1:59168 Closing
+[Fri Dec 19 02:09:05 2025] 127.0.0.1:59182 Accepted
+[Fri Dec 19 02:09:05 2025] ExternalService: Checking Mock Mode. Env=mock URL=http://mock-service/taxis
+[Fri Dec 19 02:09:06 2025] PHP Fatal error:  Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/taxis.php(90): TaxiOrder->create()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php on line 17
+[Fri Dec 19 02:09:06 2025] 127.0.0.1:59182 [500]: POST /tour_management/api/v1/taxis.php - Uncaught Error: Call to a member function prepare() on null in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php:17
+Stack trace:
+#0 /opt/lampp/htdocs/tour_management/api/v1/taxis.php(90): TaxiOrder->create()
+#1 {main}
+  thrown in /opt/lampp/htdocs/tour_management/models/TaxiOrder.php on line 17
+[Fri Dec 19 02:09:06 2025] 127.0.0.1:59182 Closing
+[Fri Dec 19 02:09:31 2025] 127.0.0.1:39332 Accepted
+[Fri Dec 19 02:09:31 2025] ExternalService: Checking Mock Mode. Env=mock URL=http://mock-service/hotels?city=Paris
+[Fri Dec 19 02:09:31 2025] 127.0.0.1:39332 [200]: GET /tour_management/api/v1/hotels.php?city=Paris
+[Fri Dec 19 02:09:31 2025] 127.0.0.1:39332 Closing
+[Fri Dec 19 02:09:31 2025] 127.0.0.1:39340 Accepted
+[Fri Dec 19 02:09:31 2025] ExternalService: Checking Mock Mode. Env=mock URL=http://mock-service/hotels
+[Fri Dec 19 02:09:31 2025] 127.0.0.1:39340 [200]: POST /tour_management/api/v1/hotels.php
+[Fri Dec 19 02:09:31 2025] 127.0.0.1:39340 Closing
+[Fri Dec 19 02:09:31 2025] 127.0.0.1:39348 Accepted
+[Fri Dec 19 02:09:31 2025] ExternalService: Checking Mock Mode. Env=mock URL=http://mock-service/restaurants?cuisine=Italian
+[Fri Dec 19 02:09:32 2025] 127.0.0.1:39348 [200]: GET /tour_management/api/v1/restaurants.php?cuisine=Italian
+[Fri Dec 19 02:09:32 2025] 127.0.0.1:39348 Closing
+[Fri Dec 19 02:09:32 2025] 127.0.0.1:39352 Accepted
+[Fri Dec 19 02:09:32 2025] ExternalService: Checking Mock Mode. Env=mock URL=http://mock-service/taxis
+[Fri Dec 19 02:09:32 2025] 127.0.0.1:39352 [200]: POST /tour_management/api/v1/taxis.php
+[Fri Dec 19 02:09:32 2025] 127.0.0.1:39352 Closing
+[Fri Dec 19 02:10:16 2025] 127.0.0.1:44884 Accepted
+[Fri Dec 19 02:10:16 2025] 127.0.0.1:44884 [200]: GET /tour_management/api/v1/hotels.php?city=Paris
+[Fri Dec 19 02:10:16 2025] 127.0.0.1:44884 Closing
+[Fri Dec 19 02:10:16 2025] 127.0.0.1:44900 Accepted
+[Fri Dec 19 02:10:16 2025] 127.0.0.1:44900 [200]: POST /tour_management/api/v1/hotels.php
+[Fri Dec 19 02:10:16 2025] 127.0.0.1:44900 Closing
+[Fri Dec 19 02:10:16 2025] 127.0.0.1:44912 Accepted
+[Fri Dec 19 02:10:17 2025] 127.0.0.1:44912 [200]: GET /tour_management/api/v1/restaurants.php?cuisine=Italian
+[Fri Dec 19 02:10:17 2025] 127.0.0.1:44912 Closing
+[Fri Dec 19 02:10:17 2025] 127.0.0.1:44926 Accepted
+[Fri Dec 19 02:10:17 2025] 127.0.0.1:44926 [200]: POST /tour_management/api/v1/taxis.php
+[Fri Dec 19 02:10:17 2025] 127.0.0.1:44926 Closing
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34574 Accepted
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34574 [200]: GET /tour_management/api/v1/hotels.php?city=Paris
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34574 Closing
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34584 Accepted
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34584 [200]: POST /tour_management/api/v1/hotels.php
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34584 Closing
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34590 Accepted
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34590 [200]: GET /tour_management/api/v1/restaurants.php?cuisine=Italian
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34590 Closing
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34606 Accepted
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34606 [200]: POST /tour_management/api/v1/taxis.php
+[Fri Dec 19 02:10:36 2025] 127.0.0.1:34606 Closing
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54222 Accepted
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54222 [200]: GET /tour_management/api/v1/hotels.php?city=Paris
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54222 Closing
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54230 Accepted
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54230 [200]: POST /tour_management/api/v1/hotels.php
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54230 Closing
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54234 Accepted
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54234 [200]: GET /tour_management/api/v1/restaurants.php?cuisine=Italian
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54234 Closing
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54240 Accepted
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54240 [200]: POST /tour_management/api/v1/taxis.php
+[Fri Dec 19 02:10:51 2025] 127.0.0.1:54240 Closing
+[Fri Dec 19 02:11:07 2025] 127.0.0.1:33048 Accepted
+[Fri Dec 19 02:11:07 2025] 127.0.0.1:33048 [200]: GET /tour_management/api/v1/hotels.php?city=Paris
+[Fri Dec 19 02:11:07 2025] 127.0.0.1:33048 Closing
+[Fri Dec 19 02:11:07 2025] 127.0.0.1:33060 Accepted
+[Fri Dec 19 02:11:07 2025] 127.0.0.1:33060 [200]: POST /tour_management/api/v1/hotels.php
+[Fri Dec 19 02:11:07 2025] 127.0.0.1:33060 Closing
+[Fri Dec 19 02:11:07 2025] 127.0.0.1:33074 Accepted
+[Fri Dec 19 02:11:08 2025] 127.0.0.1:33074 [200]: GET /tour_management/api/v1/restaurants.php?cuisine=Italian
+[Fri Dec 19 02:11:08 2025] 127.0.0.1:33074 Closing
+[Fri Dec 19 02:11:08 2025] 127.0.0.1:33078 Accepted
+[Fri Dec 19 02:11:08 2025] 127.0.0.1:33078 [200]: POST /tour_management/api/v1/taxis.php
+[Fri Dec 19 02:11:08 2025] 127.0.0.1:33078 Closing
+[Fri Dec 19 02:29:03 2025] 127.0.0.1:38916 Accepted
+[Fri Dec 19 02:29:03 2025] 127.0.0.1:38916 [200]: GET /tour_management/api/v1/hotels.php?city=Paris
+[Fri Dec 19 02:29:03 2025] 127.0.0.1:38916 Closing
+[Fri Dec 19 02:29:03 2025] 127.0.0.1:38930 Accepted
+[Fri Dec 19 02:29:04 2025] 127.0.0.1:38930 [200]: POST /tour_management/api/v1/hotels.php
+[Fri Dec 19 02:29:04 2025] 127.0.0.1:38930 Closing
+[Fri Dec 19 02:29:04 2025] 127.0.0.1:43966 Accepted
+[Fri Dec 19 02:29:04 2025] 127.0.0.1:43966 [200]: GET /tour_management/api/v1/restaurants.php?cuisine=Italian
+[Fri Dec 19 02:29:04 2025] 127.0.0.1:43966 Closing
+[Fri Dec 19 02:29:04 2025] 127.0.0.1:43974 Accepted
+[Fri Dec 19 02:29:04 2025] 127.0.0.1:43974 [200]: POST /tour_management/api/v1/taxis.php
+[Fri Dec 19 02:29:04 2025] 127.0.0.1:43974 Closing

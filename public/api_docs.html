@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tour Management Public API v1</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+
+        .endpoint {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-right: 10px;
+        }
+
+        .method.get {
+            background: #61affe;
+            color: white;
+        }
+
+        .method.post {
+            background: #49cc90;
+            color: white;
+        }
+
+        code {
+            background: #eee;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: Consolas, monospace;
+        }
+
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        .alert {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ffeeba;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Tour Management Public API v1</h1>
+
+    <div class="alert">
+        <strong>Authentication Required:</strong> All API requests must include the <code>X-API-KEY</code> header.<br>
+        Demo Key: <code>demo-api-key</code>
+    </div>
+
+    <h2>Base URL</h2>
+    <code>/tour_management/api/v1/</code>
+
+    <h2>Endpoints</h2>
+
+    <div class="endpoint">
+        <span class="method get">GET</span> <code>hotels.php</code>
+        <p>Search for hotels.</p>
+        <strong>Query Parameters:</strong>
+        <ul>
+            <li><code>city</code> (optional): City name to filter by.</li>
+            <li><code>q</code> (optional): Search query.</li>
+        </ul>
+        <strong>Example Response:</strong>
+        <pre>{
+  "source": "external",
+  "data": [
+    {
+      "id": "ext-1",
+      "name": "Mock Placid Hotel",
+      "location": "Paris, France",
+      "price": 150
+    }
+  ]
+}</pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span> <code>hotels.php</code>
+        <p>Book a hotel room.</p>
+        <strong>JSON Payload:</strong>
+        <pre>{
+  "hotel_id": "ext-1",
+  "check_in": "2024-12-25",
+  "check_out": "2024-12-30",
+  "guests": 2,
+  "roomType": "Standard"
+}</pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span> <code>restaurants.php</code>
+        <p>Search for restaurants.</p>
+        <strong>Query Parameters:</strong>
+        <ul>
+            <li><code>city</code> (optional)</li>
+            <li><code>cuisine</code> (optional)</li>
+        </ul>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span> <code>restaurants.php</code>
+        <p>Reserve a table.</p>
+        <strong>JSON Payload:</strong>
+        <pre>{
+  "restaurant_id": "ext-r1",
+  "date": "2024-12-25",
+  "time": "19:00",
+  "guests": 2
+}</pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span> <code>taxis.php</code>
+        <p>Order a taxi.</p>
+        <strong>JSON Payload:</strong>
+        <pre>{
+  "pickup": "Hotel A",
+  "destination": "Airport",
+  "vehicleType": "standard"
+}</pre>
+    </div>
+
+</body>
+
+</html>

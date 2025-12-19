@@ -2,13 +2,14 @@
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-KEY');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
 }
 
+require_once 'middleware/Auth.php';
 require_once '../../config/ExternalService.php';
 
 $baseUrl = getenv('EXTERNAL_RESTAURANT_API');
@@ -23,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $reservation = [
-        'user' => $payload['user'] ?? null,
+        'user' => $payload['user'] ?? ['id' => 0],
         'restaurant_id' => $payload['restaurant_id'] ?? null,
         'date' => $payload['date'] ?? null,
         'time' => $payload['time'] ?? null,
@@ -76,15 +77,23 @@ $queryParams = [
     'priceRange' => $_GET['price'] ?? ''
 ];
 
-$source = 'external';
+$source = 'db';
 $data = [];
 
-$url = rtrim($baseUrl ?: 'http://mock-service/restaurants', '/');
-$url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query(array_filter($queryParams));
+if (!empty($baseUrl) || getenv('EXTERNAL_API_MODE') === 'mock') {
+    $url = rtrim($baseUrl ?: 'http://mock-service/restaurants', '/');
+    $url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query(array_filter($queryParams));
 
-$response = ExternalService::requestJson($url);
-if ($response['ok'] && is_array($response['data'])) {
-    $data = $response['data'];
+    $response = ExternalService::requestJson($url);
+    if ($response['ok'] && is_array($response['data'])) {
+        $data = $response['data'];
+        $source = 'external';
+    }
+}
+
+// Local DB read removed.
+if (!$data) {
+    // Empty data
 }
 
 echo json_encode(['source' => $source, 'data' => $data]);
