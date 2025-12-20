@@ -1,16 +1,18 @@
 <?php
+
+ // local or production
+
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-KEY');
-
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
 }
 
-// Enable error reporting for debugging (remove in production)
+// Enable error reporting for local debugging
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -22,6 +24,7 @@ require_once '../../config/ExternalService.php';
 // Read environment variables
 $baseUrl = rtrim(getenv('EXTERNAL_TAXI_API') ?: '', '/');
 $apiKey = getenv('EXTERNAL_TAXI_API_KEY');
+$appEnv = getenv('APP_ENV') ?: 'local';
 
 if (empty($baseUrl) || empty($apiKey)) {
     http_response_code(500);
@@ -67,54 +70,37 @@ if (!$start || !$end) {
     exit;
 }
 
-// Build ORS request URL
-$url = $baseUrl . '?api_key=' . urlencode($apiKey);
+// Prepare default fallback values
+$distanceMeters = 2000; // 2 km
+$durationSeconds = 300; // 5 minutes
 
-// Call ORS API
-$response = ExternalService::requestJson($url, 'POST', [
-    'coordinates' => [$start, $end]
-], [
-    'Content-Type: application/json'
-]);
+// Call ORS API only if not local or if you want real data
+if ($appEnv !== 'local') {
+    $url = $baseUrl . '?api_key=' . urlencode($apiKey);
 
-// Log raw ORS response for debugging
-file_put_contents('ors.log', date('Y-m-d H:i:s') . ' ' . json_encode($response) . PHP_EOL, FILE_APPEND);
-
-// Handle failed request
-if (!$response['ok'] || !is_array($response['data'])) {
-    echo json_encode([
-        'message' => 'External taxi service unavailable',
-        'provider' => 'openrouteservice',
-        'details' => $response
+    $response = ExternalService::requestJson($url, 'POST', [
+        'coordinates' => [$start, $end]
+    ], [
+        'Content-Type: application/json'
     ]);
-    exit;
-}
 
-$data = $response['data'];
-$firstFeature = $data['features'][0] ?? null;
-$properties = $firstFeature['properties'] ?? [];
-$summary = $properties['summary'] ?? null;
+    // Safe logging
+    @file_put_contents('/tmp/ors.log', date('Y-m-d H:i:s').' '.json_encode($response).PHP_EOL, FILE_APPEND);
 
-// Extract distance and duration
-$distanceMeters = null;
-$durationSeconds = null;
+    if ($response['ok'] && is_array($response['data']) && !empty($response['data']['features'])) {
+        $data = $response['data'];
+        $firstFeature = $data['features'][0];
+        $properties = $firstFeature['properties'] ?? [];
+        $summary = $properties['summary'] ?? null;
 
-if ($summary && isset($summary['distance'], $summary['duration'])) {
-    $distanceMeters = $summary['distance'];
-    $durationSeconds = $summary['duration'];
-} elseif (!empty($properties['segments'][0]) && isset($properties['segments'][0]['distance'], $properties['segments'][0]['duration'])) {
-    $distanceMeters = $properties['segments'][0]['distance'];
-    $durationSeconds = $properties['segments'][0]['duration'];
-}
-
-// If still null, return friendly message
-if ($distanceMeters === null) {
-    echo json_encode([
-        'message' => 'External taxi service unavailable (no distance returned)',
-        'provider' => 'openrouteservice',
-        'details' => $data
-    ]);
-    exit;
+        if ($summary && isset($summary['distance'], $summary['duration'])) {
+            $distanceMeters = $summary['distance'];
+            $durationSeconds = $summary['duration'];
+        } elseif (!empty($properties['segments'][0]) && isset($properties['segments'][0]['distance'], $properties['segments'][0]['duration'])) {
+            $distanceMeters = $properties['segments'][0]['distance'];
+            $durationSeconds = $properties['segments'][0]['duration'];
+        }
+    }
 }
 
 // Compute fare
