@@ -30,6 +30,11 @@
             role: 'all'
         };
 
+        const bookingFilters = {
+            query: '',
+            status: 'all'
+        };
+
         const notify = (message, type = 'info') => {
             if (window.Popup && Popup.toast) {
                 Popup.toast({ message, type });
@@ -66,6 +71,23 @@
                     loadUsers();
                 });
             }
+
+            const bookingSearchInput = document.getElementById('booking-search');
+            const bookingStatusFilter = document.getElementById('booking-status-filter');
+
+            if (bookingSearchInput) {
+                bookingSearchInput.addEventListener('input', (e) => {
+                    bookingFilters.query = e.target.value.toLowerCase();
+                    loadBookings();
+                });
+            }
+
+            if (bookingStatusFilter) {
+                bookingStatusFilter.addEventListener('change', (e) => {
+                    bookingFilters.status = e.target.value;
+                    loadBookings();
+                });
+            }
         });
 
         // Switch between views
@@ -73,58 +95,79 @@
             // Update active nav item
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
-            });
-            document.querySelector(`[onclick="switchView('${viewName}')"]`).classList.add('active');
+                const bookings = overview.bookings || [];
 
-            // Hide all views and show selected
-            document.querySelectorAll('.admin-main > div').forEach(view => {
-                view.style.display = 'none';
-            });
-            document.getElementById(`${viewName}-view`).style.display = 'block';
+                const filtered = bookings.filter((b) => {
+                    const q = (bookingFilters.query || '').trim();
+                    const matchesStatus = bookingFilters.status === 'all' ? true : (b.status || '').toLowerCase() === bookingFilters.status;
+                    if (!q) return matchesStatus;
+                    const haystack = `${b.tourist_name || ''} ${b.tourist_email || ''} ${b.tour_title || ''} ${(b.status || '')}`.toLowerCase();
+                    return matchesStatus && haystack.includes(q);
+                });
 
-            // Load view data
-            if (viewName === 'users') {
-                loadUsers();
-            } else if (viewName === 'tours') {
-                loadTours();
-            } else if (viewName === 'bookings') {
-                loadBookings();
-            } else if (viewName === 'hotels') {
-                loadHotels();
-            } else if (viewName === 'restaurants') {
-                loadRestaurants();
-            } else if (viewName === 'taxi') {
-                loadTaxiOrders();
-            } else if (viewName === 'hotel-reservations') {
-                loadHotelReservations();
-            } else if (viewName === 'restaurant-reservations') {
-                loadRestaurantReservations();
-            }
-        }
+                if (!filtered.length) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                            <i class="fas fa-calendar-check" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <h3>No bookings match your filters</h3>
+                            <p>Adjust the search or status filter to see results.</p>
+                        </div>
+                    `;
+                    return;
+                }
 
-        // Load dashboard data
-        async function loadDashboardData() {
-            const loading = document.getElementById('last-updated');
-            if (loading) {
-                loading.textContent = 'Loading...';
-            }
+                const statusClass = (status) => {
+                    if (status === 'confirmed') return 'status-active';
+                    if (status === 'pending') return 'status-pending';
+                    return 'status-inactive';
+                };
 
-            try {
-                const response = await fetch('/api/admin/overview.php');
-                const data = await response.json();
-
-                overview.users = data.users || [];
-                overview.tours = data.tours || [];
-                overview.bookings = data.bookings || [];
-                overview.taxiOrders = data.taxi_orders || [];
-                overview.hotelReservations = data.hotel_reservations || [];
-                overview.restaurantReservations = data.restaurant_reservations || [];
-                overview.stats = data.stats || overview.stats;
-
-                document.getElementById('total-users').textContent = overview.stats.total_users;
-                document.getElementById('total-tours').textContent = overview.stats.total_tours;
-                document.getElementById('total-bookings').textContent = overview.stats.total_bookings;
-                document.getElementById('total-revenue').textContent = `$${(overview.stats.revenue || 0).toFixed(2)}`;
+                container.innerHTML = `
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tourist</th>
+                                    <th>Tour</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filtered.map(booking => `
+                                    <tr>
+                                        <td>#${booking.id}</td>
+                                        <td>${booking.tourist_name || 'N/A'}<br><small>${booking.tourist_email || ''}</small></td>
+                                        <td>${booking.tour_title || 'Unknown tour'}</td>
+                                        <td>${new Date(booking.booking_date).toLocaleDateString()}</td>
+                                        <td>
+                                            <span class="status-badge ${statusClass(booking.status)}">
+                                                ${(booking.status || 'pending').toString().toUpperCase()}
+                                            </span>
+                                        </td>
+                                        <td><strong>$${Number(booking.price || 0).toFixed(2)}</strong></td>
+                                        <td>
+                                            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                                                <button onclick="viewBooking(${booking.id})" class="btn btn-outline btn-sm" title="View details">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                ${booking.status !== 'confirmed' ? `<button onclick="changeBookingStatus(${booking.id}, 'confirmed')" class="btn btn-primary btn-sm" title="Approve booking"><i class="fas fa-check"></i></button>` : ''}
+                                                ${booking.status !== 'cancelled' ? `<button onclick="changeBookingStatus(${booking.id}, 'cancelled')" class="btn btn-outline btn-sm" style="border-color: var(--border);" title="Cancel booking"><i class="fas fa-ban"></i></button>` : ''}
+                                                ${booking.status !== 'pending' ? `<button onclick="changeBookingStatus(${booking.id}, 'pending')" class="btn btn-outline btn-sm" style="border-color: var(--border);" title="Mark as pending"><i class="fas fa-clock"></i></button>` : ''}
+                                                <button onclick="deleteBooking(${booking.id})" class="btn btn-danger btn-sm" title="Delete booking">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
 
                 document.getElementById('user-count').textContent = overview.stats.total_users;
                 document.getElementById('tour-count').textContent = overview.stats.total_tours;
@@ -558,8 +601,19 @@
         }
 
         function searchBookings() {
-            const query = document.getElementById('booking-search').value.toLowerCase();
-            alert(`Searching bookings for: ${query}\nThis would filter the bookings table.`);
+            bookingFilters.query = (document.getElementById('booking-search')?.value || '').toLowerCase();
+            bookingFilters.status = document.getElementById('booking-status-filter')?.value || 'all';
+            loadBookings();
+        }
+
+        function clearBookingFilters() {
+            const searchInput = document.getElementById('booking-search');
+            const statusSelect = document.getElementById('booking-status-filter');
+            if (searchInput) searchInput.value = '';
+            if (statusSelect) statusSelect.value = 'all';
+            bookingFilters.query = '';
+            bookingFilters.status = 'all';
+            loadBookings();
         }
 
         // Load hotels from services API
@@ -785,6 +839,25 @@
                 if (!res.ok) throw new Error(data.message || 'Failed');
                 notify('Booking updated', 'success');
                 closeBookingDrawer();
+                loadDashboardData();
+            } catch (e) {
+                notify(e.message, 'error');
+            }
+        }
+
+        async function changeBookingStatus(bookingId, status) {
+            const niceStatus = status.charAt(0).toUpperCase() + status.slice(1);
+            const ok = await askConfirm('Update booking status', `Set booking #${bookingId} to ${niceStatus}?`);
+            if (!ok) return;
+            try {
+                const res = await fetch('/api/admin/bookings/update_status.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: bookingId, status })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed');
+                notify(`Booking marked as ${niceStatus}`, 'success');
                 loadDashboardData();
             } catch (e) {
                 notify(e.message, 'error');
@@ -1150,12 +1223,16 @@
             // populate selects
             const tourSelect = document.getElementById('create-booking-tour');
             const userSelect = document.getElementById('create-booking-user');
+            const statusSelect = document.getElementById('create-booking-status');
             if (tourSelect) {
                 tourSelect.innerHTML = (overview.tours || []).map(t => `<option value="${t.id}">${t.title} (${t.location})</option>`).join('');
             }
             if (userSelect) {
                 const customers = (overview.users || []).filter(u => u.role === 'customer');
                 userSelect.innerHTML = customers.length ? customers.map(u => `<option value="${u.id}">${u.name} (${u.email})</option>`).join('') : '<option value="">No customers</option>';
+            }
+            if (statusSelect) {
+                statusSelect.value = 'pending';
             }
             document.getElementById('booking-create-drawer').classList.remove('hidden');
         }
@@ -1168,6 +1245,7 @@
             event.preventDefault();
             const tour_id = parseInt(document.getElementById('create-booking-tour').value, 10);
             const user_id = parseInt(document.getElementById('create-booking-user').value, 10);
+            const status = (document.getElementById('create-booking-status')?.value || 'pending');
             if (!Number.isFinite(tour_id) || !Number.isFinite(user_id)) {
                 return notify('Select valid tour and customer.', 'error');
             }
@@ -1175,7 +1253,7 @@
                 const res = await fetch('/api/bookings/create.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tour_id, user_id })
+                    body: JSON.stringify({ tour_id, user_id, status })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.message || 'Failed to create booking');

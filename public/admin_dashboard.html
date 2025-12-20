@@ -412,8 +412,17 @@
                     <div style="display: flex; gap: 1rem;">
                         <input type="text" id="booking-search" class="admin-input"
                             placeholder="Search bookings by tourist, tour, or status...">
+                        <select id="booking-status-filter" class="admin-select" aria-label="Filter by booking status">
+                            <option value="all">All statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
                         <button onclick="searchBookings()" class="btn btn-primary">
                             <i class="fas fa-search"></i> Search
+                        </button>
+                        <button onclick="clearBookingFilters()" class="btn btn-outline" style="border-color: var(--border);">
+                            <i class="fas fa-times"></i> Clear
                         </button>
                     </div>
                 </div>
@@ -826,6 +835,14 @@
                 <div class="form-group">
                     <label>Customer</label>
                     <select id="create-booking-user" class="admin-select" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="create-booking-status" class="admin-select">
+                        <option value="pending">Pending (requires approval)</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
                 </div>
                 <div class="drawer-footer">
                     <button type="button" class="btn btn-outline" onclick="closeBookingCreateDrawer()">Cancel</button>

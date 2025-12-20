@@ -19,17 +19,21 @@ class Booking
     public function create()
     {
         $query = "INSERT INTO " . $this->table_name . " (tour_id, user_id, status)
-                  VALUES (:tour_id, :user_id, 'confirmed')"; // Auto confirm for now
+                  VALUES (:tour_id, :user_id, :status)";
 
         $stmt = $this->conn->prepare($query);
 
         // Sanitize
         $this->tour_id = htmlspecialchars(strip_tags($this->tour_id));
         $this->user_id = htmlspecialchars(strip_tags($this->user_id));
+        $allowedStatuses = ['pending', 'confirmed', 'cancelled'];
+        $incomingStatus = strtolower($this->status ?? 'pending');
+        $this->status = in_array($incomingStatus, $allowedStatuses, true) ? $incomingStatus : 'pending';
 
         // Bind data
         $stmt->bindParam(':tour_id', $this->tour_id);
         $stmt->bindParam(':user_id', $this->user_id);
+        $stmt->bindParam(':status', $this->status);
 
         if ($stmt->execute()) {
             return true;

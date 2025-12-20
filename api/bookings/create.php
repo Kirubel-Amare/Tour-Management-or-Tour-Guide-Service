@@ -26,6 +26,12 @@ if (
     $booking->tour_id = $data->tour_id;
     $booking->user_id = $data->user_id;
 
+    // Allow clients (admin) to request a status; default is pending
+    $valid_status = ['pending', 'confirmed', 'cancelled'];
+    if (!empty($data->status) && in_array(strtolower($data->status), $valid_status, true)) {
+        $booking->status = strtolower($data->status);
+    }
+
     if ($booking->create()) {
         http_response_code(201);
         echo json_encode(['message' => 'Booking Created']);
