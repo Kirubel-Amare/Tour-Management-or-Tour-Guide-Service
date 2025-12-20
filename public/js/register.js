@@ -3,6 +3,16 @@ function togglePassword(fieldId) {
     field.type = field.type === 'password' ? 'text' : 'password';
 }
 
+function getSiteBasePath() {
+    const path = window.location.pathname || '';
+    const idx = path.indexOf('/public/');
+    if (idx > -1) {
+        return path.substring(0, idx);
+    }
+    // If not under /public, assume root
+    return '';
+}
+
 document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -39,7 +49,8 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     submitBtn.textContent = 'Creating Account...';
 
     try {
-        const response = await fetch('/api/auth/register.php', {
+        const apiUrl = `${getSiteBasePath()}/api/auth/register.php`;
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -52,7 +63,15 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
             })
         });
 
-        const result = await response.json();
+        // Try JSON first, fallback to text for non-JSON responses
+        let result;
+        const contentType = response.headers.get('Content-Type') || '';
+        if (contentType.includes('application/json')) {
+            result = await response.json();
+        } else {
+            const text = await response.text();
+            try { result = JSON.parse(text); } catch { result = { message: text }; }
+        }
 
         if (response.ok) {
             // Success
@@ -73,6 +92,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
             errorDiv.style.display = 'block';
         }
     } catch (err) {
+        // Likely a network error or CORS/path issue
         errorDiv.textContent = 'Cannot connect to server. Please try again later.';
         errorDiv.style.display = 'block';
     } finally {
