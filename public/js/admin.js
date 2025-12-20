@@ -115,7 +115,9 @@
             }
 
             try {
-                const response = await fetch('/api/admin/overview.php');
+                const response = await fetch('/api/admin/overview.php', {
+                    credentials: 'include'
+                });
                 const data = await response.json();
 
                 overview.users = data.users || [];
@@ -468,7 +470,9 @@
             const body = document.getElementById('taxi-list');
             if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
             try {
-                const res = await fetch('/api/admin/taxis/read.php');
+                const res = await fetch('/api/admin/taxis/read.php', {
+                    credentials: 'include'
+                });
                 const data = await res.json();
                 overview.taxiOrders = data || [];
                 if (body) {
@@ -501,7 +505,9 @@
             const body = document.getElementById('hotel-res-list');
             if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
             try {
-                const res = await fetch('/api/admin/hotels/reservations.php');
+                const res = await fetch('/api/admin/hotels/reservations.php', {
+                    credentials: 'include'
+                });
                 const data = await res.json();
                 overview.hotelReservations = data || [];
                 if (body) {
@@ -534,7 +540,9 @@
             const body = document.getElementById('rest-res-list');
             if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
             try {
-                const res = await fetch('/api/admin/restaurants/reservations.php');
+                const res = await fetch('/api/admin/restaurants/reservations.php', {
+                    credentials: 'include'
+                });
                 const data = await res.json();
                 overview.restaurantReservations = data || [];
                 if (body) {
