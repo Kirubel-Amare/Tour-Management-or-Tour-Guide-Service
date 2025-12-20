@@ -86,15 +86,29 @@ if (!$response['ok'] || !is_array($response['data'])) {
 }
 
 $data = $response['data'];
-$summary = $data['features'][0]['properties']['summary'] ?? null;
-$distanceKm = $summary ? ($summary['distance'] / 1000) : null; // meters -> km
-$durationMinutes = $summary ? ceil($summary['duration'] / 60) : null; // seconds -> minutes
+$firstFeature = $data['features'][0] ?? null;
+$properties = $firstFeature['properties'] ?? [];
+$summary = $properties['summary'] ?? null;
 
-if ($distanceKm === null) {
+// Prefer summary; fallback to first segment if summary missing
+$distanceMeters = null;
+$durationSeconds = null;
+if ($summary && isset($summary['distance'], $summary['duration'])) {
+    $distanceMeters = $summary['distance'];
+    $durationSeconds = $summary['duration'];
+} elseif (!empty($properties['segments']) && isset($properties['segments'][0]['distance'], $properties['segments'][0]['duration'])) {
+    $distanceMeters = $properties['segments'][0]['distance'];
+    $durationSeconds = $properties['segments'][0]['duration'];
+}
+
+if ($distanceMeters === null) {
     http_response_code(503);
-    echo json_encode(['message' => 'External taxi service unavailable (no distance returned)']);
+    echo json_encode(['message' => 'External taxi service unavailable (no distance returned)', 'provider' => 'openrouteservice']);
     exit;
 }
+
+$distanceKm = $distanceMeters / 1000; // meters -> km
+$durationMinutes = ceil(($durationSeconds ?? 0) / 60); // seconds -> minutes
 
 $rates = [
     'standard' => 2.5,
