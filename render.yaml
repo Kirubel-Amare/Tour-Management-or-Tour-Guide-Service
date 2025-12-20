@@ -5,21 +5,36 @@ services:
     plan: free
     region: oregon
     autoDeploy: true
+
     envVars:
-      - key: DATABASE_URL
-        fromService:
-          type: pserv
-          name: tour-management-db
-          property: connectionString
       - key: DB_DRIVER
         value: pgsql
       - key: DB_PORT
         value: "5432"
+
+      # External API mode
+      - key: EXTERNAL_API_MODE
+        value: live
+
+      # Hotels (Amadeus)
+      - key: EXTERNAL_HOTEL_API
+        value: https://test.api.amadeus.com/v1/reference-data/locations/hotels/by-city
+      - key: EXTERNAL_HOTEL_API_TOKEN
+        sync: false
+
+      # Restaurants (Yelp)
+      - key: EXTERNAL_RESTAURANT_API
+        value: https://api.yelp.com/v3/businesses/search
+      - key: EXTERNAL_RESTAURANT_API_TOKEN
+        sync: false
+
+      # Taxi / ETA
+      - key: EXTERNAL_TAXI_API
+        value: https://api.openrouteservice.org/v2/directions/driving-car
+      - key: EXTERNAL_TAXI_API_KEY
+        sync: false
+
     healthCheckPath: /
-    disk:
-      name: cache
-      mountPath: /var/www/html/storage
-      sizeGB: 1
 
   - type: pserv
     name: tour-management-db
