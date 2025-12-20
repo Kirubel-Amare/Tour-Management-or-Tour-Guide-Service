@@ -19,7 +19,7 @@ if ($token = getenv('EXTERNAL_TAXI_API_TOKEN')) {
     $taxiHeaders[] = 'Authorization: Bearer ' . $token;
 }
 if ($apiKey = getenv('EXTERNAL_TAXI_API_KEY')) {
-    $taxiHeaders[] = 'Authorization: ' . $apiKey;
+    $taxiHeaders[] = 'Authorization: ' . $apiKey; // ORS supports header auth
 }
 if ($rapidKey = getenv('EXTERNAL_TAXI_RAPIDAPI_KEY')) {
     $taxiHeaders[] = 'X-RapidAPI-Key: ' . $rapidKey;
@@ -74,14 +74,26 @@ if (!$start || !$end) {
     exit;
 }
 
+// Build URL with api_key query param as a fallback (ORS supports both header and query)
+$url = $baseUrl;
+if (!empty($apiKey)) {
+    $url .= (strpos($baseUrl, '?') === false ? '?' : '&') . 'api_key=' . urlencode($apiKey);
+}
+
 // Call external routing API (OpenRouteService directions)
-$response = ExternalService::requestJson($baseUrl, 'POST', [
+$response = ExternalService::requestJson($url, 'POST', [
     'coordinates' => [$start, $end]
 ], $taxiHeaders);
 
 if (!$response['ok'] || !is_array($response['data'])) {
     http_response_code(503);
-    echo json_encode(['message' => 'External taxi service error', 'status' => $response['status'], 'error' => $response['error']]);
+    echo json_encode([
+        'message' => 'External taxi service error',
+        'provider' => 'openrouteservice',
+        'status' => $response['status'],
+        'error' => $response['error'],
+        'details' => $response['data']
+    ]);
     exit;
 }
 
