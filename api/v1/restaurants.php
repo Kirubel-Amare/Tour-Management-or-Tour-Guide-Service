@@ -12,7 +12,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'middleware/Auth.php';
 require_once '../../config/ExternalService.php';
 
-$baseUrl = getenv('EXTERNAL_RESTAURANT_API');
+$baseUrl = rtrim(getenv('EXTERNAL_RESTAURANT_API') ?: '', '/');
+// Optional/typical headers for real providers
+$restaurantHeaders = [];
+if ($token = getenv('EXTERNAL_RESTAURANT_API_TOKEN')) {
+    $restaurantHeaders[] = 'Authorization: Bearer ' . $token;
+}
+if ($apiKey = getenv('EXTERNAL_RESTAURANT_API_KEY')) {
+    $restaurantHeaders[] = 'X-API-Key: ' . $apiKey;
+}
+if ($rapidKey = getenv('EXTERNAL_RESTAURANT_RAPIDAPI_KEY')) {
+    $restaurantHeaders[] = 'X-RapidAPI-Key: ' . $rapidKey;
+}
+if ($rapidHost = getenv('EXTERNAL_RESTAURANT_RAPIDAPI_HOST')) {
+    $restaurantHeaders[] = 'X-RapidAPI-Host: ' . $rapidHost;
+}
+
+if (empty($baseUrl)) {
+    http_response_code(500);
+    echo json_encode(['message' => 'EXTERNAL_RESTAURANT_API is required']);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $payload = json_decode(file_get_contents('php://input'), true);
@@ -41,20 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $source = 'external';
     $data = null;
 
-    if (!empty($baseUrl) || getenv('EXTERNAL_API_MODE') === 'mock') {
-        $response = ExternalService::requestJson(rtrim($baseUrl ?: 'http://mock-service/restaurants', '/'), 'POST', $reservation);
-        if ($response['ok']) {
-            $data = $response['data'];
-        } else {
-            http_response_code(503);
-            echo json_encode(['message' => 'External service error', 'status' => $response['status'], 'error' => $response['error']]);
-            exit;
-        }
-    }
-
-    if ($data === null) {
+    $response = ExternalService::requestJson($baseUrl, 'POST', $reservation, $restaurantHeaders);
+    if ($response['ok']) {
+        $data = $response['data'];
+    } else {
         http_response_code(503);
-        echo json_encode(['message' => 'External restaurant service unavailable']);
+        echo json_encode(['message' => 'External service error', 'status' => $response['status'], 'error' => $response['error']]);
         exit;
     }
 
@@ -77,23 +89,58 @@ $queryParams = [
     'priceRange' => $_GET['price'] ?? ''
 ];
 
-$source = 'db';
+$source = 'external';
 $data = [];
 
-if (!empty($baseUrl) || getenv('EXTERNAL_API_MODE') === 'mock') {
-    $url = rtrim($baseUrl ?: 'http://mock-service/restaurants', '/');
-    $url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query(array_filter($queryParams));
-
-    $response = ExternalService::requestJson($url);
-    if ($response['ok'] && is_array($response['data'])) {
-        $data = $response['data'];
-        $source = 'external';
-    }
+// Remap to common provider params (e.g., Yelp: location, term, categories, price)
+$forwardParams = array_filter($queryParams);
+if (!empty($forwardParams['city'])) {
+    $forwardParams['location'] = $forwardParams['city'];
+    unset($forwardParams['city']);
+}
+if (!empty($forwardParams['cuisine'])) {
+    $forwardParams['categories'] = $forwardParams['cuisine'];
+    unset($forwardParams['cuisine']);
+}
+if (!empty($forwardParams['priceRange'])) {
+    // Yelp expects 1,2,3,4 for $, $$, $$$, $$$$
+    $priceMap = [' $' => '1', '$$' => '2', '$$$' => '3', '$$$$' => '4'];
+    $forwardParams['price'] = $priceMap[$forwardParams['priceRange']] ?? $forwardParams['priceRange'];
+    unset($forwardParams['priceRange']);
+}
+if (!empty($forwardParams['q'])) {
+    $forwardParams['term'] = $forwardParams['q'];
+    unset($forwardParams['q']);
 }
 
-// Local DB read removed.
-if (!$data) {
-    // Empty data
+$url = $baseUrl . ((strpos($baseUrl, '?') === false ? '?' : '&') . http_build_query($forwardParams));
+
+$response = ExternalService::requestJson($url, 'GET', null, $restaurantHeaders);
+if ($response['ok'] && is_array($response['data'])) {
+    $raw = isset($response['data']['data']) && is_array($response['data']['data'])
+        ? $response['data']['data']
+        : $response['data'];
+
+    $data = array_map(function ($item) {
+        $categories = $item['categories'] ?? $item['cuisines'] ?? [];
+        if (is_array($categories)) {
+            $categories = array_map(function ($c) {
+                return is_array($c) ? ($c['title'] ?? $c['name'] ?? '') : $c;
+            }, $categories);
+        }
+        return [
+            'id' => $item['id'] ?? uniqid('restaurant_', true),
+            'name' => $item['name'] ?? 'Restaurant',
+            'location' => $item['location']['city'] ?? $item['city'] ?? $item['address'] ?? 'Unknown',
+            'cuisine' => $categories[0] ?? 'International',
+            'priceRange' => $item['price'] ?? '$$',
+            'rating' => $item['rating'] ?? 4.5,
+            'reviews' => $item['review_count'] ?? $item['reviews'] ?? 40,
+            'description' => $item['description'] ?? 'Partner restaurant',
+            'image' => $item['image_url'] ?? $item['image'] ?? 'https://via.placeholder.com/600x400?text=Restaurant',
+            'features' => $item['features'] ?? $categories ?? []
+        ];
+    }, is_array($raw) ? $raw : []);
 }
 
 echo json_encode(['source' => $source, 'data' => $data]);

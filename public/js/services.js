@@ -2,6 +2,7 @@ let places = [];
 let tours = [];
 let hotels = [];
 let restaurants = [];
+const PUBLIC_API_KEY = 'demo-api-key'; // align with api_docs; replace if rotated
 
 document.addEventListener('DOMContentLoaded', () => {
     initServicesPage();
@@ -73,9 +74,13 @@ async function loadTours() {
     renderTours(filterToursData());
 }
 
-async function loadHotels() {
+async function loadHotels(cityInput) {
     try {
-        const response = await fetch('/api/services/hotels.php');
+        const city = (cityInput || '').trim();
+        const qs = city ? `?city=${encodeURIComponent(city)}` : '';
+        const response = await fetch(`/api/v1/hotels.php${qs}`, {
+            headers: { 'X-API-KEY': PUBLIC_API_KEY }
+        });
         const payload = await response.json();
         const incoming = payload?.data || payload || [];
         hotels = Array.isArray(incoming) && incoming.length ? incoming.map(mapHotel) : [];
@@ -84,11 +89,24 @@ async function loadHotels() {
         hotels = [];
     }
     renderHotels(filterHotelsData());
+
+    const hotelSearch = document.getElementById('hotels-search');
+    if (hotelSearch && !hotelSearch.dataset.wired) {
+        hotelSearch.dataset.wired = 'true';
+        hotelSearch.addEventListener('input', debounce(async (e) => {
+            const value = e.target.value || '';
+            await loadHotels(value);
+        }, 500));
+    }
 }
 
-async function loadRestaurants() {
+async function loadRestaurants(cityInput) {
     try {
-        const response = await fetch('/api/services/restaurants.php');
+        const city = (cityInput || '').trim();
+        const qs = city ? `?city=${encodeURIComponent(city)}` : '';
+        const response = await fetch(`/api/v1/restaurants.php${qs}`, {
+            headers: { 'X-API-KEY': PUBLIC_API_KEY }
+        });
         const payload = await response.json();
         const incoming = payload?.data || payload || [];
         restaurants = Array.isArray(incoming) && incoming.length ? incoming.map(mapRestaurant) : [];
@@ -97,6 +115,15 @@ async function loadRestaurants() {
         restaurants = [];
     }
     renderRestaurants(filterRestaurantsData());
+
+    const restaurantSearch = document.getElementById('restaurants-search');
+    if (restaurantSearch && !restaurantSearch.dataset.wired) {
+        restaurantSearch.dataset.wired = 'true';
+        restaurantSearch.addEventListener('input', debounce(async (e) => {
+            const value = e.target.value || '';
+            await loadRestaurants(value);
+        }, 500));
+    }
 }
 
 function mapPlace(raw, idx) {
@@ -106,9 +133,9 @@ function mapPlace(raw, idx) {
         type: raw.type || raw.category || 'Destination',
         continent: raw.continent || raw.country || raw.city || 'Unknown',
         climate: raw.climate || 'Temperate',
-        description: raw.description || 'Explore this amazing place.',
-        image: raw.image || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
         rating: raw.rating || 4.6,
+        description: raw.description || 'Discover new destinations curated for travelers.',
+        image: raw.image || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
         reviews: raw.reviews || 120,
         features: raw.features || []
     };
@@ -133,9 +160,9 @@ function mapHotel(raw, idx) {
     return {
         id: raw.id || idx || Date.now(),
         name: raw.name || 'Hotel',
-        location: raw.location || 'Unknown',
+        location: raw.location || (raw.address?.cityName) || 'Unknown',
         price: Number(raw.price || 0).toFixed(2),
-        rating: raw.rating || 4.4,
+        rating: raw.rating || raw.hotelRating || 4.4,
         reviews: raw.reviews || 50,
         description: raw.description || 'Comfortable stay provided by partner hotel.',
         image: raw.image || 'https://images.unsplash.com/photo-1501117716987-c8e1ecb210af?auto=format&fit=crop&w=800&q=80',
@@ -339,11 +366,13 @@ function searchTours() {
 }
 
 function searchHotels() {
-    renderHotels(filterHotelsData());
+    const value = document.getElementById('hotels-search').value || '';
+    loadHotels(value);
 }
 
 function searchRestaurants() {
-    renderRestaurants(filterRestaurantsData());
+    const value = document.getElementById('restaurants-search').value || '';
+    loadRestaurants(value);
 }
 
 function filterPlaces() {
@@ -415,6 +444,15 @@ function filterHotelsData() {
         );
         return matchesQuery && matchesRoom && matchesStar && matchesPrice;
     });
+}
+
+// simple debounce to avoid hammering API on every keystroke
+function debounce(fn, delay) {
+    let t;
+    return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), delay);
+    };
 }
 
 function filterRestaurantsData() {
@@ -492,9 +530,12 @@ async function bookHotel(hotelId) {
     const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     try {
-        const response = await fetch('/api/services/hotels.php', {
+        const response = await fetch('/api/v1/hotels.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': PUBLIC_API_KEY
+            },
             body: JSON.stringify({
                 user,
                 hotel_id: hotel.id,
@@ -505,11 +546,12 @@ async function bookHotel(hotelId) {
             })
         });
 
+        const payload = await response.json().catch(() => ({}));
         if (response.ok) {
-            const payload = await response.json();
             alert(`Hotel booked! Confirmation: ${payload.data?.confirmation || 'pending'}`);
         } else {
-            alert('Hotel booking failed.');
+            const msg = payload?.message || 'Hotel booking failed (provider may not support booking in this environment).';
+            alert(msg);
         }
     } catch (err) {
         console.error('Hotel booking error', err);
@@ -528,9 +570,12 @@ async function bookRestaurant(restaurantId) {
     const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
     try {
-        const response = await fetch('/api/services/restaurants.php', {
+        const response = await fetch('/api/v1/restaurants.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': PUBLIC_API_KEY
+            },
             body: JSON.stringify({
                 user,
                 restaurant_id: restaurant.id,
@@ -540,11 +585,12 @@ async function bookRestaurant(restaurantId) {
             })
         });
 
+        const payload = await response.json().catch(() => ({}));
         if (response.ok) {
-            const payload = await response.json();
             alert(`Reservation placed! Confirmation: ${payload.data?.confirmation || 'pending'}`);
         } else {
-            alert('Reservation failed.');
+            const msg = payload?.message || 'Reservation failed (provider may not support booking in this environment).';
+            alert(msg);
         }
     } catch (err) {
         console.error('Restaurant booking error', err);
@@ -598,18 +644,22 @@ async function orderTaxi(e) {
     }
 
     try {
-        const response = await fetch('/api/services/taxis.php', {
+        const response = await fetch('/api/v1/taxis.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': PUBLIC_API_KEY
+            },
             body: JSON.stringify({ pickup, destination, vehicleType, schedule, customTime, user })
         });
 
+        const payload = await response.json().catch(() => ({}));
         if (response.ok) {
-            const payload = await response.json();
             const ride = payload.data || {};
             alert(`Taxi booked!\n\nPickup: ${ride.pickup}\nDestination: ${ride.destination}\nVehicle: ${ride.vehicleType}\nFare: $${ride.fare}\nETA: ${ride.eta_minutes} minutes\nConfirmation: ${ride.ride_id || 'pending'}`);
         } else {
-            alert('Taxi booking failed.');
+            const msg = payload?.message || 'Taxi booking failed (provider may not support booking in this environment).';
+            alert(msg);
         }
     } catch (err) {
         console.error('Taxi booking error', err);

@@ -12,6 +12,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'middleware/Auth.php';
 require_once '../../config/ExternalService.php';
 
+$baseUrl = rtrim(getenv('EXTERNAL_TAXI_API') ?: '', '/');
+$taxiHeaders = [];
+if ($token = getenv('EXTERNAL_TAXI_API_TOKEN')) {
+    $taxiHeaders[] = 'Authorization: Bearer ' . $token;
+}
+if ($apiKey = getenv('EXTERNAL_TAXI_API_KEY')) {
+    $taxiHeaders[] = 'X-API-Key: ' . $apiKey;
+}
+if ($rapidKey = getenv('EXTERNAL_TAXI_RAPIDAPI_KEY')) {
+    $taxiHeaders[] = 'X-RapidAPI-Key: ' . $rapidKey;
+}
+if ($rapidHost = getenv('EXTERNAL_TAXI_RAPIDAPI_HOST')) {
+    $taxiHeaders[] = 'X-RapidAPI-Host: ' . $rapidHost;
+}
+
+if (empty($baseUrl)) {
+    http_response_code(500);
+    echo json_encode(['message' => 'EXTERNAL_TAXI_API is required']);
+    exit;
+}
+
 $payload = json_decode(file_get_contents('php://input'), true);
 if (!$payload) {
     http_response_code(400);
@@ -31,34 +52,27 @@ if ($pickup === '' || $destination === '') {
     exit;
 }
 
-$baseUrl = getenv('EXTERNAL_TAXI_API');
-$fare = null;
-$responseData = null;
-$source = 'external';
+// Call external taxi/routing API
+$response = ExternalService::requestJson($baseUrl, 'POST', [
+    'pickup' => $pickup,
+    'destination' => $destination,
+    'vehicleType' => $vehicle,
+    'schedule' => $schedule,
+    'customTime' => $customTime
+], $taxiHeaders);
 
-if (!empty($baseUrl) || getenv('EXTERNAL_API_MODE') === 'mock') {
-    $url = rtrim($baseUrl ?: 'http://mock-service/taxis', '/');
-    $response = ExternalService::requestJson($url, 'POST', [
-        'pickup' => $pickup,
-        'destination' => $destination,
-        'vehicleType' => $vehicle,
-        'schedule' => $schedule,
-        'customTime' => $customTime
-    ]);
-
-    if ($response['ok'] && is_array($response['data'])) {
-        $responseData = $response['data'];
-        $fare = $responseData['fare'] ?? null;
-    } else {
-        http_response_code(503);
-        echo json_encode(['message' => 'External service error', 'status' => $response['status'], 'error' => $response['error']]);
-        exit;
-    }
+if (!$response['ok'] || !is_array($response['data'])) {
+    http_response_code(503);
+    echo json_encode(['message' => 'External taxi service error', 'status' => $response['status'], 'error' => $response['error']]);
+    exit;
 }
+
+$responseData = $response['data'];
+$fare = $responseData['fare'] ?? null;
 
 if ($fare === null) {
     http_response_code(503);
-    echo json_encode(['message' => 'External taxi service unavailable']);
+    echo json_encode(['message' => 'External taxi service unavailable (no fare returned)']);
     exit;
 }
 
