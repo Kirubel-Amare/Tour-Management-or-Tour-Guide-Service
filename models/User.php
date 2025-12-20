@@ -26,9 +26,10 @@ class User
             $this->role = 'customer';
         }
 
+        // Postgres-compatible insert (no backticks)
         $query = "INSERT INTO " . $this->table_name . " 
-                  (`name`, `email`, `password`, `role`) 
-                  VALUES (:name, :email, :password, :role)";
+              (name, email, password, role) 
+              VALUES (:name, :email, :password, :role)";
 
         $stmt = $this->conn->prepare($query);
 
