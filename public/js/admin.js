@@ -44,6 +44,9 @@
             }
         };
 
+        // Always send cookies/session with API calls that rely on PHP sessions
+        const apiFetch = (url, options = {}) => fetch(url, { credentials: 'include', ...options });
+
         const askConfirm = async (title, message) => {
             if (window.Popup && Popup.confirm) {
                 return Popup.confirm({ title, message });
