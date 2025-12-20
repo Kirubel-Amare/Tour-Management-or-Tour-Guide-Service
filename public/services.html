@@ -299,17 +299,19 @@
                 <form class="booking-form" onsubmit="orderTaxi(event)">
                     <div class="form-group">
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
-                            <i class="fas fa-map-pin"></i> Pickup Location
+                            <i class="fas fa-map-pin"></i> Pickup Coordinates (lon, lat)
                         </label>
                         <input type="text" id="pickup-location" class="search-input"
-                            placeholder="Enter your current location" required>
+                            placeholder="e.g., -73.9857, 40.7484" required>
+                        <small style="color: var(--text-muted); display:block; margin-top: 0.25rem;">Use longitude,latitude format. Example: Times Square NYC is <code>-73.9857, 40.7484</code>.</small>
                     </div>
 
                     <div class="form-group">
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
-                            <i class="fas fa-flag-checkered"></i> Destination
+                            <i class="fas fa-flag-checkered"></i> Destination Coordinates (lon, lat)
                         </label>
-                        <input type="text" id="destination" class="search-input" placeholder="Where to?" required>
+                        <input type="text" id="destination" class="search-input" placeholder="e.g., -73.9787, 40.7614" required>
+                        <small style="color: var(--text-muted); display:block; margin-top: 0.25rem;">Use longitude,latitude format. Example: Central Park NYC is <code>-73.9787, 40.7614</code>.</small>
                     </div>
 
                     <div class="form-row">

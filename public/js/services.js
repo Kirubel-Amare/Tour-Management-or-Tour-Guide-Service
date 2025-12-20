@@ -638,8 +638,16 @@ async function orderTaxi(e) {
     const schedule = document.getElementById('schedule').value;
     const customTime = document.getElementById('scheduled-time').value;
 
+    function isLonLat(v) {
+        const re = /^\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*$/;
+        return re.test(v);
+    }
     if (!pickup || !destination) {
-        alert('Please enter both pickup location and destination.');
+        alert('Please enter both pickup and destination coordinates (lon,lat).');
+        return;
+    }
+    if (!isLonLat(pickup) || !isLonLat(destination)) {
+        alert('Coordinates must be in "longitude,latitude" format, e.g., -73.9857, 40.7484');
         return;
     }
 
