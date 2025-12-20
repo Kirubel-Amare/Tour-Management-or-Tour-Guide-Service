@@ -1,9 +1,20 @@
 <?php
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+$origin = $_SERVER['HTTP_ORIGIN'] ?? ($_SERVER['HTTP_HOST'] ? ('http://' . $_SERVER['HTTP_HOST']) : '*');
+if ($origin === 'null') { // file:// case
+    $origin = 'null';
+}
 header('Access-Control-Allow-Origin: ' . $origin);
 header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 header('Vary: Origin');
 header('Content-Type: application/json');
+
+// Handle CORS preflight
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
 
 require_once '../../../config/Database.php';
 require_once '../../../api/middleware/AuthMiddleware.php';

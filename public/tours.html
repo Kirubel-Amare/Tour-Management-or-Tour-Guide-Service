@@ -112,6 +112,64 @@
         </div>
     </section>
 
+  <!-- Reviews CTA -->
+<section class="section-container">
+    <div class="content-card">
+        <div class="flex-grid">
+            <div class="content-text">
+                <h2>Share Your Experience</h2>
+                <p>Add a rating and comment for any tour you joined. Your feedback helps other travelers decide.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> Pick a tour from the list</li>
+                    <li><i class="fas fa-check-circle"></i> Rate 1 to 5 stars</li>
+                    <li><i class="fas fa-check-circle"></i> Optional email/name for contact</li>
+                </ul>
+            </div>
+            
+            <div class="form-container">
+                <form id="review-form" class="contact-form">
+                    <div class="form-group">
+                        <label for="review-tour" class="form-label">Tour <span class="required">*</span></label>
+                        <select id="review-tour" class="form-select" required>
+                            <option value="">Select a tour</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="review-rating" class="form-label">Rating <span class="required">*</span></label>
+                            <input type="number" id="review-rating" class="form-input" min="1" max="5" step="0.5" placeholder="5" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="review-name" class="form-label">Name</label>
+                            <input type="text" id="review-name" class="form-input" placeholder="Your name">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="review-email" class="form-label">Email</label>
+                            <input type="email" id="review-email" class="form-input" placeholder="you@example.com">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="review-comment" class="form-label">Comment</label>
+                        <textarea id="review-comment" class="form-textarea" rows="3" placeholder="Tell us what you loved..."></textarea>
+                    </div>
+                    
+                    <div id="review-status" class="form-status"></div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block" id="review-submit-btn">
+                        <i class="fas fa-paper-plane"></i> Submit Review
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
     <!-- CTA Section -->
     <section style="padding: 4rem 2rem; text-align: center; background: var(--dark); color: white;">
         <div style="max-width: 600px; margin: 0 auto;">

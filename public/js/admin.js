@@ -104,6 +104,8 @@
                 loadHotelReservations();
             } else if (viewName === 'restaurant-reservations') {
                 loadRestaurantReservations();
+            } else if (viewName === 'reviews') {
+                loadAdminReviews();
             }
         }
 
@@ -151,6 +153,7 @@
                 loadTaxiOrders();
                 loadHotelReservations();
                 loadRestaurantReservations();
+                loadAdminReviews();
 
                 if (loading) {
                     loading.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -473,30 +476,38 @@
                 const res = await fetch('/api/admin/taxis/read.php', {
                     credentials: 'include'
                 });
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
                 const data = await res.json();
                 overview.taxiOrders = data || [];
                 if (body) {
                     if (!overview.taxiOrders.length) {
                         body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">No taxi orders</td></tr>`;
                     } else {
-                        body.innerHTML = overview.taxiOrders.map(t => `
+                        body.innerHTML = overview.taxiOrders.map(t => {
+                            const fare = Number.parseFloat(t.fare ?? 0) || 0;
+                            return `
                             <tr>
                                 <td>#${t.id}</td>
                                 <td>${t.user_name || 'N/A'}<br><small>${t.user_email || ''}</small></td>
                                 <td>${t.pickup}</td>
                                 <td>${t.destination}</td>
                                 <td>${t.vehicle_type}</td>
-                                <td>$${(t.fare ?? 0).toFixed(2)}</td>
+                                <td>$${fare.toFixed(2)}</td>
                                 <td><span class="status-badge status-active">${(t.status || 'accepted').toUpperCase()}</span></td>
                                 <td>${new Date(t.created_at).toLocaleString()}</td>
                             </tr>
-                        `).join('');
+                        `;
+                        }).join('');
                     }
                 }
                 const badge = document.getElementById('taxi-count');
                 if (badge) badge.textContent = overview.taxiOrders.length || 0;
             } catch (e) {
-                if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--danger);">Failed to load taxi orders</td></tr>`;
+                const msg = e?.message || 'Failed to load taxi orders';
+                if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--danger);">Failed to load taxi orders (${msg})</td></tr>`;
+                console.error('Taxi orders load failed:', e);
             }
         }
 
@@ -567,6 +578,39 @@
                 if (badge) badge.textContent = overview.restaurantReservations.length || 0;
             } catch (e) {
                 if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--danger);">Failed to load restaurant reservations</td></tr>`;
+            }
+        }
+
+        // Reviews (admin)
+        async function loadAdminReviews() {
+            const body = document.getElementById('admin-reviews-list');
+            if (body) body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
+            try {
+                const res = await fetch('/api/admin/reviews/read.php', {
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                const reviews = Array.isArray(data) ? data : [];
+                if (body) {
+                    if (!reviews.length) {
+                        body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1rem; color: var(--text-muted);">No reviews found</td></tr>`;
+                    } else {
+                        body.innerHTML = reviews.map(r => `
+                            <tr>
+                                <td>#${r.id}</td>
+                                <td>${r.tour_title || 'Tour #' + r.tour_id}</td>
+                                <td>${r.reviewer_name || 'User #' + r.user_id}<br><small>${r.reviewer_email || ''}</small></td>
+                                <td><i class="fas fa-star" style="color:var(--warning);"></i> ${(parseFloat(r.rating) || 0).toFixed(1)}</td>
+                                <td>${(r.comment || '').slice(0, 120)}${(r.comment || '').length > 120 ? '…' : ''}</td>
+                                <td>${new Date(r.created_at).toLocaleString()}</td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+                const badge = document.getElementById('reviews-count');
+                if (badge) badge.textContent = reviews.length || 0;
+            } catch (e) {
+                if (body) body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1rem; color: var(--danger);">Failed to load reviews</td></tr>`;
             }
         }
 
@@ -1212,7 +1256,7 @@
         // Logout
         document.getElementById('logout-btn').addEventListener('click', (e) => {
             e.preventDefault();
-            if (confirm('Are you sure you want to logout?')) {
+            if (Confirm('Are you sure you want to logout?')) {
                 fetch('/api/auth/logout.php', { method: 'POST' }).finally(() => {
                     localStorage.removeItem('user');
                     window.location.href = 'index.html';

@@ -124,7 +124,8 @@
                         <i class="fas fa-star"></i>
                         <span>Reviews</span>
                         <span
-                            style="margin-left: auto; background: #10b981; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">12</span>
+                            style="margin-left: auto; background: #10b981; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
+                            id="reviews-count">0</span>
                     </a>
                 </div>
 
@@ -519,6 +520,35 @@
                             </thead>
                             <tbody id="rest-res-list">
                                 <tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reviews View -->
+            <div id="reviews-view" class="fade-in" style="display: none;">
+                <div class="search-section">
+                    <div style="margin-bottom: 1.5rem;">
+                        <h2><i class="fas fa-star"></i> Reviews</h2>
+                        <p style="color: var(--text-muted);">All tour reviews from users</p>
+                    </div>
+                </div>
+                <div id="reviews-management-content">
+                    <div style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tour</th>
+                                    <th>User</th>
+                                    <th>Rating</th>
+                                    <th>Comment</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-reviews-list">
+                                <tr><td colspan="6" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>

@@ -1,11 +1,13 @@
 
 // Global state
 let allTours = [];
+const REVIEW_API_KEY = 'demo-api-key';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadTours();
     setupEventListeners();
+    setupReviewForm();
 });
 
 // Load tours from API
@@ -34,6 +36,8 @@ async function loadTours() {
         }));
 
         displayFilteredTours(allTours);
+
+        populateReviewTourSelect(allTours);
 
         // Featured tours (random top 3 or recent)
         const featured = allTours.slice(0, 3);
@@ -136,6 +140,78 @@ function setupEventListeners() {
         const el = document.getElementById(id);
         if (el) el.addEventListener('change', filterTours);
     });
+}
+
+// Review form setup
+function setupReviewForm() {
+    const form = document.getElementById('review-form');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const tourId = document.getElementById('review-tour').value;
+        const rating = parseFloat(document.getElementById('review-rating').value);
+        const name = document.getElementById('review-name').value.trim();
+        const email = document.getElementById('review-email').value.trim();
+        const comment = document.getElementById('review-comment').value.trim();
+        const status = document.getElementById('review-status');
+        const submitBtn = document.getElementById('review-submit-btn');
+
+        if (!tourId || Number.isNaN(rating)) {
+            status.textContent = 'Please choose a tour and rating.';
+            status.style.color = 'var(--danger)';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        status.textContent = 'Sending your review...';
+        status.style.color = 'var(--text-muted)';
+
+        try {
+            const payload = {
+                tour_id: Number.parseInt(tourId, 10),
+                rating,
+                comment
+            };
+            if (email) payload.email = email;
+            if (name) payload.name = name;
+
+            const res = await fetch('/api/v1/reviews.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-KEY': REVIEW_API_KEY
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || 'Failed to submit review');
+            }
+
+            status.textContent = 'Thanks! Your review was submitted.';
+            status.style.color = 'var(--success, #16a34a)';
+            form.reset();
+            document.getElementById('review-tour').value = tourId; // keep tour selected
+        } catch (err) {
+            status.textContent = err.message || 'Could not submit review.';
+            status.style.color = 'var(--danger)';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Review';
+        }
+    });
+}
+
+function populateReviewTourSelect(tours) {
+    const select = document.getElementById('review-tour');
+    if (!select) return;
+    const options = ['<option value="">Select a tour</option>'].concat(
+        tours.map(t => `<option value="${t.id}">${t.title} — ${t.location}</option>`)
+    );
+    select.innerHTML = options.join('');
 }
 
 // Filter tours
