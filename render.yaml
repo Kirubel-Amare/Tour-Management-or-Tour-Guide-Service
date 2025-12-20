@@ -12,7 +12,6 @@ services:
       - key: DB_PORT
         value: "5432"
 
-      # External API mode
       - key: EXTERNAL_API_MODE
         value: live
 
@@ -35,7 +34,3 @@ services:
         sync: false
 
     healthCheckPath: /
-
-  - type: pserv
-    name: tour-management-db
-    plan: free
