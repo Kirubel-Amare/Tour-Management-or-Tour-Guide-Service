@@ -30,6 +30,11 @@
             role: 'all'
         };
 
+            const bookingFilters = {
+            query: '',
+            status: 'all'
+        };
+
         const notify = (message, type = 'info') => {
             if (window.Popup && Popup.toast) {
                 Popup.toast({ message, type });
