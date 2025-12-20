@@ -127,6 +127,53 @@
 }</pre>
     </div>
 
+        <div class="endpoint">
+                <span class="method get">GET</span> <code>tours.php</code>
+                <p>List tours or fetch a single tour.</p>
+                <strong>Query Parameters:</strong>
+                <ul>
+                        <li><code>id</code> (optional): Get one tour by ID.</li>
+                        <li><code>guide_id</code> (optional): Filter by guide.</li>
+                        <li><code>q</code> (optional): Search by title/location.</li>
+                </ul>
+                <strong>Example Response:</strong>
+                <pre>{
+    "source": "db",
+    "data": [
+        {
+            "id": 1,
+            "guide_id": 3,
+            "title": "Old Town Walking Tour",
+            "location": "Prague, Czechia",
+            "price": 25.00,
+            "schedule_date": "2025-02-12"
+        }
+    ]
+}</pre>
+        </div>
+
+        <div class="endpoint">
+                <span class="method post">POST</span> <code>tours.php</code>
+                <p>Book a tour (creates a booking). Provide either <code>user_id</code> or <code>email</code> to identify the customer.</p>
+                <strong>JSON Payload:</strong>
+                <pre>{
+    "tour_id": 1,
+    "user_id": 10
+}
+
+// or with email-based guest creation
+{
+    "tour_id": 1,
+    "email": "partner-guest@example.com",
+    "name": "Guest from Partner"
+}</pre>
+                <strong>Example Response:</strong>
+                <pre>{
+    "message": "Booking Created",
+    "data": { "tour_id": 1, "user_id": 10, "status": "confirmed" }
+}</pre>
+        </div>
+
     <div class="endpoint">
         <span class="method get">GET</span> <code>restaurants.php</code>
         <p>Search for restaurants.</p>
@@ -158,6 +205,65 @@
   "destination": "Airport",
   "vehicleType": "standard"
 }</pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span> <code>places.php</code>
+        <p>List featured places.</p>
+        <strong>Query Parameters:</strong>
+        <ul>
+            <li><code>q</code> (optional): search in name/description</li>
+            <li><code>type</code> (optional): e.g., City, Beach</li>
+            <li><code>continent</code> (optional): e.g., Europe</li>
+            <li><code>climate</code> (optional): e.g., Tropical</li>
+        </ul>
+        <strong>Example Response:</strong>
+        <pre>{
+  "source": "db",
+  "data": [ { "id": 1, "name": "Paris, France", "type": "City" } ]
+}</pre>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span> <code>reviews.php</code>
+        <p>Read tour reviews.</p>
+        <strong>Query Parameters:</strong>
+        <ul>
+            <li><code>tour_id</code> (optional): reviews for a tour</li>
+            <li><code>guide_id</code> (optional): reviews for a guide's tours</li>
+            <li><code>stats=true</code> (optional with <code>guide_id</code>): averages</li>
+        </ul>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span> <code>reviews.php</code>
+        <p>Create a tour review.</p>
+        <strong>JSON Payload:</strong>
+        <pre>{
+  "tour_id": 1,
+  "rating": 4.5,
+  "comment": "Great tour!",
+  "user_id": 10
+}
+
+// or with email-based user creation
+{
+  "tour_id": 1,
+  "rating": 5,
+  "comment": "Amazing",
+  "email": "partner-reviewer@example.com",
+  "name": "Partner Reviewer"
+}</pre>
+    </div>
+
+    <h2>Partner Integration Notes</h2>
+    <div class="endpoint">
+        <p>
+            - Include <code>X-API-KEY</code> in all requests (demo: <code>demo-api-key</code>).<br>
+            - CORS is enabled for browser integrations.<br>
+            - Versioning: current <code>v1</code>. Future changes will be backward-compatible or versioned.<br>
+            - Rate limiting and per-partner keys available on request.
+        </p>
     </div>
 
 </body>

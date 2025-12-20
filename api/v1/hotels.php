@@ -12,6 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'middleware/Auth.php';
 require_once '../../config/ExternalService.php';
 
+// Enforce API key authentication for partner access
+Auth::authenticate();
+
 function fetchAmadeusToken()
 {
     $clientId = getenv('EXTERNAL_HOTEL_CLIENT_ID');

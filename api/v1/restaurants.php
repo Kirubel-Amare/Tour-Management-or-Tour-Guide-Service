@@ -12,6 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'middleware/Auth.php';
 require_once '../../config/ExternalService.php';
 
+// Enforce API key authentication for partner access
+Auth::authenticate();
+
 $baseUrl = rtrim(getenv('EXTERNAL_RESTAURANT_API') ?: '', '/');
 // Optional/typical headers for real providers
 $restaurantHeaders = [];

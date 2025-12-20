@@ -1,0 +1,174 @@
+openapi: 3.0.3
+info:
+  title: Tour Management Public API
+  version: 1.0.0
+  description: Partner-facing API for hotels, restaurants, taxis, tours, places, and reviews.
+servers:
+  - url: /tour_management/api/v1
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+security:
+  - ApiKeyAuth: []
+paths:
+  /hotels.php:
+    get:
+      summary: Search hotels
+      parameters:
+        - in: query
+          name: city
+          schema: { type: string }
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Book hotel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hotel_id: { type: string }
+                check_in: { type: string, format: date }
+                check_out: { type: string, format: date }
+                guests: { type: integer }
+                roomType: { type: string }
+              required: [hotel_id, check_in, check_out]
+      responses:
+        '201': { description: Created }
+  /restaurants.php:
+    get:
+      summary: Search restaurants
+      parameters:
+        - in: query
+          name: city
+          schema: { type: string }
+        - in: query
+          name: cuisine
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Reserve a table
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                restaurant_id: { type: string }
+                date: { type: string, format: date }
+                time: { type: string }
+                guests: { type: integer }
+                notes: { type: string }
+              required: [restaurant_id, date, time]
+      responses:
+        '201': { description: Created }
+  /taxis.php:
+    post:
+      summary: Order a taxi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pickup: { type: string, description: "lon,lat" }
+                destination: { type: string, description: "lon,lat" }
+                vehicleType: { type: string }
+                schedule: { type: string }
+                customTime: { type: string, format: date-time }
+              required: [pickup, destination]
+      responses:
+        '200': { description: OK }
+  /tours.php:
+    get:
+      summary: List or get a tour
+      parameters:
+        - in: query
+          name: id
+          schema: { type: integer }
+        - in: query
+          name: guide_id
+          schema: { type: integer }
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create a tour booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tour_id: { type: integer }
+                user_id: { type: integer }
+                email: { type: string, format: email }
+                name: { type: string }
+              required: [tour_id]
+      responses:
+        '201': { description: Created }
+  /places.php:
+    get:
+      summary: List places
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: type
+          schema: { type: string }
+        - in: query
+          name: continent
+          schema: { type: string }
+        - in: query
+          name: climate
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /reviews.php:
+    get:
+      summary: Read reviews
+      parameters:
+        - in: query
+          name: tour_id
+          schema: { type: integer }
+        - in: query
+          name: guide_id
+          schema: { type: integer }
+        - in: query
+          name: stats
+          schema: { type: string, enum: ["true","false"] }
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create a review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tour_id: { type: integer }
+                rating: { type: number }
+                comment: { type: string }
+                user_id: { type: integer }
+                email: { type: string, format: email }
+                name: { type: string }
+              required: [tour_id, rating]
+      responses:
+        '201': { description: Created }

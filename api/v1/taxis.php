@@ -21,6 +21,9 @@ error_reporting(E_ALL);
 require_once 'middleware/Auth.php';
 require_once '../../config/ExternalService.php';
 
+// Enforce API key authentication for partner access
+Auth::authenticate();
+
 // Read environment variables
 $baseUrl = rtrim(getenv('EXTERNAL_TAXI_API') ?: '', '/');
 $apiKey = getenv('EXTERNAL_TAXI_API_KEY');
