@@ -3,13 +3,13 @@ function togglePassword(fieldId) {
     field.type = field.type === 'password' ? 'text' : 'password';
 }
 
-function buildApiUrl(relative) {
-    // Resolve reliably relative to current page location, works under subpaths
-    try {
-        return new URL(relative, window.location.href).toString();
-    } catch {
-        return relative; // fallback
+function getSiteBasePath() {
+    const path = window.location.pathname || '';
+    const idx = path.indexOf('/public/');
+    if (idx > -1) {
+        return path.substring(0, idx);
     }
+    return '';
 }
 
 document.getElementById('register-form').addEventListener('submit', async (e) => {
@@ -48,7 +48,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     submitBtn.textContent = 'Creating Account...';
 
     try {
-        const apiUrl = buildApiUrl('api/auth/register.php');
+        const apiUrl = `${getSiteBasePath()}/api/auth/register.php`;
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
