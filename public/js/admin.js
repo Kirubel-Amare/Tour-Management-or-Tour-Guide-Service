@@ -30,11 +30,6 @@
             role: 'all'
         };
 
-        const bookingFilters = {
-            query: '',
-            status: 'all'
-        };
-
         const notify = (message, type = 'info') => {
             if (window.Popup && Popup.toast) {
                 Popup.toast({ message, type });
@@ -115,7 +110,7 @@
             }
 
             try {
-                const response = await apiFetch('/api/admin/overview.php');
+                const response = await fetch('/api/admin/overview.php');
                 const data = await response.json();
 
                 overview.users = data.users || [];
@@ -468,7 +463,7 @@
             const body = document.getElementById('taxi-list');
             if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
             try {
-                const res = await apiFetch('/api/admin/taxis/read.php');
+                const res = await fetch('/api/admin/taxis/read.php');
                 const data = await res.json();
                 overview.taxiOrders = data || [];
                 if (body) {
@@ -501,7 +496,7 @@
             const body = document.getElementById('hotel-res-list');
             if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
             try {
-                const res = await apiFetch('/api/admin/hotels/reservations.php');
+                const res = await fetch('/api/admin/hotels/reservations.php');
                 const data = await res.json();
                 overview.hotelReservations = data || [];
                 if (body) {
@@ -534,7 +529,7 @@
             const body = document.getElementById('rest-res-list');
             if (body) body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
             try {
-                const res = await apiFetch('/api/admin/restaurants/reservations.php');
+                const res = await fetch('/api/admin/restaurants/reservations.php');
                 const data = await res.json();
                 overview.restaurantReservations = data || [];
                 if (body) {
@@ -687,7 +682,7 @@
             const ok = await askConfirm('Delete user', 'Delete this user? This will also remove related tours/bookings.');
             if (!ok) return;
             try {
-                const res = await apiFetch('/api/admin/users/delete.php', {
+                const res = await fetch('/api/admin/users/delete.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: userId })
@@ -717,7 +712,7 @@
             const ok = await askConfirm('Delete tour', 'Delete this tour? This action cannot be undone.');
             if (!ok) return;
             try {
-                const res = await apiFetch('/api/admin/tours/delete.php', {
+                const res = await fetch('/api/admin/tours/delete.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: tourId })
@@ -781,7 +776,7 @@
             }
 
             try {
-                const res = await apiFetch('/api/admin/bookings/update_status.php', {
+                const res = await fetch('/api/admin/bookings/update_status.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: bookingId, status })
@@ -800,7 +795,7 @@
             const ok = await askConfirm('Delete booking', 'Delete this booking?');
             if (!ok) return;
             try {
-                const res = await apiFetch('/api/admin/bookings/delete.php', {
+                const res = await fetch('/api/admin/bookings/delete.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: bookingId })
@@ -1037,7 +1032,7 @@
             }
             try {
                 const endpoint = mode === 'edit' ? '/api/admin/hotels/update.php' : '/api/admin/hotels/create.php';
-                const res = await apiFetch(endpoint, {
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -1056,7 +1051,7 @@
             const ok = await askConfirm('Delete hotel', 'Delete this hotel?');
             if (!ok) return;
             try {
-                const res = await apiFetch('/api/admin/hotels/delete.php', {
+                const res = await fetch('/api/admin/hotels/delete.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id })
@@ -1117,7 +1112,7 @@
             }
             try {
                 const endpoint = mode === 'edit' ? '/api/admin/restaurants/update.php' : '/api/admin/restaurants/create.php';
-                const res = await apiFetch(endpoint, {
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -1136,7 +1131,7 @@
             const ok = await askConfirm('Delete restaurant', 'Delete this restaurant?');
             if (!ok) return;
             try {
-                const res = await apiFetch('/api/admin/restaurants/delete.php', {
+                const res = await fetch('/api/admin/restaurants/delete.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id })
