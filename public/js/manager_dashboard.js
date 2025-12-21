@@ -646,14 +646,18 @@ function closeCalendarModal() {
 }
 
 // Logout
-function logout() {
+document.getElementById('logout-btn').addEventListener('click', (e) => {
+    e.preventDefault();
     if (confirm('Are you sure you want to logout?')) {
         fetch('/api/auth/logout.php', { method: 'POST' }).finally(() => {
+            // Clear all stored session info so the guard redirects next load
             localStorage.removeItem('user');
+            localStorage.removeItem('manager');
+            sessionStorage.removeItem('isLoggedIn');
             window.location.href = 'index.html';
         });
     }
-}
+});
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function () {
