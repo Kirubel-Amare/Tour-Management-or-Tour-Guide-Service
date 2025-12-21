@@ -2,7 +2,7 @@ let places = [];
 let tours = [];
 let hotels = [];
 let restaurants = [];
-const PUBLIC_API_KEY = 'demo-api-key'; // align with api_docs; replace if rotated
+const PUBLIC_API_KEY = window.__PUBLIC_API_KEY__ || window.__REVIEW_API_KEY__ || 'demo-api-key';
 
 document.addEventListener('DOMContentLoaded', () => {
     initServicesPage();

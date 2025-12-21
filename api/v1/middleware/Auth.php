@@ -6,8 +6,13 @@ class Auth
 
     public static function authenticate()
     {
-        $headers = getallheaders();
-        $apiKey = $headers['X-API-KEY'] ?? $headers['x-api-key'] ?? null;
+        // Be robust to various server header casings and environments
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $apiKey = $headers['X-API-KEY']
+            ?? $headers['x-api-key']
+            ?? $headers['X-Api-Key']
+            ?? ($_SERVER['HTTP_X_API_KEY'] ?? null)
+            ?? ($_SERVER['HTTP_X_API-KEY'] ?? null);
 
         $envKey = getenv('API_REVIEW_KEY') ?: getenv('REVIEW_API_KEY') ?: self::$apiKey;
 

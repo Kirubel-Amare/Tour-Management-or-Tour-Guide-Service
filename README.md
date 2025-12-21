@@ -104,3 +104,27 @@ This repo includes a `render.yaml` blueprint and `Dockerfile` so you can deploy 
 Notes:
 - Apache is configured to respect the Render-assigned `PORT`. No extra config is needed.
 - If you prefer MySQL locally, set `DB_DRIVER=mysql` and run `db/setup.sql` on your MySQL instance.
+
+## 🔐 API Authentication
+
+All endpoints under `api/v1/*.php` require the header `X-API-KEY`.
+
+- Default local key: `demo-api-key`.
+- Server key is read from `API_REVIEW_KEY` (or `REVIEW_API_KEY`) environment variable.
+
+Set it in your shell when running PHP locally:
+
+```bash
+export API_REVIEW_KEY=demo-api-key
+```
+
+If you deploy with a custom key, update your frontend to send it (see `public/js/services.js` and `public/js/tours.js`).
+
+### Taxi external API
+
+The taxi endpoint reads OpenRouteService settings from env:
+
+- `EXTERNAL_TAXI_API` (e.g. `https://api.openrouteservice.org/v2/directions/driving-car`)
+- `EXTERNAL_TAXI_API_KEY` (your ORS key)
+
+For local mock mode, omit these or set `APP_ENV=local`. In non-local environments, both must be set.
