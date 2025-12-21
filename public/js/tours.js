@@ -1,7 +1,8 @@
 
 // Global state
 let allTours = [];
-const REVIEW_API_KEY = 'demo-api-key';
+const REVIEW_API_KEY = window.__REVIEW_API_KEY__ || 'demo-api-key';
+const API_BASE_PATH = (window.__APP_BASE_PATH__ || '').replace(/\/$/, '');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -177,7 +178,7 @@ function setupReviewForm() {
             if (email) payload.email = email;
             if (name) payload.name = name;
 
-            const res = await fetch('/api/v1/reviews.php', {
+            const res = await fetch(`${API_BASE_PATH}/api/v1/reviews.php`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

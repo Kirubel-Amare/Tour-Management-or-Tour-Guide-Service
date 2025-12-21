@@ -167,6 +167,14 @@
             }
         }
 
+        // Chart helpers
+        function destroyChart(id) {
+            const canvas = document.getElementById(id);
+            if (!canvas || !window.Chart || typeof Chart.getChart !== 'function') return;
+            const existing = Chart.getChart(canvas);
+            if (existing) existing.destroy();
+        }
+
         // Initialize charts
         function initializeCharts() {
             const revenueByMonth = Array(12).fill(0);
@@ -181,7 +189,10 @@
             }, {});
 
             // Revenue Chart
-            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            destroyChart('revenueChart');
+            const revenueCanvas = document.getElementById('revenueChart');
+            if (!revenueCanvas) return;
+            const revenueCtx = revenueCanvas.getContext('2d');
             new Chart(revenueCtx, {
                 type: 'line',
                 data: {
@@ -218,7 +229,10 @@
             });
 
             // User Chart
-            const userCtx = document.getElementById('userChart').getContext('2d');
+            destroyChart('userChart');
+            const userCanvas = document.getElementById('userChart');
+            if (!userCanvas) return;
+            const userCtx = userCanvas.getContext('2d');
             new Chart(userCtx, {
                 type: 'doughnut',
                 data: {
