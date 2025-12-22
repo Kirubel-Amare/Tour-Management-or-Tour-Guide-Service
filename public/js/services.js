@@ -2,14 +2,18 @@ let places = [];
 let tours = [];
 let hotels = [];
 let restaurants = [];
+let taxiServices = [];
 const PUBLIC_API_KEY = window.__PUBLIC_API_KEY__ || window.__REVIEW_API_KEY__ || 'demo-api-key';
+const TAXI_API_KEY = 'TAXI_GROUP_SECURE_KEY_2024';
+const TAXI_API_BASE_PRIMARY = 'https://taxi-system.infinityfreeapp.com/api';
+const TAXI_API_BASE_FALLBACK = 'http://taxi-system.infinityfreeapp.com/api';
 
 document.addEventListener('DOMContentLoaded', () => {
     initServicesPage();
 });
 
 async function initServicesPage() {
-    await Promise.all([loadPlaces(), loadTours(), loadHotels(), loadRestaurants()]);
+    await Promise.all([loadPlaces(), loadTours(), loadHotels(), loadRestaurants(), loadTaxiServices()]);
     setupEventListeners();
     calculateFare();
     syncAuthLinks();
@@ -608,22 +612,147 @@ function requireAuth(message) {
     return user;
 }
 
+// vehicle → service_id mapping fallback (updated when services load)
+const SERVICE_MAP = {
+    standard: 1,
+    premium: 2,
+    van: 3,
+    luxury: 4
+};
+
+// rates for client-side estimate (visual only)
+const RATES = {
+    standard: 2.5,
+    premium: 3.5,
+    van: 4.5,
+    luxury: 6.0
+};
+
+function parseCoords(value) {
+    const parts = (value || '').split(',').map(p => p.trim());
+    if (parts.length !== 2) return null;
+    const lon = parseFloat(parts[0]);
+    const lat = parseFloat(parts[1]);
+    if (isNaN(lon) || isNaN(lat)) return null;
+    return { lon, lat };
+}
+
+// rough distance estimation (Haversine)
+function estimateDistanceKm(a, b) {
+    const R = 6371;
+    const dLat = (b.lat - a.lat) * Math.PI / 180;
+    const dLon = (b.lon - a.lon) * Math.PI / 180;
+    const lat1 = a.lat * Math.PI / 180;
+    const lat2 = b.lat * Math.PI / 180;
+
+    const h =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+
+    return R * 2 * Math.asin(Math.sqrt(h));
+}
+
 function calculateFare() {
-    const vehicleType = document.getElementById('vehicle-type').value;
-    const rates = {
-        standard: 2.5,
-        premium: 3.5,
-        van: 4.5,
-        luxury: 6.0
-    };
+    const pickupVal = document.getElementById('pickup-location')?.value || '';
+    const destVal = document.getElementById('destination')?.value || '';
+    const vehicle = document.getElementById('vehicle-type')?.value || '';
 
-    const rate = rates[vehicleType] || 2.5;
-    const distance = 15;
-    const fare = distance * rate;
+    const start = parseCoords(pickupVal);
+    const end = parseCoords(destVal);
 
-    document.getElementById('estimated-distance').textContent = `${distance} km`;
-    document.getElementById('estimated-time').textContent = `${Math.round(distance * 2.5)} minutes`;
+    if (!start || !end || !vehicle) return;
+
+    const distanceKm = estimateDistanceKm(start, end);
+    const rate = RATES[vehicle] || 2.5;
+    const fare = distanceKm * rate;
+    const eta = Math.max(5, Math.round(distanceKm * 2));
+
+    document.getElementById('estimated-distance').textContent = `${distanceKm.toFixed(2)} km`;
+    document.getElementById('estimated-time').textContent = `${eta} minutes`;
     document.getElementById('estimated-fare').textContent = `$${fare.toFixed(2)}`;
+}
+
+document.getElementById('schedule')?.addEventListener('change', e => {
+    const custom = document.getElementById('custom-time');
+    if (custom) custom.style.display = e.target.value === 'custom' ? 'block' : 'none';
+});
+
+async function loadTaxiServices() {
+    const select = document.getElementById('vehicle-type');
+    const statusEl = document.getElementById('taxi-service-status');
+    const listEl = document.getElementById('available-services');
+    if (!select) return;
+
+    try {
+        const res = await fetchTaxi('/services.php', {
+            headers: { 'X-API-KEY': TAXI_API_KEY }
+        });
+        const data = await res.json().catch(() => []);
+        const services = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        taxiServices = services;
+
+        if (services.length) {
+            select.innerHTML = '<option value="">Select vehicle/service</option>' +
+                services.map(s => {
+                    const id = s.id || s.service_id || s.code || s.name;
+                    const value = s.type || s.name || id;
+                    if (value) SERVICE_MAP[value] = id;
+                    return `<option value="${value}" data-service-id="${id}">${s.name || s.type || 'Service'}${s.base_fare ? ` - $${s.base_fare}` : ''}</option>`;
+                }).join('');
+
+            // Render list cards
+            if (listEl) {
+                listEl.innerHTML = services.map(s => `
+                    <div style="border:1px solid var(--border); border-radius: var(--radius); padding:0.5rem;">
+                        <div style="font-weight:600; color:var(--dark);">${s.name || s.type || 'Service'}</div>
+                        <div style="font-size:0.9rem; color:var(--text-muted);">
+                            ID: ${s.id || s.service_id || s.code || '—'}
+                            ${s.base_fare ? ` • Base: $${s.base_fare}` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            if (statusEl) statusEl.textContent = 'Services loaded';
+        }
+    } catch (err) {
+        console.warn('Failed to load taxi services, using defaults', err);
+        if (statusEl) statusEl.textContent = 'Unable to fetch services; using defaults';
+    }
+
+    if (!select.innerHTML.trim()) {
+        select.innerHTML = `
+            <option value="">Select vehicle type</option>
+            <option value="standard" data-service-id="1">Standard (4 seats) - $2.50/km</option>
+            <option value="premium" data-service-id="2">Premium (4 seats) - $3.50/km</option>
+            <option value="van" data-service-id="3">Van (6+ seats) - $4.50/km</option>
+            <option value="luxury" data-service-id="4">Luxury (4 seats) - $6.00/km</option>
+        `;
+        if (listEl) {
+            listEl.innerHTML = `
+                <div style="border:1px solid var(--border); border-radius: var(--radius); padding:0.5rem;">
+                    <div style="font-weight:600; color:var(--dark);">Standard</div>
+                    <div style="font-size:0.9rem; color:var(--text-muted);">ID: 1 • Base: $2.50/km</div>
+                </div>
+                <div style="border:1px solid var(--border); border-radius: var(--radius); padding:0.5rem;">
+                    <div style="font-weight:600; color:var(--dark);">Premium</div>
+                    <div style="font-size:0.9rem; color:var(--text-muted);">ID: 2 • Base: $3.50/km</div>
+                </div>
+                <div style="border:1px solid var(--border); border-radius: var(--radius); padding:0.5rem;">
+                    <div style="font-weight:600; color:var(--dark);">Van</div>
+                    <div style="font-size:0.9rem; color:var(--text-muted);">ID: 3 • Base: $4.50/km</div>
+                </div>
+                <div style="border:1px solid var(--border); border-radius: var(--radius); padding:0.5rem;">
+                    <div style="font-weight:600; color:var(--dark);">Luxury</div>
+                    <div style="font-size:0.9rem; color:var(--text-muted);">ID: 4 • Base: $6.00/km</div>
+                </div>
+            `;
+        }
+    }
+}
+
+function buildPickupTime(schedule, customTime) {
+    if (schedule === 'custom' && customTime) return customTime.replace('T', ' ') + ':00';
+    return new Date().toISOString().slice(0, 19).replace('T', ' ');
 }
 
 async function orderTaxi(e) {
@@ -632,50 +761,68 @@ async function orderTaxi(e) {
     const user = requireAuth('Please login to book a taxi.');
     if (!user) return;
 
-    const pickup = document.getElementById('pickup-location').value;
-    const destination = document.getElementById('destination').value;
-    const vehicleType = document.getElementById('vehicle-type').value || 'standard';
+    const pickup = document.getElementById('pickup-location').value.trim();
+    const destination = document.getElementById('destination').value.trim();
+    const vehicleType = document.getElementById('vehicle-type').value;
     const schedule = document.getElementById('schedule').value;
-    const customTime = document.getElementById('scheduled-time').value;
+    const customTimeInput = document.getElementById('scheduled-time').value;
 
-    function isLonLat(v) {
-        const re = /^\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*$/;
-        return re.test(v);
-    }
-    if (!pickup || !destination) {
-        alert('Please enter both pickup and destination coordinates (lon,lat).');
+    if (!pickup || !destination || !vehicleType) {
+        alert('Please fill all required fields');
         return;
     }
-    if (!isLonLat(pickup) || !isLonLat(destination)) {
-        alert('Coordinates must be in "longitude,latitude" format, e.g., -73.9857, 40.7484');
-        return;
-    }
+
+    const pickupTime = buildPickupTime(schedule, customTimeInput);
+    const serviceId = SERVICE_MAP[vehicleType] || document.getElementById('vehicle-type').selectedOptions?.[0]?.dataset?.serviceId;
 
     try {
-        const response = await fetch('/api/v1/taxis.php', {
+        const response = await fetchTaxi('/bookings.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-API-KEY': PUBLIC_API_KEY
+                'X-API-KEY': TAXI_API_KEY
             },
-            body: JSON.stringify({ pickup, destination, vehicleType, schedule, customTime, user })
+            body: JSON.stringify({
+                user_id: user.id,
+                pickup_location: pickup,
+                dropoff_location: destination,
+                pickup_time: pickupTime,
+                service_id: serviceId
+            })
         });
 
         const payload = await response.json().catch(() => ({}));
+
         if (response.ok) {
-            const ride = payload.data || {};
-            alert(`Taxi booked!\n\nPickup: ${ride.pickup}\nDestination: ${ride.destination}\nVehicle: ${ride.vehicleType}\nFare: $${ride.fare}\nETA: ${ride.eta_minutes} minutes\nConfirmation: ${ride.ride_id || 'pending'}`);
+            alert(
+                `Taxi booked successfully!\n\n` +
+                `Pickup: ${pickup}\n` +
+                `Destination: ${destination}\n` +
+                `Vehicle: ${vehicleType}\n` +
+                `Status: Confirmed`
+            );
+            e.target.reset();
+            calculateFare();
         } else {
-            const msg = payload?.message || 'Taxi booking failed (provider may not support booking in this environment).';
-            alert(msg);
+            alert(payload.message || 'Taxi booking failed');
         }
     } catch (err) {
         console.error('Taxi booking error', err);
         alert('Unable to book taxi right now.');
     }
-
-    e.target.reset();
-    calculateFare();
 }
 
-calculateFare();
+document.querySelectorAll('#pickup-location, #destination, #vehicle-type').forEach(el => {
+    el?.addEventListener('input', calculateFare);
+});
+
+async function fetchTaxi(path, options) {
+    const attempt = async (base) => fetch(`${base}${path}`, options);
+    try {
+        const res = await attempt(TAXI_API_BASE_PRIMARY);
+        if (res) return res;
+    } catch (err) {
+        console.warn('Taxi API HTTPS failed, retrying HTTP', err);
+    }
+    return attempt(TAXI_API_BASE_FALLBACK);
+}
