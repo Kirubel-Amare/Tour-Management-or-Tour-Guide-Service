@@ -702,15 +702,18 @@ async function loadTaxiServices() {
 
             // Render list cards
             if (listEl) {
-                listEl.innerHTML = services.map(s => `
-                    <div style="border:1px solid var(--border); border-radius: var(--radius); padding:0.5rem;">
-                        <div style="font-weight:600; color:var(--dark);">${s.name || s.type || 'Service'}</div>
-                        <div style="font-size:0.9rem; color:var(--text-muted);">
-                            ID: ${s.id || s.service_id || s.code || '—'}
-                            ${s.base_fare ? ` • Base: $${s.base_fare}` : ''}
-                        </div>
-                    </div>
-                `).join('');
+                listEl.innerHTML = services.map(s => {
+                    const id = s.id || s.service_id || s.code || s.name;
+                    const value = s.type || s.name || id;
+                    return `
+                        <button type="button" onclick="selectTaxiService('${id}','${value}')" style="text-align:left; background:white; border:1px solid var(--border); border-radius: var(--radius); padding:0.5rem; cursor:pointer;">
+                            <div style="font-weight:600; color:var(--dark);">${s.name || s.type || 'Service'}</div>
+                            <div style="font-size:0.9rem; color:var(--text-muted);">
+                                ID: ${id}${s.base_fare ? ` • Base: $${s.base_fare}` : ''}
+                            </div>
+                        </button>
+                    `;
+                }).join('');
             }
             if (statusEl) statusEl.textContent = 'Services loaded';
         }
@@ -750,6 +753,27 @@ async function loadTaxiServices() {
     }
 }
 
+function selectTaxiService(serviceId, value) {
+    const select = document.getElementById('vehicle-type');
+    const statusEl = document.getElementById('taxi-service-status');
+    if (!select) return;
+
+    // Try to select matching option; if missing, add it
+    const opt = Array.from(select.options).find(o => o.dataset.serviceId === String(serviceId));
+    if (opt) {
+        select.value = opt.value;
+    } else {
+        const option = document.createElement('option');
+        option.value = value;
+        option.dataset.serviceId = String(serviceId);
+        option.textContent = value;
+        select.appendChild(option);
+        select.value = value;
+    }
+    SERVICE_MAP[value] = serviceId;
+    if (statusEl) statusEl.textContent = `Selected service: ${value} (ID ${serviceId})`;
+}
+
 function buildPickupTime(schedule, customTime) {
     if (schedule === 'custom' && customTime) return customTime.replace('T', ' ') + ':00';
     return new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -773,6 +797,8 @@ async function orderTaxi(e) {
     }
 
     const pickupTime = buildPickupTime(schedule, customTimeInput);
+    const customerName = (document.getElementById('customer-name')?.value || '').trim();
+    const customerPhone = (document.getElementById('customer-phone')?.value || '').trim();
     const serviceId = SERVICE_MAP[vehicleType] || document.getElementById('vehicle-type').selectedOptions?.[0]?.dataset?.serviceId;
 
     try {
@@ -783,11 +809,13 @@ async function orderTaxi(e) {
                 'X-API-KEY': TAXI_API_KEY
             },
             body: JSON.stringify({
-                user_id: user.id,
+                service_id: serviceId,
+                customer_name: customerName || user.name || 'TourismPro User',
+                phone: customerPhone || user.phone || '',
                 pickup_location: pickup,
                 dropoff_location: destination,
                 pickup_time: pickupTime,
-                service_id: serviceId
+                notes: `Scheduled: ${schedule}${customTimeInput ? ' @ ' + customTimeInput : ''}`
             })
         });
 

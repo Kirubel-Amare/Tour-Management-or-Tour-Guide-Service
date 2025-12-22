@@ -68,93 +68,109 @@
                             <option value="Asia">Asia</option>
                             <option value="North America">North America</option>
                             <option value="South America">South America</option>
-                            <option value="Africa">Africa</option>
-                            <option value="Australia">Australia</option>
-                        </select>
-                    </div>
+                            <div class="taxi-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; align-items:start;">
+                                <div class="taxi-services-panel">
+                                    <div style="margin-bottom:1rem;">
+                                        <h3 style="margin:0; color: var(--dark);"><i class="fas fa-list"></i> Available Services</h3>
+                                        <small id="taxi-service-status" style="display:block; margin-top:0.25rem; color: var(--text-muted);">Fetching available taxi services…</small>
+                                    </div>
+                                    <div id="available-services" style="display:grid; grid-template-columns: 1fr; gap:0.5rem;"></div>
+                                </div>
 
-                    <div class="filter-group">
-                        <label><i class="fas fa-mountain"></i> Type</label>
-                        <select id="type-filter" class="filter-select" onchange="filterPlaces()">
-                            <option value="">All Types</option>
-                            <option value="City">City</option>
-                            <option value="Beach">Beach</option>
-                            <option value="Mountain">Mountain</option>
-                            <option value="Historical">Historical</option>
-                            <option value="Nature">Nature</option>
-                        </select>
-                    </div>
+                                <div class="taxi-booking">
+                                    <div style="text-align: center; margin-bottom: 1rem;">
+                                        <i class="fas fa-map-marker-alt" style="color: var(--primary); font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                                        <h3 style="margin:0 0 0.5rem 0; color: var(--dark);">Book a Taxi</h3>
+                                        <p style="color: var(--text-muted);">Fill details to place a booking</p>
+                                    </div>
 
-                    <div class="filter-group">
-                        <label><i class="fas fa-thermometer-half"></i> Climate</label>
-                        <select id="climate-filter" class="filter-select" onchange="filterPlaces()">
-                            <option value="">Any Climate</option>
-                            <option value="Tropical">Tropical</option>
-                            <option value="Temperate">Temperate</option>
-                            <option value="Mediterranean">Mediterranean</option>
-                            <option value="Desert">Desert</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+                                    <form class="booking-form" onsubmit="orderTaxi(event)">
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                                                    <i class="fas fa-user"></i> Your Name
+                                                </label>
+                                                <input type="text" id="customer-name" class="search-input" placeholder="e.g., Jane Doe" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                                                    <i class="fas fa-phone"></i> Phone Number
+                                                </label>
+                                                <input type="tel" id="customer-phone" class="search-input" placeholder="e.g., +15551234567" required>
+                                            </div>
+                                        </div>
 
-            <div id="places-list" class="services-grid">
-                <!-- Places will be loaded here -->
-            </div>
-        </section>
+                                        <div class="form-group">
+                                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                                                <i class="fas fa-map-pin"></i> Pickup Location (address or lon,lat)
+                                            </label>
+                                            <input type="text" id="pickup-location" class="search-input" placeholder="e.g., 123 Main St or -73.9857, 40.7484" required>
+                                        </div>
 
-        <!-- Tours & Tickets Section -->
-        <section id="tours-section" class="service-section">
-            <div class="section-header">
-                <h2>Travel Tickets & Tours</h2>
-                <p>Book your next adventure with our verified providers</p>
-            </div>
+                                        <div class="form-group">
+                                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                                                <i class="fas fa-flag-checkered"></i> Dropoff Location (address or lon,lat)
+                                            </label>
+                                            <input type="text" id="destination" class="search-input" placeholder="e.g., 456 Oak Ave or -73.9787, 40.7614" required>
+                                        </div>
 
-            <div class="search-filters">
-                <div class="search-container">
-                    <div class="search-box">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="tours-search" class="search-input" placeholder="Search tours...">
-                    </div>
-                    <button onclick="searchTours()" class="btn btn-primary">
-                        <i class="fas fa-search"></i> Search
-                    </button>
-                </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                                                    <i class="fas fa-car"></i> Vehicle / Service
+                                                </label>
+                                                <select id="vehicle-type" class="filter-select" required>
+                                                    <option value="">Loading services…</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                                                    <i class="fas fa-clock"></i> Schedule
+                                                </label>
+                                                <select id="schedule" class="filter-select" required>
+                                                    <option value="now">Book Now</option>
+                                                    <option value="30min">In 30 minutes</option>
+                                                    <option value="1hour">In 1 hour</option>
+                                                    <option value="custom">Schedule for later</option>
+                                                </select>
+                                            </div>
+                                        </div>
 
-                <div class="filters-container">
-                    <div class="filter-group">
-                        <label><i class="fas fa-dollar-sign"></i> Price Range</label>
-                        <select id="tours-price-filter" class="filter-select" onchange="filterTours()">
-                            <option value="">Any Price</option>
-                            <option value="0-50">Under $50</option>
-                            <option value="50-100">$50 - $100</option>
-                            <option value="100-200">$100 - $200</option>
-                            <option value="200+">$200+</option>
-                        </select>
-                    </div>
+                                        <div id="custom-time" style="display: none;">
+                                            <div class="form-group">
+                                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
+                                                    <i class="fas fa-calendar-alt"></i> Date & Time
+                                                </label>
+                                                <input type="datetime-local" id="scheduled-time" class="search-input">
+                                            </div>
+                                        </div>
 
-                    <div class="filter-group">
-                        <label><i class="fas fa-clock"></i> Duration</label>
-                        <select id="duration-filter" class="filter-select" onchange="filterTours()">
-                            <option value="">Any Duration</option>
-                            <option value="0-2">Under 2 hours</option>
-                            <option value="2-4">2-4 hours</option>
-                            <option value="4-8">Half day</option>
-                            <option value="8+">Full day</option>
-                        </select>
-                    </div>
+                                        <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                                <span style="color: var(--text-muted);">Estimated Distance:</span>
+                                                <span style="font-weight: 600;" id="estimated-distance">-- km</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                                <span style="color: var(--text-muted);">Estimated Time:</span>
+                                                <span style="font-weight: 600;" id="estimated-time">-- minutes</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between;">
+                                                <span style="color: var(--text-muted);">Estimated Fare:</span>
+                                                <span style="font-weight: 600;" id="estimated-fare">--</span>
+                                            </div>
+                                        </div>
 
-                    <div class="filter-group">
-                        <label><i class="fas fa-star"></i> Rating</label>
-                        <select id="rating-filter" class="filter-select" onchange="filterTours()">
-                            <option value="">Any Rating</option>
-                            <option value="4">4+ Stars</option>
-                            <option value="4.5">4.5+ Stars</option>
-                            <option value="5">5 Stars</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+                                        <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+                                            <button class="btn btn-primary" type="submit">
+                                                <i class="fas fa-taxi"></i> Book Taxi
+                                            </button>
+                                            <button class="btn btn-outline" type="reset" style="border-color: var(--border);">
+                                                <i class="fas fa-undo"></i> Reset
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
 
             <div id="tours-list" class="services-grid">
                 <!-- Tours will be loaded here -->

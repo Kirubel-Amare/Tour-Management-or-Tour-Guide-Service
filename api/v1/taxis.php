@@ -12,8 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 /* ================== CONFIG ================== */
-$TAXI_API_BASE = rtrim(getenv('TAXI_API_BASE'), '/');
-$TAXI_API_KEY  = getenv('TAXI_API_KEY');
+$TAXI_API_BASE = rtrim(getenv('EXTERNAL_TAXI_API'), '/');
+$TAXI_API_KEY  = getenv('EXTERNAL_TAXI_API_KEY');
 
 if (!$TAXI_API_BASE || !$TAXI_API_KEY) {
     http_response_code(500);
