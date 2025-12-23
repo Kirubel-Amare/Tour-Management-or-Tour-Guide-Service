@@ -35,6 +35,48 @@ $taxiHeaders = [
     'Authorization: Bearer ' . $TAXI_API_KEY
 ];
 
+// --- Helper: parse "lon,lat" or "lat,lon" into numeric coords
+function parseCoords($value)
+{
+    if (!is_string($value)) return null;
+    $v = trim($value);
+    // Accept common separators
+    $v = str_replace([';',' '], ',', $v);
+    $parts = array_values(array_filter(array_map('trim', explode(',', $v)), fn($p) => $p !== ''));
+    if (count($parts) !== 2) return null;
+    if (!is_numeric($parts[0]) || !is_numeric($parts[1])) return null;
+    $a = (float)$parts[0];
+    $b = (float)$parts[1];
+    // Heuristic: latitude is between -90..90, longitude -180..180
+    $lat = null; $lon = null;
+    if (abs($a) <= 90 && abs($b) <= 180) { // assume lat,lon
+        $lat = $a; $lon = $b;
+    } elseif (abs($a) <= 180 && abs($b) <= 90) { // assume lon,lat
+        $lon = $a; $lat = $b;
+    } else {
+        return null;
+    }
+    return ['lat' => $lat, 'lon' => $lon];
+}
+
+// --- Helper: reverse geocode to human-readable name
+function reverseGeocodeName($lat, $lon)
+{
+    $base = getenv('GEOCODER_BASE_URL') ?: 'https://nominatim.openstreetmap.org/reverse';
+    $url = $base . '?format=jsonv2&lat=' . urlencode($lat) . '&lon=' . urlencode($lon);
+    $resp = ExternalService::requestJson($url, 'GET');
+    if (!$resp['ok'] || !is_array($resp['data'])) return null;
+    $data = $resp['data'];
+    // Prefer display_name; fallback to composed short name
+    if (!empty($data['display_name'])) return $data['display_name'];
+    $addr = $data['address'] ?? [];
+    $parts = [];
+    foreach (['road','neighbourhood','suburb','city','town','state','country'] as $k) {
+        if (!empty($addr[$k])) $parts[] = $addr[$k];
+    }
+    return $parts ? implode(', ', $parts) : null;
+}
+
 /* ================================
    POST /api/v1/taxis.php
    -> Book Taxi
@@ -69,11 +111,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Resolve coordinates to human-readable names if needed
+    $pickupCoords = parseCoords($booking['pickup_location']);
+    $dropCoords = parseCoords($booking['dropoff_location']);
+    if ($pickupCoords) {
+        $name = reverseGeocodeName($pickupCoords['lat'], $pickupCoords['lon']);
+        if ($name) {
+            $booking['pickup_location'] = $name;
+        }
+    }
+    if ($dropCoords) {
+        $name = reverseGeocodeName($dropCoords['lat'], $dropCoords['lon']);
+        if ($name) {
+            $booking['dropoff_location'] = $name;
+        }
+    }
+
     // Send a payload that includes both legacy and explicit keys for broader provider compatibility
     $externalPayload = array_merge($booking, [
         'pickup' => $booking['pickup_location'],
         'destination' => $booking['dropoff_location'],
         'vehicleType' => $booking['vehicle_type'],
+        // Include original coordinates when available for providers that can use them
+        'pickup_lat' => $pickupCoords['lat'] ?? null,
+        'pickup_lon' => $pickupCoords['lon'] ?? null,
+        'destination_lat' => $dropCoords['lat'] ?? null,
+        'destination_lon' => $dropCoords['lon'] ?? null,
     ]);
 
     // Try multiple candidate endpoints for bookings (with and without api_key in query)

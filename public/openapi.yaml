@@ -82,8 +82,8 @@ paths:
             schema:
               type: object
               properties:
-                pickup: { type: string, description: "lon,lat" }
-                destination: { type: string, description: "lon,lat" }
+                pickup: { type: string, description: "Either a human-readable place name (e.g., 'Eiffel Tower, Paris') or coordinates in 'lon,lat' or 'lat,lon' format" }
+                destination: { type: string, description: "Either a human-readable place name or coordinates in 'lon,lat' or 'lat,lon' format" }
                 vehicleType: { type: string }
                 schedule: { type: string }
                 customTime: { type: string, format: date-time }
