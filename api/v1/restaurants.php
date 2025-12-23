@@ -33,11 +33,6 @@ if (empty($baseApi)) {
     echo json_encode(['message' => 'EXTERNAL_RESTAURANT_API base URL is required']);
     exit;
 }
-if (!$bearer) {
-    http_response_code(500);
-    echo json_encode(['message' => 'EXTERNAL_RESTAURANT_API_TOKEN is required for external restaurant API']);
-    exit;
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $payload = json_decode(file_get_contents('php://input'), true);
@@ -60,6 +55,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$reservation['restaurant_id'] || !$reservation['date'] || !$reservation['time']) {
         http_response_code(400);
         echo json_encode(['message' => 'restaurant_id, date, and time are required']);
+        exit;
+    }
+
+    // Booking requires Bearer token; fail fast if missing
+    if (!$bearer) {
+        http_response_code(401);
+        echo json_encode(['message' => 'EXTERNAL_RESTAURANT_API_TOKEN is required for booking']);
         exit;
     }
 
