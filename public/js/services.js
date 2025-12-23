@@ -530,12 +530,10 @@ async function bookHotel(hotelId) {
     const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     try {
+        // POST without sending X-API-KEY
         const response = await fetch('/api/v1/hotels.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-KEY': PUBLIC_API_KEY
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 user,
                 hotel_id: hotel.id,
@@ -550,7 +548,7 @@ async function bookHotel(hotelId) {
         if (response.ok) {
             alert(`Hotel booked! Confirmation: ${payload.data?.confirmation || 'pending'}`);
         } else {
-            const msg = payload?.message || 'Hotel booking failed (provider may not support booking in this environment).';
+            const msg = payload?.message || 'Hotel booking failed (provider may not support booking).';
             alert(msg);
         }
     } catch (err) {
@@ -558,6 +556,7 @@ async function bookHotel(hotelId) {
         alert('Unable to book hotel right now.');
     }
 }
+
 
 async function bookRestaurant(restaurantId) {
     const user = requireAuth('Please login to book restaurant tables.');
@@ -652,12 +651,10 @@ async function orderTaxi(e) {
     }
 
     try {
+        // POST without sending X-API-KEY
         const response = await fetch('/api/v1/taxis.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-KEY': PUBLIC_API_KEY
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ pickup, destination, vehicleType, schedule, customTime, user })
         });
 
@@ -666,7 +663,7 @@ async function orderTaxi(e) {
             const ride = payload.data || {};
             alert(`Taxi booked!\n\nPickup: ${ride.pickup}\nDestination: ${ride.destination}\nVehicle: ${ride.vehicleType}\nFare: $${ride.fare}\nETA: ${ride.eta_minutes} minutes\nConfirmation: ${ride.ride_id || 'pending'}`);
         } else {
-            const msg = payload?.message || 'Taxi booking failed (provider may not support booking in this environment).';
+            const msg = payload?.message || 'Taxi booking failed (provider may not support booking).';
             alert(msg);
         }
     } catch (err) {
@@ -677,5 +674,3 @@ async function orderTaxi(e) {
     e.target.reset();
     calculateFare();
 }
-
-calculateFare();
