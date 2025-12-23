@@ -171,18 +171,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $source = 'external';
 
     if (!$response['ok']) {
-        // Fallback mock when external provider fails
-        $raw = null;
-        $ride = [
-            'ride_id' => 'mock-taxi-' . uniqid(),
-            'pickup' => $booking['pickup_location'],
-            'destination' => $booking['dropoff_location'],
-            'vehicleType' => $booking['vehicle_type'] ?? 'standard',
-            'eta_minutes' => rand(4, 12),
-            'fare' => rand(10, 40),
-            'status' => 'mock-confirmed'
+        http_response_code(503);
+        $out = [
+            'message' => 'External taxi service error',
+            'status' => $response['status'],
+            'error' => $response['error']
         ];
-        $source = 'mock';
+        if ($DEBUG) {
+            $out['hit_url'] = $hitUrl;
+            $out['candidates'] = $bookingCandidates;
+            $out['upstream'] = $response['data'];
+        }
+        echo json_encode($out);
+        exit;
     } else {
         // Normalize external response so frontend fields are populated
         $raw = $response['data'];
@@ -351,34 +352,8 @@ if ($response['ok']) {
             ];
         }, $data);
     }
-}
-
-if (!$services) {
-    // Mock fallback if external list fails
-    $services = [
-        [
-            'id' => 'mock-std',
-            'name' => 'Standard Taxi',
-            'vehicle_type' => 'standard',
-            'capacity' => 4,
-            'price_per_km' => 2.5,
-            'eta_minutes' => rand(4, 10),
-            'status' => 'available'
-        ],
-        [
-            'id' => 'mock-van',
-            'name' => 'Van',
-            'vehicle_type' => 'van',
-            'capacity' => 6,
-            'price_per_km' => 4.0,
-            'eta_minutes' => rand(6, 14),
-            'status' => 'available'
-        ]
-    ];
-}
-
 $listOut = [
-    'source' => $services && isset($services[0]['id']) && str_starts_with($services[0]['id'], 'mock-') ? 'mock' : 'external',
+    'source' => 'external',
     'data' => $services
 ];
 if ($DEBUG) {
@@ -402,4 +377,10 @@ if ($DEBUG) {
         'raw_sample' => $rawSample
     ];
 }
+if (!$response['ok'] || !$services) {
+    http_response_code(503);
+    $listOut['message'] = 'External taxi service unavailable';
+}
 echo json_encode($listOut);
+
+}
