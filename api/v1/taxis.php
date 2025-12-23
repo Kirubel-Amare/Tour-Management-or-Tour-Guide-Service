@@ -378,9 +378,9 @@ if ($DEBUG) {
     ];
 }
 if (!$response['ok'] || !$services) {
-    http_response_code(503);
     $listOut['message'] = 'External taxi service unavailable';
+    $listOut['status'] = $response['status'];
+    $listOut['error'] = $response['error'];
 }
 echo json_encode($listOut);
-
 }

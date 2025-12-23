@@ -741,10 +741,19 @@ async function loadTaxis() {
 }
 
 function renderTaxis(taxis) {
-    const container = document.getElementById('taxis-list');
+    const container = document.getElementById('availableTaxis');
+    const countEl = document.getElementById('taxis-count');
     if (!container) return;
 
-    container.innerHTML = taxis.map(t => `
+    const list = Array.isArray(taxis) ? taxis : [];
+    if (countEl) countEl.textContent = `${list.length} available`;
+
+    if (!list.length) {
+        container.innerHTML = '<div class="loading-taxis"><p>No taxis available right now.</p></div>';
+        return;
+    }
+
+    container.innerHTML = list.map(t => `
         <div class="taxi-card">
             <h3>${t.name || 'Taxi'}</h3>
             <p>Vehicle: ${t.vehicle_type || 'Standard'}</p>
