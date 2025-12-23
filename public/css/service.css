@@ -466,6 +466,29 @@
     margin: 0 auto;
 }
 
+/* Modal Message Box */
+.msg-modal { position: fixed; inset: 0; display: none; z-index: 10000; }
+.msg-modal.show { display: block; }
+.msg-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+.msg-dialog {
+    position: relative;
+    max-width: 520px;
+    margin: 12vh auto;
+    background: #ffffff;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    overflow: hidden;
+}
+.msg-dialog.info { border-top: 4px solid #3b82f6; }
+.msg-dialog.success { border-top: 4px solid #10b981; }
+.msg-dialog.error { border-top: 4px solid #ef4444; }
+.msg-header { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1.1rem; border-bottom: 1px solid var(--border); }
+.msg-header #msg-title { font-weight: 700; color: var(--dark); }
+.msg-close { background: transparent; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted); }
+.msg-body { padding: 1rem 1.1rem; color: var(--dark); line-height: 1.5; white-space: pre-wrap; }
+.msg-actions { padding: 0.75rem 1.1rem 1.1rem; display: flex; justify-content: flex-end; gap: 0.5rem; }
+
 .taxi-booking-form {
     background: white;
     border-radius: var(--radius);

@@ -4,7 +4,49 @@ let hotels = [];
 let restaurants = [];
 const PUBLIC_API_KEY = window.__PUBLIC_API_KEY__ || window.__REVIEW_API_KEY__ || 'demo-api-key';
 
+// Modal-based message box to replace native alerts
+const nativeAlert = window.alert;
+function initMessageBox() {
+    const modal = document.getElementById('message-modal');
+    if (!modal || modal.dataset.wired) return;
+    modal.dataset.wired = 'true';
+
+    const dialog = modal.querySelector('.msg-dialog');
+    const titleEl = document.getElementById('msg-title');
+    const bodyEl = document.getElementById('msg-body');
+    const okBtn = document.getElementById('msg-ok');
+    const closeElements = modal.querySelectorAll('[data-close]');
+
+    const close = () => modal.classList.remove('show');
+
+    closeElements.forEach(el => el.addEventListener('click', close));
+    okBtn?.addEventListener('click', close);
+    modal.addEventListener('click', (e) => {
+        if (e.target.dataset.close === 'true') close();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) close();
+    });
+
+    const showMessageBox = (message, { title = 'Message', type = 'info' } = {}) => {
+        if (!modal) return nativeAlert(message);
+        dialog.classList.remove('info', 'success', 'error');
+        dialog.classList.add(type || 'info');
+        titleEl.textContent = title;
+        bodyEl.textContent = Array.isArray(message) ? message.join('\n') : message;
+        modal.classList.add('show');
+        okBtn?.focus({ preventScroll: true });
+    };
+
+    // Override window.alert to use the message box
+    window.alert = (msg) => showMessageBox(String(msg));
+
+    // Expose helper for explicit typed messages
+    window.showMessageBox = showMessageBox;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    initMessageBox();
     initServicesPage();
 });
 

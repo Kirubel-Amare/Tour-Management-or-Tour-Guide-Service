@@ -425,6 +425,21 @@
 
     <script src="js/app.js"></script>
     <script src="js/services.js"></script>
+
+    <!-- Reusable Message Box Modal -->
+    <div id="message-modal" class="msg-modal" aria-hidden="true">
+        <div class="msg-backdrop" data-close="true"></div>
+        <div class="msg-dialog info" role="dialog" aria-modal="true" aria-labelledby="msg-title">
+            <div class="msg-header">
+                <span id="msg-title">Message</span>
+                <button type="button" class="msg-close" aria-label="Close" data-close="true">&times;</button>
+            </div>
+            <div class="msg-body" id="msg-body"></div>
+            <div class="msg-actions">
+                <button type="button" class="btn btn-primary" id="msg-ok">OK</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
