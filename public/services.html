@@ -281,124 +281,144 @@
             </div>
         </section>
 
-        <!-- Taxis Section -->
-        <section id="taxis-section" class="service-section">
-            <div class="section-header">
-                <h2>Order Taxis</h2>
-                <p>Reliable transportation at your fingertips</p>
+       <!-- Taxis Section - Updated -->
+<section id="taxis-section" class="service-section">
+    <div class="section-header">
+        <h2>Order Taxis</h2>
+        <p>Reliable transportation at your fingertips</p>
+    </div>
+
+    <div class="taxi-layout">
+        <!-- Booking Form Column -->
+        <div class="taxi-booking-form">
+            <div class="booking-intro">
+                <i class="fas fa-map-marker-alt booking-icon"></i>
+                <h3>Where would you like to go?</h3>
+                <p>Book a taxi in seconds with our reliable service</p>
             </div>
 
-            <div class="taxi-booking">
-                <div style="text-align: center; margin-bottom: 2rem;">
-                    <i class="fas fa-map-marker-alt"
-                        style="color: var(--primary); font-size: 3rem; margin-bottom: 1rem;"></i>
-                    <h3 style="margin-bottom: 0.5rem; color: var(--dark);">Where would you like to go?</h3>
-                    <p style="color: var(--text-muted);">Book a taxi in seconds</p>
+            <form id="taxi-form" class="booking-form" onsubmit="orderTaxi(event)">
+                <div class="form-group">
+                    <label for="pickup-location" class="form-label">
+                        <i class="fas fa-map-pin"></i> Pickup Coordinates (longitude, latitude)
+                    </label>
+                    <input type="text" id="pickup-location" class="form-input"
+                        placeholder="e.g., -73.9857, 40.7484" required>
+                    <small class="form-help">Use longitude,latitude format. Example: Times Square NYC is <code>-73.9857, 40.7484</code></small>
                 </div>
 
-                <form class="booking-form" onsubmit="orderTaxi(event)">
+                <div class="form-group">
+                    <label for="destination" class="form-label">
+                        <i class="fas fa-flag-checkered"></i> Destination Coordinates (longitude, latitude)
+                    </label>
+                    <input type="text" id="destination" class="form-input" 
+                        placeholder="e.g., -73.9787, 40.7614" required>
+                    <small class="form-help">Use longitude,latitude format. Example: Central Park NYC is <code>-73.9787, 40.7614</code></small>
+                </div>
+
+                <div class="form-row">
                     <div class="form-group">
-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
-                            <i class="fas fa-map-pin"></i> Pickup Coordinates (lon, lat)
+                        <label for="vehicle-type" class="form-label">
+                            <i class="fas fa-car"></i> Vehicle Type
                         </label>
-                        <input type="text" id="pickup-location" class="search-input"
-                            placeholder="e.g., -73.9857, 40.7484" required>
-                        <small style="color: var(--text-muted); display:block; margin-top: 0.25rem;">Use longitude,latitude format. Example: Times Square NYC is <code>-73.9857, 40.7484</code>.</small>
+                        <select id="vehicle-type" class="form-select" required>
+                            <option value="">Select vehicle type</option>
+                            <option value="standard">Standard (4 seats) - $2.50/km</option>
+                            <option value="premium">Premium (4 seats) - $3.50/km</option>
+                            <option value="van">Van (6+ seats) - $4.50/km</option>
+                            <option value="luxury">Luxury (4 seats) - $6.00/km</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
-                            <i class="fas fa-flag-checkered"></i> Destination Coordinates (lon, lat)
+                        <label for="schedule" class="form-label">
+                            <i class="fas fa-clock"></i> Schedule
                         </label>
-                        <input type="text" id="destination" class="search-input" placeholder="e.g., -73.9787, 40.7614" required>
-                        <small style="color: var(--text-muted); display:block; margin-top: 0.25rem;">Use longitude,latitude format. Example: Central Park NYC is <code>-73.9787, 40.7614</code>.</small>
+                        <select id="schedule" class="form-select" required>
+                            <option value="now">Book Now</option>
+                            <option value="30min">In 30 minutes</option>
+                            <option value="1hour">In 1 hour</option>
+                            <option value="custom">Schedule for later</option>
+                        </select>
                     </div>
+                </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
-                                <i class="fas fa-car"></i> Vehicle Type
-                            </label>
-                            <select id="vehicle-type" class="filter-select" required>
-                                <option value="">Select vehicle type</option>
-                                <option value="standard">Standard (4 seats) - $2.50/km</option>
-                                <option value="premium">Premium (4 seats) - $3.50/km</option>
-                                <option value="van">Van (6+ seats) - $4.50/km</option>
-                                <option value="luxury">Luxury (4 seats) - $6.00/km</option>
-                            </select>
-                        </div>
+                <div id="custom-time" class="form-group" style="display: none;">
+                    <label for="scheduled-time" class="form-label">
+                        <i class="fas fa-calendar-alt"></i> Date & Time
+                    </label>
+                    <input type="datetime-local" id="scheduled-time" class="form-input">
+                </div>
 
-                        <div class="form-group">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
-                                <i class="fas fa-clock"></i> Schedule
-                            </label>
-                            <select id="schedule" class="filter-select" required>
-                                <option value="now">Book Now</option>
-                                <option value="30min">In 30 minutes</option>
-                                <option value="1hour">In 1 hour</option>
-                                <option value="custom">Schedule for later</option>
-                            </select>
+                <div class="fare-estimate">
+                    <h4><i class="fas fa-calculator"></i> Fare Estimate</h4>
+                    <div class="fare-details">
+                        <div class="fare-item">
+                            <span>Estimated Distance:</span>
+                            <span id="estimated-distance">-- km</span>
                         </div>
-                    </div>
-
-                    <div id="custom-time" style="display: none;">
-                        <div class="form-group">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark);">
-                                <i class="fas fa-calendar-alt"></i> Date & Time
-                            </label>
-                            <input type="datetime-local" id="scheduled-time" class="search-input">
+                        <div class="fare-item">
+                            <span>Estimated Time:</span>
+                            <span id="estimated-time">-- minutes</span>
                         </div>
-                    </div>
-
-                    <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span style="color: var(--text-muted);">Estimated Distance:</span>
-                            <span style="font-weight: 600;" id="estimated-distance">-- km</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span style="color: var(--text-muted);">Estimated Time:</span>
-                            <span style="font-weight: 600;" id="estimated-time">-- minutes</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 1.25rem;">
-                            <span style="font-weight: 600; color: var(--dark);">Estimated Fare:</span>
-                            <span style="font-weight: 700; color: var(--primary);" id="estimated-fare">$--</span>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem; padding: 1rem;">
-                        <i class="fas fa-taxi"></i> Book Taxi Now
-                    </button>
-                </form>
-
-                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
-                    <h4 style="margin-bottom: 1rem; color: var(--dark);">
-                        <i class="fas fa-shield-alt"></i> Why Choose Our Taxi Service?
-                    </h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
-                        <div style="text-align: center;">
-                            <i class="fas fa-clock"
-                                style="color: var(--primary); font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
-                            <div style="font-size: 0.9rem; color: var(--text-muted);">5-min pickup time</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <i class="fas fa-dollar-sign"
-                                style="color: var(--primary); font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
-                            <div style="font-size: 0.9rem; color: var(--text-muted);">Fixed prices</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <i class="fas fa-user-check"
-                                style="color: var(--primary); font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
-                            <div style="font-size: 0.9rem; color: var(--text-muted);">Verified drivers</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <i class="fas fa-star"
-                                style="color: var(--primary); font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
-                            <div style="font-size: 0.9rem; color: var(--text-muted);">4.8★ rating</div>
+                        <div class="fare-total">
+                            <span>Estimated Fare:</span>
+                            <span id="estimated-fare">$--</span>
                         </div>
                     </div>
                 </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-large">
+                    <i class="fas fa-taxi"></i> Book Taxi Now
+                </button>
+            </form>
+
+            <div class="features-grid">
+                <h4><i class="fas fa-shield-alt"></i> Why Choose Our Taxi Service?</h4>
+                <div class="features">
+                    <div class="feature">
+                        <i class="fas fa-clock"></i>
+                        <span>5-min pickup time</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Fixed prices</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-user-check"></i>
+                        <span>Verified drivers</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-star"></i>
+                        <span>4.8★ rating</span>
+                    </div>
+                </div>
             </div>
-        </section>
+        </div>
+
+        <!-- Available Taxis Column - Updated to match form height -->
+        <aside class="available-taxis">
+            <div class="taxis-header">
+                <h3><i class="fas fa-taxi"></i> Available Taxis</h3>
+                <span class="taxis-count" id="taxis-count">0 available</span>
+            </div>
+            
+            <div class="taxis-container">
+                <div id="availableTaxis" class="taxis-list">
+                    <div class="loading-taxis">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading available taxis...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="taxis-info">
+                <p><i class="fas fa-info-circle"></i> Taxis update every 30 seconds</p>
+                <p><i class="fas fa-map-marker-alt"></i> Showing taxis near your area</p>
+            </div>
+        </aside>
+    </div>
+</section>
     </div>
 
     <div id="footer-placeholder"></div>

@@ -1,131 +1,114 @@
 <?php
-
-/* ================== HEADERS ================== */
-header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
+header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-KEY');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
 }
 
-/* ================== CONFIG ================== */
-$TAXI_API_BASE = rtrim(getenv('EXTERNAL_TAXI_API'), '/');
-$TAXI_API_KEY  = getenv('EXTERNAL_TAXI_API_KEY');
+require_once 'middleware/Auth.php';
+require_once '../../config/ExternalService.php';
 
-if (!$TAXI_API_BASE || !$TAXI_API_KEY) {
-    http_response_code(500);
-    echo json_encode(['message' => 'Taxi API configuration missing']);
-    exit;
-}
+// Enforce API Key
+Auth::authenticate();
 
-/* ================== HELPER ================== */
-function taxiRequest(string $url, string $method = 'GET', array $payload = null)
-{
-    global $TAXI_API_KEY;
+/* ================================
+   CONFIG
+================================ */
+$TAXI_BASE_URL = 'https://taxi-system.infinityfreeapp.com/api';
+$TAXI_API_KEY  = getenv('EXTERNAL_TAXI_API_KEY') ?: 'TAXI_GROUP_SECURE_KEY_2024';
 
-    $ch = curl_init($url);
+$taxiHeaders = [
+    'Content-Type: application/json',
+    'X-API-KEY: ' . $TAXI_API_KEY
+];
 
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CUSTOMREQUEST  => $method,
-        CURLOPT_HTTPHEADER     => [
-            'Content-Type: application/json',
-            'X-API-KEY: ' . $TAXI_API_KEY
-        ]
-    ]);
+/* ================================
+   POST /api/v1/taxis.php
+   -> Book Taxi
+================================ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $payload = json_decode(file_get_contents('php://input'), true);
 
-    if ($payload) {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    }
-
-    $response = curl_exec($ch);
-    $status   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    return [
-        'ok' => $status >= 200 && $status < 300,
-        'status' => $status,
-        'data' => json_decode($response, true)
-    ];
-}
-
-/* ================== ROUTING ================== */
-$method = $_SERVER['REQUEST_METHOD'];
-
-/* ============================================================
-   GET → AVAILABLE TAXIS
-   ============================================================ */
-if ($method === 'GET') {
-
-    $result = taxiRequest($TAXI_API_BASE . '/services.php');
-
-    if (!$result['ok']) {
-        http_response_code(502);
-        echo json_encode(['message' => 'Failed to fetch taxi services']);
-        exit;
-    }
-
-    echo json_encode([
-        'message' => 'Available taxis',
-        'data' => $result['data']
-    ]);
-    exit;
-}
-
-/* ============================================================
-   POST → BOOK TAXI
-   ============================================================ */
-if ($method === 'POST') {
-
-    $input = json_decode(file_get_contents('php://input'), true);
-
-    if (!$input) {
+    if (!$payload) {
         http_response_code(400);
         echo json_encode(['message' => 'Invalid JSON payload']);
         exit;
     }
 
-    $userId   = intval($input['user_id'] ?? 0);
-    $pickup   = trim($input['pickup_location'] ?? '');
-    $dropoff  = trim($input['dropoff_location'] ?? '');
-    $service  = intval($input['service_id'] ?? 1);
-    $time     = $input['pickup_time'] ?? date('Y-m-d H:i:s');
+    $booking = [
+        'user_id'          => $payload['user_id'] ?? null,
+        'pickup_location'  => $payload['pickup'] ?? null,
+        'dropoff_location' => $payload['destination'] ?? null,
+        'pickup_time'      => $payload['pickup_time'] ?? date('Y-m-d H:i:s'),
+        'service_id'       => $payload['service_id'] ?? null
+    ];
 
-    if (!$userId || !$pickup || !$dropoff) {
+    if (
+        !$booking['user_id'] ||
+        !$booking['pickup_location'] ||
+        !$booking['dropoff_location']
+    ) {
         http_response_code(400);
-        echo json_encode(['message' => 'Missing required fields']);
+        echo json_encode(['message' => 'user_id, pickup_location and dropoff_location are required']);
         exit;
     }
 
-    $payload = [
-        'user_id' => $userId,
-        'pickup_location' => $pickup,
-        'dropoff_location' => $dropoff,
-        'pickup_time' => $time,
-        'service_id' => $service
-    ];
+    $response = ExternalService::requestJson(
+        $TAXI_BASE_URL . '/bookings.php',
+        'POST',
+        $booking,
+        $taxiHeaders
+    );
 
-    $result = taxiRequest($TAXI_API_BASE . '/bookings.php', 'POST', $payload);
-
-    if (!$result['ok']) {
-        http_response_code(502);
+    if (!$response['ok']) {
+        http_response_code(503);
         echo json_encode([
-            'message' => 'Taxi booking failed',
-            'provider_error' => $result['data']
+            'message' => 'Taxi provider unavailable',
+            'error' => $response['error']
         ]);
         exit;
     }
 
     echo json_encode([
+        'source' => 'external',
         'message' => 'Taxi booked successfully',
-        'provider_response' => $result['data']
+        'data' => $response['data']
     ]);
     exit;
 }
 
-/* ================== FALLBACK ================== */
-http_response_code(405);
-echo json_encode(['message' => 'Method not allowed']);
+/* ================================
+   GET /api/v1/taxis.php
+   -> Available Taxis
+================================ */
+$response = ExternalService::requestJson(
+    $TAXI_BASE_URL . '/services.php',
+    'GET',
+    null,
+    $taxiHeaders
+);
+
+$services = [];
+
+if ($response['ok'] && is_array($response['data'])) {
+    $services = array_map(function ($item) {
+        return [
+            'id' => $item['id'] ?? null,
+            'name' => $item['name'] ?? 'Taxi',
+            'vehicle_type' => $item['vehicle_type'] ?? 'Standard',
+            'capacity' => $item['capacity'] ?? 4,
+            'price_per_km' => $item['price_per_km'] ?? 0,
+            'eta_minutes' => $item['eta_minutes'] ?? rand(3, 10),
+            'status' => 'available'
+        ];
+    }, $response['data']);
+}
+
+echo json_encode([
+    'source' => 'external',
+    'data' => $services
+]);
