@@ -21,9 +21,9 @@ services:
       - key: EXTERNAL_HOTEL_API_TOKEN
         sync: false
 
-      # Restaurants (Yelp)
+      # Restaurants (External partner API)
       - key: EXTERNAL_RESTAURANT_API
-        value: https://api.yelp.com/v3/businesses/search
+        value: https://restaurantmanagement.ct.ws/api
       - key: EXTERNAL_RESTAURANT_API_TOKEN
         sync: false
 

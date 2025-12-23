@@ -15,25 +15,27 @@ require_once '../../config/ExternalService.php';
 // Enforce API key authentication for partner access
 Auth::authenticate();
 
-$baseUrl = rtrim(getenv('EXTERNAL_RESTAURANT_API') ?: '', '/');
-// Optional/typical headers for real providers
-$restaurantHeaders = [];
-if ($token = getenv('EXTERNAL_RESTAURANT_API_TOKEN')) {
-    $restaurantHeaders[] = 'Authorization: Bearer ' . $token;
-}
-if ($apiKey = getenv('EXTERNAL_RESTAURANT_API_KEY')) {
-    $restaurantHeaders[] = 'X-API-Key: ' . $apiKey;
-}
-if ($rapidKey = getenv('EXTERNAL_RESTAURANT_RAPIDAPI_KEY')) {
-    $restaurantHeaders[] = 'X-RapidAPI-Key: ' . $rapidKey;
-}
-if ($rapidHost = getenv('EXTERNAL_RESTAURANT_RAPIDAPI_HOST')) {
-    $restaurantHeaders[] = 'X-RapidAPI-Host: ' . $rapidHost;
-}
+// Base of the external API (e.g., https://restaurantmanagement.ct.ws/api)
+$baseApi = rtrim(getenv('EXTERNAL_RESTAURANT_API') ?: 'https://restaurantmanagement.ct.ws/api', '/');
+// Optional debug flag to inspect upstream behavior
+$DEBUG = (isset($_GET['debug']) && $_GET['debug'] === '1');
 
-if (empty($baseUrl)) {
+// Upstream auth: Bearer token is required for most endpoints
+$restaurantHeaders = [];
+$bearer = getenv('EXTERNAL_RESTAURANT_API_TOKEN');
+if ($bearer) {
+    $restaurantHeaders[] = 'Authorization: Bearer ' . $bearer;
+}
+$restaurantHeaders[] = 'Content-Type: application/json';
+
+if (empty($baseApi)) {
     http_response_code(500);
-    echo json_encode(['message' => 'EXTERNAL_RESTAURANT_API is required']);
+    echo json_encode(['message' => 'EXTERNAL_RESTAURANT_API base URL is required']);
+    exit;
+}
+if (!$bearer) {
+    http_response_code(500);
+    echo json_encode(['message' => 'EXTERNAL_RESTAURANT_API_TOKEN is required for external restaurant API']);
     exit;
 }
 
@@ -61,15 +63,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Map to external Booking API payload
+    $externalBody = [
+        'restaurant_id' => $reservation['restaurant_id'],
+        'booking_date' => $reservation['date'],
+        'booking_time' => $reservation['time'],
+        'number_of_people' => $reservation['guests'],
+        'special_requests' => $reservation['notes']
+    ];
+
     $source = 'external';
     $data = null;
 
-    $response = ExternalService::requestJson($baseUrl, 'POST', $reservation, $restaurantHeaders);
+    $url = $baseApi . '/bookings/create.php';
+    $response = ExternalService::requestJson($url, 'POST', $externalBody, $restaurantHeaders);
     if ($response['ok']) {
         $data = $response['data'];
     } else {
         http_response_code(503);
-        echo json_encode(['message' => 'External service error', 'status' => $response['status'], 'error' => $response['error']]);
+        $out = [
+            'message' => 'External service error',
+            'status' => $response['status'],
+            'error' => $response['error']
+        ];
+        if ($DEBUG) {
+            $out['upstream'] = $response['data'];
+            $out['hit_url'] = $url;
+            $out['payload'] = $externalBody;
+        }
+        echo json_encode($out);
         exit;
     }
 
@@ -85,65 +107,173 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// Build listing/search against external API
 $queryParams = [
     'q' => $_GET['q'] ?? '',
     'city' => $_GET['city'] ?? '',
-    'cuisine' => $_GET['cuisine'] ?? '',
-    'priceRange' => $_GET['price'] ?? ''
+    'priceRange' => $_GET['price'] ?? '',
+    'rating' => $_GET['rating'] ?? '',
+    'user_id' => $_GET['user_id'] ?? ''
 ];
 
 $source = 'external';
 $data = [];
 
-// Remap to common provider params (e.g., Yelp: location, term, categories, price)
-$forwardParams = array_filter($queryParams);
-if (!empty($forwardParams['city'])) {
-    $forwardParams['location'] = $forwardParams['city'];
-    unset($forwardParams['city']);
-}
-if (!empty($forwardParams['cuisine'])) {
-    $forwardParams['categories'] = $forwardParams['cuisine'];
-    unset($forwardParams['cuisine']);
-}
-if (!empty($forwardParams['priceRange'])) {
-    // Yelp expects 1,2,3,4 for $, $$, $$$, $$$$
-    $priceMap = [' $' => '1', '$$' => '2', '$$$' => '3', '$$$$' => '4'];
-    $forwardParams['price'] = $priceMap[$forwardParams['priceRange']] ?? $forwardParams['priceRange'];
-    unset($forwardParams['priceRange']);
-}
-if (!empty($forwardParams['q'])) {
-    $forwardParams['term'] = $forwardParams['q'];
-    unset($forwardParams['q']);
-}
+// Map our query to provider fields
+$forward = [];
+if (!empty($queryParams['city'])) $forward['location'] = $queryParams['city'];
+if (!empty($queryParams['priceRange'])) $forward['price_range'] = $queryParams['priceRange'];
+if (!empty($queryParams['rating'])) $forward['rating'] = $queryParams['rating'];
+if (!empty($queryParams['user_id'])) $forward['user_id'] = $queryParams['user_id'];
+// External docs do not mention free-text search param; ignore 'q' if present.
 
-$url = $baseUrl . ((strpos($baseUrl, '?') === false ? '?' : '&') . http_build_query($forwardParams));
+$url = $baseApi . '/restaurants/index.php';
+if (!empty($forward)) {
+    $url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query($forward);
+}
 
 $response = ExternalService::requestJson($url, 'GET', null, $restaurantHeaders);
-if ($response['ok'] && is_array($response['data'])) {
-    $raw = isset($response['data']['data']) && is_array($response['data']['data'])
-        ? $response['data']['data']
-        : $response['data'];
+if ($response['ok']) {
+    // Decide which upstream endpoint to call based on query
+    $id = $_GET['id'] ?? null;
+    $hasMenu = isset($_GET['menu']);
+    $hasAvailability = isset($_GET['availability']);
+    $hasReviews = isset($_GET['reviews']);
 
-    $data = array_map(function ($item) {
-        $categories = $item['categories'] ?? $item['cuisines'] ?? [];
-        if (is_array($categories)) {
-            $categories = array_map(function ($c) {
-                return is_array($c) ? ($c['title'] ?? $c['name'] ?? '') : $c;
-            }, $categories);
+    if ($id && $hasMenu) {
+        // Menu
+        $menuUrl = $baseApi . '/restaurants/menu.php?id=' . urlencode($id);
+        $resp = ExternalService::requestJson($menuUrl, 'GET', null, $restaurantHeaders);
+        if ($resp['ok']) {
+            $raw = $resp['data'];
+            $data = is_array($raw) && isset($raw['data']) ? $raw['data'] : (is_array($raw) ? $raw : []);
+        } else {
+            http_response_code(503);
+            $out = ['message' => 'External service error', 'status' => $resp['status'], 'error' => $resp['error']];
+            if ($DEBUG) { $out['hit_url'] = $menuUrl; $out['upstream'] = $resp['data']; }
+            echo json_encode($out);
+            exit;
         }
-        return [
-            'id' => $item['id'] ?? uniqid('restaurant_', true),
-            'name' => $item['name'] ?? 'Restaurant',
-            'location' => $item['location']['city'] ?? $item['city'] ?? $item['address'] ?? 'Unknown',
-            'cuisine' => $categories[0] ?? 'International',
-            'priceRange' => $item['price'] ?? '$$',
-            'rating' => $item['rating'] ?? 4.5,
-            'reviews' => $item['review_count'] ?? $item['reviews'] ?? 40,
-            'description' => $item['description'] ?? 'Partner restaurant',
-            'image' => $item['image_url'] ?? $item['image'] ?? 'https://via.placeholder.com/600x400?text=Restaurant',
-            'features' => $item['features'] ?? $categories ?? []
-        ];
-    }, is_array($raw) ? $raw : []);
+    } elseif ($id && $hasAvailability) {
+        // Availability requires id, date, time
+        $date = $_GET['date'] ?? '';
+        $time = $_GET['time'] ?? '';
+        $availUrl = $baseApi . '/restaurants/availability.php?id=' . urlencode($id) . '&date=' . urlencode($date) . '&time=' . urlencode($time);
+        $resp = ExternalService::requestJson($availUrl, 'GET', null, $restaurantHeaders);
+        if ($resp['ok']) {
+            $raw = $resp['data'];
+            $raw = is_array($raw) && isset($raw['data']) ? $raw['data'] : $raw;
+            if (is_array($raw)) {
+                $data = [
+                    'restaurant_id' => $raw['restaurant_id'] ?? $id,
+                    'date' => $raw['date'] ?? $date,
+                    'time' => $raw['time'] ?? $time,
+                    'available_seats' => $raw['available_seats'] ?? null
+                ];
+            } else {
+                $data = $raw ?: [];
+            }
+        } else {
+            http_response_code(503);
+            $out = ['message' => 'External service error', 'status' => $resp['status'], 'error' => $resp['error']];
+            if ($DEBUG) { $out['hit_url'] = $availUrl; $out['upstream'] = $resp['data']; }
+            echo json_encode($out);
+            exit;
+        }
+    } elseif ($id && $hasReviews) {
+        // Reviews
+        $reviewsUrl = $baseApi . '/restaurants/reviews.php?id=' . urlencode($id);
+        $resp = ExternalService::requestJson($reviewsUrl, 'GET', null, $restaurantHeaders);
+        if ($resp['ok']) {
+            $raw = $resp['data'];
+            $data = is_array($raw) && isset($raw['data']) ? $raw['data'] : (is_array($raw) ? $raw : []);
+        } else {
+            http_response_code(503);
+            $out = ['message' => 'External service error', 'status' => $resp['status'], 'error' => $resp['error']];
+            if ($DEBUG) { $out['hit_url'] = $reviewsUrl; $out['upstream'] = $resp['data']; }
+            echo json_encode($out);
+            exit;
+        }
+    } elseif ($id) {
+        // Single restaurant read
+        $readUrl = $baseApi . '/restaurants/read.php?id=' . urlencode($id);
+        $resp = ExternalService::requestJson($readUrl, 'GET', null, $restaurantHeaders);
+        if ($resp['ok']) {
+            $raw = $resp['data'];
+            $raw = is_array($raw) && isset($raw['data']) ? $raw['data'] : $raw;
+            if (is_array($raw)) {
+                $item = $raw;
+                $amenitiesStr = $item['amenities'] ?? '';
+                $features = [];
+                if (is_string($amenitiesStr) && $amenitiesStr !== '') {
+                    $features = array_values(array_filter(array_map(function ($s) { return trim($s); }, explode(',', $amenitiesStr)), fn($x) => $x !== ''));
+                }
+                $data = [
+                    'id' => $item['id'] ?? uniqid('restaurant_', true),
+                    'name' => $item['name'] ?? 'Restaurant',
+                    'location' => $item['location'] ?? 'Unknown',
+                    'cuisine' => $item['cuisine'] ?? 'International',
+                    'priceRange' => $item['price_range'] ?? '$$',
+                    'rating' => isset($item['rating']) ? (is_numeric($item['rating']) ? (float)$item['rating'] : $item['rating']) : 4.5,
+                    'description' => $item['description'] ?? 'Partner restaurant',
+                    'image' => $item['image_url'] ?? $item['image'] ?? 'https://via.placeholder.com/600x400?text=Restaurant',
+                    'features' => $features,
+                    // Additional fields
+                    'capacity' => $item['capacity'] ?? null,
+                    'contact_phone' => $item['contact_phone'] ?? null,
+                    'opening_hours' => $item['opening_hours'] ?? null
+                ];
+            } else {
+                $data = [];
+            }
+        } else {
+            http_response_code(503);
+            $out = ['message' => 'External service error', 'status' => $resp['status'], 'error' => $resp['error']];
+            if ($DEBUG) { $out['hit_url'] = $readUrl; $out['upstream'] = $resp['data']; }
+            echo json_encode($out);
+            exit;
+        }
+    } else {
+        // List/search
+        $raw = $response['data'];
+        if (is_array($raw) && isset($raw['data'])) {
+            $raw = $raw['data'];
+        }
+        if (is_array($raw)) {
+            $data = array_map(function ($item) {
+                $amenitiesStr = $item['amenities'] ?? '';
+                $features = [];
+                if (is_string($amenitiesStr) && $amenitiesStr !== '') {
+                    $features = array_values(array_filter(array_map(function ($s) { return trim($s); }, explode(',', $amenitiesStr)), fn($x) => $x !== ''));
+                }
+                return [
+                    'id' => $item['id'] ?? uniqid('restaurant_', true),
+                    'name' => $item['name'] ?? 'Restaurant',
+                    'location' => $item['location'] ?? 'Unknown',
+                    'cuisine' => $item['cuisine'] ?? 'International',
+                    'priceRange' => $item['price_range'] ?? '$$',
+                    'rating' => isset($item['rating']) ? (is_numeric($item['rating']) ? (float)$item['rating'] : $item['rating']) : 4.5,
+                    'reviews' => $item['review_count'] ?? $item['reviews'] ?? 40,
+                    'description' => $item['description'] ?? 'Partner restaurant',
+                    'image' => $item['image_url'] ?? $item['image'] ?? 'https://via.placeholder.com/600x400?text=Restaurant',
+                    'features' => $features
+                ];
+            }, $raw);
+        }
+    }
+} else {
+    http_response_code(503);
+    $out = [
+        'message' => 'External service error',
+        'status' => $response['status'],
+        'error' => $response['error']
+    ];
+    if ($DEBUG) {
+        $out['upstream'] = $response['data'];
+        $out['hit_url'] = $url;
+    }
+    echo json_encode($out);
+    exit;
 }
 
 echo json_encode(['source' => $source, 'data' => $data]);
