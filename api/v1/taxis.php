@@ -218,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$ride['ride_id']) {
         $ride['ride_id'] = 'ext-' . uniqid();
     }
-    if (!$ride['confirmation']) {
+    if (!isset($ride['confirmation']) || !$ride['confirmation']) {
         $ride['confirmation'] = $ride['ride_id'];
     }
     if ($ride['eta_minutes'] === null) {
