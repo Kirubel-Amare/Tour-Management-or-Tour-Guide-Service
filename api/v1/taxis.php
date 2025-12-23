@@ -115,19 +115,32 @@ $response = ExternalService::requestJson(
 
 $services = [];
 
-if ($response['ok'] && is_array($response['data'])) {
-    $services = array_map(function ($item) {
-        return [
-            'id' => $item['id'] ?? null,
-            'name' => $item['name'] ?? 'Taxi',
-            'vehicle_type' => $item['vehicle_type'] ?? 'Standard',
-            'capacity' => $item['capacity'] ?? 4,
-            'price_per_km' => $item['price_per_km'] ?? 0,
-            'eta_minutes' => $item['eta_minutes'] ?? rand(3, 10),
-            'status' => 'available'
-        ];
-    }, $response['data']);
-} else {
+if ($response['ok']) {
+    $data = $response['data'];
+    // If provider returned raw string (non-JSON 2xx), attempt to decode
+    if (!is_array($data) && is_string($data)) {
+        $decoded = json_decode($data, true);
+        if (is_array($decoded)) {
+            $data = $decoded;
+        }
+    }
+
+    if (is_array($data)) {
+        $services = array_map(function ($item) {
+            return [
+                'id' => $item['id'] ?? null,
+                'name' => $item['name'] ?? 'Taxi',
+                'vehicle_type' => $item['vehicle_type'] ?? 'Standard',
+                'capacity' => $item['capacity'] ?? 4,
+                'price_per_km' => $item['price_per_km'] ?? 0,
+                'eta_minutes' => $item['eta_minutes'] ?? rand(3, 10),
+                'status' => 'available'
+            ];
+        }, $data);
+    }
+}
+
+if (!$services) {
     // Mock fallback if external list fails
     $services = [
         [
