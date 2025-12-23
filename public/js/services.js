@@ -657,7 +657,15 @@ async function orderTaxi(e) {
                 'Content-Type': 'application/json',
                 'X-API-KEY': PUBLIC_API_KEY
             },
-            body: JSON.stringify({ pickup, destination, vehicleType, schedule, customTime, user })
+            body: JSON.stringify({
+                user_id: user.id,
+                pickup_location: pickup,
+                dropoff_location: destination,
+                vehicle_type: vehicleType,
+                schedule,
+                pickup_time: customTime || undefined,
+                service_id: null
+            })
         });
 
         const payload = await response.json().catch(() => ({}));
