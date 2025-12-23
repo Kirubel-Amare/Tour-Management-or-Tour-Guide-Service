@@ -45,7 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'pickup_location'  => $payload['pickup_location'] ?? $payload['pickup'] ?? null,
         'dropoff_location' => $payload['dropoff_location'] ?? $payload['destination'] ?? null,
         'pickup_time'      => $payload['pickup_time'] ?? date('Y-m-d H:i:s'),
-        'service_id'       => $payload['service_id'] ?? null
+        'service_id'       => $payload['service_id'] ?? null,
+        'vehicle_type'     => $payload['vehicle_type'] ?? 'standard',
+        'schedule'         => $payload['schedule'] ?? 'now'
     ];
 
     if (
@@ -58,10 +60,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Send a payload that includes both legacy and explicit keys for broader provider compatibility
+    $externalPayload = array_merge($booking, [
+        'pickup' => $booking['pickup_location'],
+        'destination' => $booking['dropoff_location'],
+        'vehicleType' => $booking['vehicle_type'],
+    ]);
+
     $response = ExternalService::requestJson(
         $TAXI_BASE_URL . '/bookings.php',
         'POST',
-        $booking,
+        $externalPayload,
         $taxiHeaders
     );
 

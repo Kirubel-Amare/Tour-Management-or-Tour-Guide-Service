@@ -36,7 +36,17 @@ class ExternalService
 
         $decoded = json_decode($response, true);
         if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
-            return ['ok' => false, 'status' => $status, 'error' => 'Invalid JSON response', 'data' => null];
+            // If provider returns non-JSON but HTTP 2xx, treat raw body as data so we don't fail bookings
+            if ($status >= 200 && $status < 300) {
+                return [
+                    'ok' => true,
+                    'status' => $status,
+                    'error' => null,
+                    'data' => $response
+                ];
+            }
+
+            return ['ok' => false, 'status' => $status, 'error' => 'Invalid JSON response', 'data' => $response];
         }
 
         return [
