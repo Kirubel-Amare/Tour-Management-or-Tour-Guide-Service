@@ -651,10 +651,12 @@ async function orderTaxi(e) {
     }
 
     try {
-        // POST without sending X-API-KEY
         const response = await fetch('/api/v1/taxis.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': PUBLIC_API_KEY
+            },
             body: JSON.stringify({ pickup, destination, vehicleType, schedule, customTime, user })
         });
 
@@ -673,4 +675,35 @@ async function orderTaxi(e) {
 
     e.target.reset();
     calculateFare();
+}
+
+async function loadTaxis() {
+    try {
+        const response = await fetch('/api/v1/taxis.php', {
+            headers: { 'X-API-KEY': PUBLIC_API_KEY }
+        }); // GET request
+        const payload = await response.json();
+        const taxis = payload.data || [];
+        
+        renderTaxis(taxis); // Render function for your UI
+    } catch (err) {
+        console.error('Failed to load taxis', err);
+        renderTaxis([]); // Empty if failed
+    }
+}
+
+function renderTaxis(taxis) {
+    const container = document.getElementById('taxis-list');
+    if (!container) return;
+
+    container.innerHTML = taxis.map(t => `
+        <div class="taxi-card">
+            <h3>${t.name || 'Taxi'}</h3>
+            <p>Vehicle: ${t.vehicle_type || 'Standard'}</p>
+            <p>Capacity: ${t.capacity || 4}</p>
+            <p>Price per km: $${t.price_per_km || 0}</p>
+            <p>ETA: ${t.eta_minutes || 'N/A'} min</p>
+            <button onclick="orderTaxi(event)">Book Now</button>
+        </div>
+    `).join('');
 }
