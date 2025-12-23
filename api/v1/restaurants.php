@@ -58,13 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Booking requires Bearer token; fail fast if missing
-    if (!$bearer) {
-        http_response_code(401);
-        echo json_encode(['message' => 'EXTERNAL_RESTAURANT_API_TOKEN is required for booking']);
-        exit;
-    }
-
     // Map to external Booking API payload
     $externalBody = [
         'restaurant_id' => $reservation['restaurant_id'],
@@ -137,6 +130,13 @@ if (!empty($forward)) {
 $response = ExternalService::requestJson($url, 'GET', null, $restaurantHeaders);
 if ($response['ok']) {
     $debugInfo = ['hit_url' => $url];
+
+    // Helper to build absolute image URLs when provider returns relative paths
+    $makeImageUrl = function ($path) use ($baseApi) {
+        if (!$path) return null;
+        if (preg_match('/^https?:\/\//i', $path)) return $path;
+        return rtrim($baseApi, '/') . '/' . ltrim($path, '/');
+    };
     // Decide which upstream endpoint to call based on query
     $id = $_GET['id'] ?? null;
     $hasMenu = isset($_GET['menu']);
@@ -227,7 +227,7 @@ if ($response['ok']) {
                     'priceRange' => $item['price_range'] ?? '$$',
                     'rating' => isset($item['rating']) ? (is_numeric($item['rating']) ? (float)$item['rating'] : $item['rating']) : 4.5,
                     'description' => $item['description'] ?? 'Partner restaurant',
-                    'image' => $item['image_url'] ?? $item['image'] ?? 'https://via.placeholder.com/600x400?text=Restaurant',
+                    'image' => $makeImageUrl($item['image_url'] ?? $item['image']) ?? 'https://via.placeholder.com/600x400?text=Restaurant',
                     'features' => $features,
                     // Additional fields
                     'capacity' => $item['capacity'] ?? null,
@@ -269,8 +269,11 @@ if ($response['ok']) {
                     'rating' => isset($item['rating']) ? (is_numeric($item['rating']) ? (float)$item['rating'] : $item['rating']) : 4.5,
                     'reviews' => $item['review_count'] ?? $item['reviews'] ?? 40,
                     'description' => $item['description'] ?? 'Partner restaurant',
-                    'image' => $item['image_url'] ?? $item['image'] ?? 'https://via.placeholder.com/600x400?text=Restaurant',
-                    'features' => $features
+                    'image' => $makeImageUrl($item['image_url'] ?? $item['image']) ?? 'https://via.placeholder.com/600x400?text=Restaurant',
+                    'features' => $features,
+                    'capacity' => $item['capacity'] ?? null,
+                    'contact_phone' => $item['contact_phone'] ?? null,
+                    'opening_hours' => $item['opening_hours'] ?? null
                 ];
             }, $raw);
         }
