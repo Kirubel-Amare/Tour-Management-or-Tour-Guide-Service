@@ -136,6 +136,7 @@ if (!empty($forward)) {
 
 $response = ExternalService::requestJson($url, 'GET', null, $restaurantHeaders);
 if ($response['ok']) {
+    $debugInfo = ['hit_url' => $url];
     // Decide which upstream endpoint to call based on query
     $id = $_GET['id'] ?? null;
     $hasMenu = isset($_GET['menu']);
@@ -148,6 +149,8 @@ if ($response['ok']) {
         $resp = ExternalService::requestJson($menuUrl, 'GET', null, $restaurantHeaders);
         if ($resp['ok']) {
             $raw = $resp['data'];
+            $debugInfo['hit_url'] = $menuUrl;
+            $debugInfo['upstream'] = $DEBUG ? $raw : null;
             $data = is_array($raw) && isset($raw['data']) ? $raw['data'] : (is_array($raw) ? $raw : []);
         } else {
             http_response_code(503);
@@ -164,6 +167,8 @@ if ($response['ok']) {
         $resp = ExternalService::requestJson($availUrl, 'GET', null, $restaurantHeaders);
         if ($resp['ok']) {
             $raw = $resp['data'];
+            $debugInfo['hit_url'] = $availUrl;
+            $debugInfo['upstream'] = $DEBUG ? $raw : null;
             $raw = is_array($raw) && isset($raw['data']) ? $raw['data'] : $raw;
             if (is_array($raw)) {
                 $data = [
@@ -188,6 +193,8 @@ if ($response['ok']) {
         $resp = ExternalService::requestJson($reviewsUrl, 'GET', null, $restaurantHeaders);
         if ($resp['ok']) {
             $raw = $resp['data'];
+            $debugInfo['hit_url'] = $reviewsUrl;
+            $debugInfo['upstream'] = $DEBUG ? $raw : null;
             $data = is_array($raw) && isset($raw['data']) ? $raw['data'] : (is_array($raw) ? $raw : []);
         } else {
             http_response_code(503);
@@ -202,6 +209,8 @@ if ($response['ok']) {
         $resp = ExternalService::requestJson($readUrl, 'GET', null, $restaurantHeaders);
         if ($resp['ok']) {
             $raw = $resp['data'];
+            $debugInfo['hit_url'] = $readUrl;
+            $debugInfo['upstream'] = $DEBUG ? $raw : null;
             $raw = is_array($raw) && isset($raw['data']) ? $raw['data'] : $raw;
             if (is_array($raw)) {
                 $item = $raw;
@@ -241,6 +250,9 @@ if ($response['ok']) {
         if (is_array($raw) && isset($raw['data'])) {
             $raw = $raw['data'];
         }
+        if ($DEBUG) {
+            $debugInfo['upstream'] = $raw;
+        }
         if (is_array($raw)) {
             $data = array_map(function ($item) {
                 $amenitiesStr = $item['amenities'] ?? '';
@@ -278,4 +290,4 @@ if ($response['ok']) {
     exit;
 }
 
-echo json_encode(['source' => $source, 'data' => $data]);
+echo json_encode($DEBUG ? ['source' => $source, 'data' => $data, 'debug' => $debugInfo] : ['source' => $source, 'data' => $data]);

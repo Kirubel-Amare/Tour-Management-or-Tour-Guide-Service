@@ -2,7 +2,7 @@
 
 class ExternalService
 {
-    public static function requestJson($url, $method = 'GET', $payload = null, $headers = [])
+    public static function requestJson($url, $method = 'GET', $payload = null, $headers = [], $attempt = 0)
     {
         // Check for Mock Mode
         if (getenv('EXTERNAL_API_MODE') === 'mock') {
@@ -41,6 +41,21 @@ class ExternalService
         $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
+        // Handle anti-bot JS challenge pages by solving __test cookie once
+        if ($response && strpos($response, 'slowAES.decrypt') !== false && $attempt === 0) {
+            $challenge = self::solveJsChallenge($response);
+            if ($challenge !== null) {
+                [$cookieValue, $redirectUrl] = $challenge;
+                // Retry original (or suggested redirect) with cookie header attached
+                $headersWithCookie = $headers;
+                    $headersWithCookie = array_values(array_filter($headers, fn($h) => stripos($h, 'Cookie:') !== 0));
+                $headersWithCookie[] = 'Cookie: __test=' . $cookieValue;
+
+                $retryUrl = $redirectUrl ?: $url;
+                return self::requestJson($retryUrl, $method, $payload, $headersWithCookie, $attempt + 1);
+            }
+        }
+
         if ($curlError) {
             return ['ok' => false, 'status' => 0, 'error' => $curlError, 'data' => null];
         }
@@ -66,6 +81,38 @@ class ExternalService
             'error' => null,
             'data' => $decoded
         ];
+    }
+
+    private static function solveJsChallenge($body)
+    {
+        // Extract key/iv/ciphertext from the challenge script
+        if (!preg_match('/toNumbers\("([0-9a-fA-F]+)"\).*toNumbers\("([0-9a-fA-F]+)"\).*toNumbers\("([0-9a-fA-F]+)"\)/s', $body, $m)) {
+            return null;
+        }
+        $keyHex = $m[1];
+        $ivHex = $m[2];
+        $cipherHex = $m[3];
+
+        $key = @hex2bin($keyHex);
+        $iv = @hex2bin($ivHex);
+        $cipher = @hex2bin($cipherHex);
+        if ($key === false || $iv === false || $cipher === false) {
+            return null;
+        }
+
+        $plain = @openssl_decrypt($cipher, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $iv);
+        if ($plain === false) {
+            return null;
+        }
+
+        $cookieValue = bin2hex($plain);
+
+        $redirectUrl = null;
+        if (preg_match('/location.href="([^"]+)"/s', $body, $u)) {
+            $redirectUrl = html_entity_decode($u[1]);
+        }
+
+        return [$cookieValue, $redirectUrl];
     }
 
     private static function mockRequest($url, $method, $payload)
