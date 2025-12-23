@@ -631,22 +631,14 @@ async function orderTaxi(e) {
     const user = requireAuth('Please login to book a taxi.');
     if (!user) return;
 
-    const pickup = document.getElementById('pickup-location').value;
-    const destination = document.getElementById('destination').value;
+    const pickup = (document.getElementById('pickup-location').value || '').trim();
+    const destination = (document.getElementById('destination').value || '').trim();
     const vehicleType = document.getElementById('vehicle-type').value || 'standard';
     const schedule = document.getElementById('schedule').value;
     const customTime = document.getElementById('scheduled-time').value;
 
-    function isLonLat(v) {
-        const re = /^\s*-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?\s*$/;
-        return re.test(v);
-    }
     if (!pickup || !destination) {
-        alert('Please enter both pickup and destination coordinates (lon,lat).');
-        return;
-    }
-    if (!isLonLat(pickup) || !isLonLat(destination)) {
-        alert('Coordinates must be in "longitude,latitude" format, e.g., -73.9857, 40.7484');
+        alert('Please enter both pickup and destination (you can type a place name or coordinates).');
         return;
     }
 
