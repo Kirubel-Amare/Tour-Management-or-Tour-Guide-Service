@@ -13,6 +13,17 @@ class ExternalService
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, strtoupper($method));
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'TourMgmtClient/1.0');
+
+        // Allow disabling SSL verification in dev if needed
+        $insecure = getenv('ALLOW_INSECURE_SSL') === 'true';
+        if ($insecure) {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        }
 
         $requestHeaders = array_merge(['Accept: application/json'], $headers);
 

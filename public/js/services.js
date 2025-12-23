@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initServicesPage() {
-    await Promise.all([loadPlaces(), loadTours(), loadHotels(), loadRestaurants()]);
+    await Promise.all([loadPlaces(), loadTours(), loadHotels(), loadRestaurants(), loadTaxis()]);
     setupEventListeners();
     calculateFare();
     syncAuthLinks();
@@ -671,7 +671,13 @@ async function orderTaxi(e) {
         const payload = await response.json().catch(() => ({}));
         if (response.ok) {
             const ride = payload.data || {};
-            alert(`Taxi booked!\n\nPickup: ${ride.pickup}\nDestination: ${ride.destination}\nVehicle: ${ride.vehicleType}\nFare: $${ride.fare}\nETA: ${ride.eta_minutes} minutes\nConfirmation: ${ride.ride_id || 'pending'}`);
+            const pick = ride.pickup || ride.pickup_location || 'N/A';
+            const drop = ride.destination || ride.dropoff_location || 'N/A';
+            const vehicle = ride.vehicleType || ride.vehicle_type || ride.vehicle || 'N/A';
+            const fare = ride.fare ?? ride.price ?? 'N/A';
+            const eta = ride.eta_minutes ?? ride.eta ?? 'N/A';
+            const conf = ride.confirmation || ride.ride_id || 'pending';
+            alert(`Taxi booked!\n\nPickup: ${pick}\nDestination: ${drop}\nVehicle: ${vehicle}\nFare: $${fare}\nETA: ${eta} minutes\nConfirmation: ${conf}`);
         } else {
             const msg = payload?.message || 'Taxi booking failed (provider may not support booking).';
             alert(msg);

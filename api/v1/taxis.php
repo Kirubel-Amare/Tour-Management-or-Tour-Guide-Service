@@ -11,19 +11,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once 'middleware/Auth.php';
 require_once '../../config/ExternalService.php';
+require_once '../../config/Database.php';
+require_once '../../models/TaxiOrder.php';
 
 // Enforce API Key
 Auth::authenticate();
+// Debug flag to help inspect upstream behavior
+$DEBUG = (isset($_GET['debug']) && $_GET['debug'] === '1');
 
 /* ================================
-   CONFIG
+    CONFIG
 ================================ */
-$TAXI_BASE_URL = 'https://taxi-system.infinityfreeapp.com/api';
+// Allow overriding the external base URL via environment for testing/production switching
+$TAXI_BASE_URL = getenv('EXTERNAL_TAXI_BASE_URL') ?: 'https://taxi-system.infinityfreeapp.com/api';
 $TAXI_API_KEY  = getenv('EXTERNAL_TAXI_API_KEY') ?: 'TAXI_GROUP_SECURE_KEY_2024';
+// Allow overriding endpoint paths; add fallbacks when probing upstream
+$TAXI_SERVICES_PATH = getenv('EXTERNAL_TAXI_SERVICES_PATH') ?: '/services.php';
+$TAXI_BOOKINGS_PATH = getenv('EXTERNAL_TAXI_BOOKINGS_PATH') ?: '/bookings.php';
 
 $taxiHeaders = [
     'Content-Type: application/json',
-    'X-API-KEY: ' . $TAXI_API_KEY
+    // Try common auth header variants used by external providers
+    'X-API-KEY: ' . $TAXI_API_KEY,
+    'Api-Key: ' . $TAXI_API_KEY,
+    'Authorization: Bearer ' . $TAXI_API_KEY
 ];
 
 /* ================================
@@ -67,16 +78,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'vehicleType' => $booking['vehicle_type'],
     ]);
 
-    $response = ExternalService::requestJson(
-        $TAXI_BASE_URL . '/bookings.php',
-        'POST',
-        $externalPayload,
-        $taxiHeaders
-    );
+    // Try multiple candidate endpoints for bookings (with and without api_key in query)
+    $bookingCandidatesBase = [
+        rtrim($TAXI_BASE_URL, '/') . $TAXI_BOOKINGS_PATH,
+        rtrim($TAXI_BASE_URL, '/') . '/api/bookings.php',
+        rtrim($TAXI_BASE_URL, '/') . '/bookings.php'
+    ];
+    $bookingCandidates = [];
+    foreach ($bookingCandidatesBase as $c) {
+        $bookingCandidates[] = $c;
+        $bookingCandidates[] = $c . (str_contains($c, '?') ? '&' : '?') . 'api_key=' . urlencode($TAXI_API_KEY);
+    }
+    $bookingCandidates = array_unique($bookingCandidates);
+
+    $response = null;
+    $hitUrl = null;
+    $raw = null;
+    foreach ($bookingCandidates as $candidate) {
+        $resp = ExternalService::requestJson($candidate, 'POST', $externalPayload, $taxiHeaders);
+        if ($resp['ok']) {
+            $response = $resp;
+            $hitUrl = $candidate;
+            break;
+        }
+    }
+    if (!$response) {
+        // if all fail, keep the last response
+        $response = $resp ?? ['ok' => false, 'status' => 0, 'error' => 'No candidates succeeded', 'data' => null];
+    }
+
+    $source = 'external';
 
     if (!$response['ok']) {
         // Fallback mock when external provider fails
-        $mock = [
+        $raw = null;
+        $ride = [
             'ride_id' => 'mock-taxi-' . uniqid(),
             'pickup' => $booking['pickup_location'],
             'destination' => $booking['dropoff_location'],
@@ -85,20 +121,107 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'fare' => rand(10, 40),
             'status' => 'mock-confirmed'
         ];
-        http_response_code(200);
-        echo json_encode([
-            'source' => 'mock',
-            'message' => 'Taxi booked successfully (mock fallback)',
-            'data' => $mock
-        ]);
-        exit;
+        $source = 'mock';
+    } else {
+        // Normalize external response so frontend fields are populated
+        $raw = $response['data'];
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $raw = $decoded;
+            }
+        }
+
+        // Unwrap common envelopes
+        if (is_array($raw)) {
+            if (isset($raw['data']) && is_array($raw['data'])) {
+                $raw = $raw['data'];
+            } elseif (isset($raw['ride']) && is_array($raw['ride'])) {
+                $raw = $raw['ride'];
+            }
+        }
+
+        $ride = [
+            'ride_id' => $raw['ride_id'] ?? $raw['id'] ?? null,
+            'pickup' => $raw['pickup_location'] ?? $raw['pickup'] ?? $booking['pickup_location'],
+            'destination' => $raw['dropoff_location'] ?? $raw['destination'] ?? $booking['dropoff_location'],
+            'vehicleType' => $raw['vehicleType'] ?? $raw['vehicle_type'] ?? $raw['vehicle'] ?? ($booking['vehicle_type'] ?? null),
+            'eta_minutes' => $raw['eta_minutes'] ?? $raw['eta'] ?? null,
+            'fare' => $raw['fare'] ?? $raw['price'] ?? null,
+            'status' => $raw['status'] ?? 'confirmed',
+            'confirmation' => $raw['confirmation'] ?? ($raw['ride_id'] ?? null)
+        ];
     }
 
-    echo json_encode([
-        'source' => 'external',
-        'message' => 'Taxi booked successfully',
-        'data' => $response['data']
-    ]);
+    // Fill missing fields with sensible fallbacks for client display
+    if (!$ride['ride_id']) {
+        $ride['ride_id'] = 'ext-' . uniqid();
+    }
+    if (!$ride['confirmation']) {
+        $ride['confirmation'] = $ride['ride_id'];
+    }
+    if ($ride['eta_minutes'] === null) {
+        $ride['eta_minutes'] = rand(5, 12);
+    }
+    if ($ride['fare'] === null) {
+        $ride['fare'] = 25.50;
+    }
+
+    // Persist booking so admins can view it later
+    $dbStatus = ['saved' => false];
+    try {
+        $database = new Database();
+        $db = $database->connect();
+        if ($db) {
+            $taxiOrder = new TaxiOrder($db);
+            $rawDistance = null;
+            if (is_array($raw)) {
+                $rawDistance = $raw['distance_km'] ?? $raw['distance'] ?? null;
+            }
+
+            $storeData = [
+                'user_id' => (int) $booking['user_id'],
+                'pickup' => $ride['pickup'] ?? $booking['pickup_location'],
+                'destination' => $ride['destination'] ?? $booking['dropoff_location'],
+                'vehicle_type' => $ride['vehicleType'] ?? $booking['vehicle_type'] ?? 'standard',
+                'schedule' => $booking['schedule'] ?? 'now',
+                'custom_time' => $booking['pickup_time'] ?? null,
+                'distance_km' => is_numeric($rawDistance) ? $rawDistance : 0,
+                'fare' => is_numeric($ride['fare']) ? $ride['fare'] : 0,
+                'eta_minutes' => is_numeric($ride['eta_minutes']) ? $ride['eta_minutes'] : rand(5, 12)
+            ];
+            $insertId = $taxiOrder->create($storeData);
+            if ($insertId) {
+                $dbStatus = ['saved' => true, 'id' => $insertId];
+                $ride['db_id'] = $insertId;
+            }
+        } else {
+            $dbStatus = ['saved' => false, 'error' => 'No DB connection'];
+        }
+    } catch (Throwable $e) {
+        $dbStatus = ['saved' => false, 'error' => $e->getMessage()];
+    }
+
+    $out = [
+        'source' => $source,
+        'message' => $source === 'external' ? 'Taxi booked successfully' : 'Taxi booked successfully (mock fallback)',
+        'data' => $ride
+    ];
+    if ($dbStatus['saved']) {
+        $out['db_saved'] = true;
+    }
+    if ($DEBUG) {
+        $out['debug'] = [
+            'base_url' => $TAXI_BASE_URL,
+            'status' => $response['status'],
+            'error' => $response['error'],
+            'rawType' => is_string($response['data']) ? 'string' : (is_array($response['data']) ? 'array' : gettype($response['data'])),
+            'hit_url' => $hitUrl,
+            'candidates' => $bookingCandidates,
+            'db' => $dbStatus
+        ];
+    }
+    echo json_encode($out);
     exit;
 }
 
@@ -106,12 +229,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
    GET /api/v1/taxis.php
    -> Available Taxis
 ================================ */
-$response = ExternalService::requestJson(
-    $TAXI_BASE_URL . '/services.php',
-    'GET',
-    null,
-    $taxiHeaders
-);
+// Try multiple candidate endpoints for services (with and without api_key in query)
+$serviceCandidatesBase = [
+    rtrim($TAXI_BASE_URL, '/') . $TAXI_SERVICES_PATH,
+    rtrim($TAXI_BASE_URL, '/') . '/api/services.php',
+    rtrim($TAXI_BASE_URL, '/') . '/services.php'
+];
+$serviceCandidates = [];
+foreach ($serviceCandidatesBase as $c) {
+    $serviceCandidates[] = $c;
+    $serviceCandidates[] = $c . (str_contains($c, '?') ? '&' : '?') . 'api_key=' . urlencode($TAXI_API_KEY);
+}
+$serviceCandidates = array_unique($serviceCandidates);
+
+$response = null;
+$hitListUrl = null;
+$rawListData = null;
+foreach ($serviceCandidates as $candidate) {
+    $resp = ExternalService::requestJson($candidate, 'GET', null, $taxiHeaders);
+    if ($resp['ok']) {
+        $response = $resp;
+        $hitListUrl = $candidate;
+        $rawListData = $resp['data'];
+        break;
+    }
+}
+if (!$response) {
+    $response = $resp ?? ['ok' => false, 'status' => 0, 'error' => 'No candidates succeeded', 'data' => null];
+}
 
 $services = [];
 
@@ -125,16 +270,23 @@ if ($response['ok']) {
         }
     }
 
+    // Unwrap common envelope keys
+    if (is_array($data) && isset($data['services']) && is_array($data['services'])) {
+        $data = $data['services'];
+    } elseif (is_array($data) && isset($data['data']) && is_array($data['data'])) {
+        $data = $data['data'];
+    }
+
     if (is_array($data)) {
         $services = array_map(function ($item) {
             return [
                 'id' => $item['id'] ?? null,
                 'name' => $item['name'] ?? 'Taxi',
-                'vehicle_type' => $item['vehicle_type'] ?? 'Standard',
-                'capacity' => $item['capacity'] ?? 4,
-                'price_per_km' => $item['price_per_km'] ?? 0,
-                'eta_minutes' => $item['eta_minutes'] ?? rand(3, 10),
-                'status' => 'available'
+                'vehicle_type' => $item['vehicle_type'] ?? $item['type'] ?? 'Standard',
+                'capacity' => $item['capacity'] ?? $item['seats'] ?? 4,
+                'price_per_km' => $item['price_per_km'] ?? $item['price'] ?? 0,
+                'eta_minutes' => $item['eta_minutes'] ?? $item['eta'] ?? rand(3, 10),
+                'status' => $item['status'] ?? 'available'
             ];
         }, $data);
     }
@@ -164,7 +316,29 @@ if (!$services) {
     ];
 }
 
-echo json_encode([
-    'source' => 'external',
+$listOut = [
+    'source' => $services && isset($services[0]['id']) && str_starts_with($services[0]['id'], 'mock-') ? 'mock' : 'external',
     'data' => $services
-]);
+];
+if ($DEBUG) {
+    // Add raw sample to help diagnose parsing issues
+    $rawSample = null;
+    if (is_string($rawListData)) {
+        $rawSample = substr($rawListData, 0, 500);
+    } elseif (is_array($rawListData)) {
+        $rawSample = array_slice($rawListData, 0, 3);
+    } else {
+        $rawSample = $rawListData;
+    }
+
+    $listOut['debug'] = [
+        'base_url' => $TAXI_BASE_URL,
+        'headers' => $taxiHeaders,
+        'hit_url' => $hitListUrl,
+        'candidates' => $serviceCandidates,
+        'status' => $response['status'],
+        'error' => $response['error'],
+        'raw_sample' => $rawSample
+    ];
+}
+echo json_encode($listOut);
