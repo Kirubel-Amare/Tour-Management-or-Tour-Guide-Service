@@ -254,7 +254,7 @@ if ($response['ok']) {
             $debugInfo['upstream'] = $raw;
         }
         if (is_array($raw)) {
-            $data = array_map(function ($item) {
+            $data = array_map(function ($item) use ($makeImageUrl) {
                 $amenitiesStr = $item['amenities'] ?? '';
                 $features = [];
                 if (is_string($amenitiesStr) && $amenitiesStr !== '') {
