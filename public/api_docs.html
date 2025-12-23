@@ -88,11 +88,11 @@
     </div>
 
     <h2>Base URL</h2>
-    <code>/tour_management/api/v1/</code>
+    <code>https://tour-management-web.onrender.com/tour_management/api/v1/</code>
 
     <h2>Endpoints</h2>
 
-    <div class="endpoint">
+    <!-- <div class="endpoint">
         <span class="method get">GET</span> <code>hotels.php</code>
         <p>Search for hotels.</p>
         <strong>Query Parameters:</strong>
@@ -112,9 +112,9 @@
     }
   ]
 }</pre>
-    </div>
+    </div> -->
 
-    <div class="endpoint">
+    <!-- <div class="endpoint">
         <span class="method post">POST</span> <code>hotels.php</code>
         <p>Book a hotel room.</p>
         <strong>JSON Payload:</strong>
@@ -125,19 +125,19 @@
   "guests": 2,
   "roomType": "Standard"
 }</pre>
-    </div>
+    </div> -->
 
-        <div class="endpoint">
-                <span class="method get">GET</span> <code>tours.php</code>
-                <p>List tours or fetch a single tour.</p>
-                <strong>Query Parameters:</strong>
-                <ul>
-                        <li><code>id</code> (optional): Get one tour by ID.</li>
-                        <li><code>guide_id</code> (optional): Filter by guide.</li>
-                        <li><code>q</code> (optional): Search by title/location.</li>
-                </ul>
-                <strong>Example Response:</strong>
-                <pre>{
+    <div class="endpoint">
+        <span class="method get">GET</span> <code>tours.php</code>
+        <p>List tours or fetch a single tour.</p>
+        <strong>Query Parameters:</strong>
+        <ul>
+            <li><code>id</code> (optional): Get one tour by ID.</li>
+            <li><code>guide_id</code> (optional): Filter by guide.</li>
+            <li><code>q</code> (optional): Search by title/location.</li>
+        </ul>
+        <strong>Example Response:</strong>
+        <pre>{
     "source": "db",
     "data": [
         {
@@ -150,13 +150,14 @@
         }
     ]
 }</pre>
-        </div>
+    </div>
 
-        <div class="endpoint">
-                <span class="method post">POST</span> <code>tours.php</code>
-                <p>Book a tour (creates a booking). Provide either <code>user_id</code> or <code>email</code> to identify the customer.</p>
-                <strong>JSON Payload:</strong>
-                <pre>{
+    <div class="endpoint">
+        <span class="method post">POST</span> <code>tours.php</code>
+        <p>Book a tour (creates a booking). Provide either <code>user_id</code> or <code>email</code> to identify the
+            customer.</p>
+        <strong>JSON Payload:</strong>
+        <pre>{
     "tour_id": 1,
     "user_id": 10
 }
@@ -167,13 +168,13 @@
     "email": "partner-guest@example.com",
     "name": "Guest from Partner"
 }</pre>
-                <strong>Example Response:</strong>
-                <pre>{
+        <strong>Example Response:</strong>
+        <pre>{
     "message": "Booking Created",
     "data": { "tour_id": 1, "user_id": 10, "status": "confirmed" }
 }</pre>
-        </div>
-
+    </div>
+    <!-- 
     <div class="endpoint">
         <span class="method get">GET</span> <code>restaurants.php</code>
         <p>Search for restaurants.</p>
@@ -182,9 +183,9 @@
             <li><code>city</code> (optional)</li>
             <li><code>cuisine</code> (optional)</li>
         </ul>
-    </div>
+    </div> -->
 
-    <div class="endpoint">
+    <!-- <div class="endpoint">
         <span class="method post">POST</span> <code>restaurants.php</code>
         <p>Reserve a table.</p>
         <strong>JSON Payload:</strong>
@@ -194,9 +195,9 @@
   "time": "19:00",
   "guests": 2
 }</pre>
-    </div>
+    </div> -->
 
-    <div class="endpoint">
+    <!-- <div class="endpoint">
         <span class="method post">POST</span> <code>taxis.php</code>
         <p>Order a taxi.</p>
         <strong>JSON Payload:</strong>
@@ -205,7 +206,7 @@
   "destination": "Airport",
   "vehicleType": "standard"
 }</pre>
-    </div>
+    </div> -->
 
     <div class="endpoint">
         <span class="method get">GET</span> <code>places.php</code>

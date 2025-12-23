@@ -19,18 +19,16 @@ Auth::authenticate();
 // Debug flag to help inspect upstream behavior
 $DEBUG = (isset($_GET['debug']) && $_GET['debug'] === '1');
 
-/* ================================
-    CONFIG
-================================ */
-// Allow overriding the external base URL via environment for testing/production switching
+
 $TAXI_BASE_URL = getenv('EXTERNAL_TAXI_BASE_URL') ?: 'https://taxi-system.infinityfreeapp.com/api';
 $TAXI_API_KEY  = getenv('EXTERNAL_TAXI_API_KEY') ?: 'TAXI_GROUP_SECURE_KEY_2024';
-// Allow overriding endpoint paths; add fallbacks when probing upstream
+
 $TAXI_SERVICES_PATH = getenv('EXTERNAL_TAXI_SERVICES_PATH') ?: '/services.php';
 $TAXI_BOOKINGS_PATH = getenv('EXTERNAL_TAXI_BOOKINGS_PATH') ?: '/bookings.php';
 
 $taxiHeaders = [
     'Content-Type: application/json',
+    
     // Try common auth header variants used by external providers
     'X-API-KEY: ' . $TAXI_API_KEY,
     'Api-Key: ' . $TAXI_API_KEY,
