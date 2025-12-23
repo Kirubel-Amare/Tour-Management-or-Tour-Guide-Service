@@ -100,10 +100,16 @@ class ExternalService
             return null;
         }
 
+        // Try with PKCS padding first, then no padding (some slowAES challenges omit padding)
         $plain = @openssl_decrypt($cipher, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $iv);
+        if ($plain === false) {
+            $plain = @openssl_decrypt($cipher, 'AES-128-CBC', $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING, $iv);
+        }
         if ($plain === false) {
             return null;
         }
+        // Trim any trailing nulls that may come from zero-padding
+        $plain = rtrim($plain, "\0");
 
         $cookieValue = bin2hex($plain);
 
