@@ -3,6 +3,12 @@ let tours = [];
 let hotels = [];
 let restaurants = [];
 let taxis = [];
+let placesPage = 1;
+let toursPage = 1;
+let hotelsPage = 1;
+let restaurantsPage = 1;
+let taxisPage = 1;
+const ITEMS_PER_PAGE = 9;
 const PUBLIC_API_KEY = window.__PUBLIC_API_KEY__ || window.__REVIEW_API_KEY__ || 'demo-api-key';
 
 // Modal-based message box to replace native alerts
@@ -94,12 +100,18 @@ function setupEventListeners() {
 async function loadPlaces() {
     try {
         const response = await fetch('/api/places/read.php');
+        if (!response.ok) throw new Error(`Places API responded ${response.status}`);
         const payload = await response.json();
         const mapped = Array.isArray(payload) ? payload.map(mapPlace) : [];
         places = mapped;
+        placesPage = 1;
+        if (!mapped.length) {
+            showMessageBox?.('No places found from the API.', { title: 'Places', type: 'error' });
+        }
     } catch (err) {
         console.error('Failed to load places', err);
         places = [];
+        showMessageBox?.('Unable to load places. Please try again later.', { title: 'Places', type: 'error' });
     }
     renderPlaces(filterPlacesData());
 }
@@ -107,12 +119,18 @@ async function loadPlaces() {
 async function loadTours() {
     try {
         const response = await fetch('/api/tours/read.php');
+        if (!response.ok) throw new Error(`Tours API responded ${response.status}`);
         const payload = await response.json();
         const mapped = Array.isArray(payload) ? payload.map(mapTour) : [];
         tours = mapped;
+        toursPage = 1;
+        if (!mapped.length) {
+            showMessageBox?.('No tours found from the API.', { title: 'Tours', type: 'error' });
+        }
     } catch (err) {
         console.error('Failed to load tours', err);
         tours = [];
+        showMessageBox?.('Unable to load tours. Please try again later.', { title: 'Tours', type: 'error' });
     }
     renderTours(filterToursData());
 }
@@ -121,15 +139,20 @@ async function loadHotels(cityInput) {
     try {
         const city = (cityInput || '').trim();
         const qs = city ? `?city=${encodeURIComponent(city)}` : '';
-        const response = await fetch(`/api/v1/hotels.php${qs}`, {
-            headers: { 'X-API-KEY': PUBLIC_API_KEY }
-        });
+        // Fetch partner hotels through backend proxy
+        const response = await fetch(`/api/integrations/hotels.php${qs}`);
+        if (!response.ok) throw new Error(`Hotels API responded ${response.status}`);
         const payload = await response.json();
-        const incoming = payload?.data || payload || [];
-        hotels = Array.isArray(incoming) && incoming.length ? incoming.map(mapHotel) : [];
+        const incoming = payload?.data?.data?.hotels || payload?.data?.hotels || payload?.data || payload || [];
+        hotels = Array.isArray(incoming) && incoming.length ? incoming.map(mapExternalHotel) : [];
+        hotelsPage = 1;
+        if (!hotels.length) {
+            showMessageBox?.('No hotels returned by the partner API.', { title: 'Hotels', type: 'error' });
+        }
     } catch (err) {
         console.error('Failed to load hotels', err);
         hotels = [];
+        showMessageBox?.('Unable to load hotels. Please try again later.', { title: 'Hotels', type: 'error' });
     }
     renderHotels(filterHotelsData());
 
@@ -150,12 +173,17 @@ async function loadRestaurants(cityInput) {
         const response = await fetch(`/api/v1/restaurants.php${qs}`, {
             headers: { 'X-API-KEY': PUBLIC_API_KEY }
         });
+        if (!response.ok) throw new Error(`Restaurants API responded ${response.status}`);
         const payload = await response.json();
         const incoming = payload?.data || payload || [];
         restaurants = Array.isArray(incoming) && incoming.length ? incoming.map(mapRestaurant) : [];
+        if (!restaurants.length) {
+            showMessageBox?.('No restaurants returned by the API.', { title: 'Restaurants', type: 'error' });
+        }
     } catch (err) {
         console.error('Failed to load restaurants', err);
         restaurants = [];
+        showMessageBox?.('Unable to load restaurants. Please try again later.', { title: 'Restaurants', type: 'error' });
     }
     renderRestaurants(filterRestaurantsData());
 
@@ -177,7 +205,8 @@ function mapPlace(raw, idx) {
         continent: raw.continent || raw.country || raw.city || 'Unknown',
         climate: raw.climate || 'Temperate',
         rating: raw.rating || 4.6,
-        description: raw.description || 'Discover new destinations curated for travelers.',
+        hotels: [],
+        hotelsPage: 1,
         image: raw.image || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
         reviews: raw.reviews || 120,
         features: raw.features || []
@@ -193,7 +222,8 @@ function mapTour(raw, idx) {
         duration: raw.duration || raw.schedule_date || 'Flexible',
         rating: raw.rating || 4.5,
         reviews: raw.reviews || 75,
-        description: raw.description || 'Tour details coming soon.',
+        restaurants: [],
+        restaurantsPage: 1,
         image: raw.image || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
         features: raw.features || ['Local guide', 'Small group', 'Flexible schedule']
     };
@@ -205,13 +235,30 @@ function mapHotel(raw, idx) {
         name: raw.name || 'Hotel',
         location: raw.location || (raw.address?.cityName) || 'Unknown',
         price: Number(raw.price || 0).toFixed(2),
-        rating: raw.rating || raw.hotelRating || 4.4,
+        taxis: [],
+        taxisPage: 1,
         reviews: raw.reviews || 50,
         description: raw.description || 'Comfortable stay provided by partner hotel.',
         image: raw.image || 'https://images.unsplash.com/photo-1501117716987-c8e1ecb210af?auto=format&fit=crop&w=800&q=80',
         roomType: raw.roomType || raw.room_type || 'Standard',
         hotelRating: raw.hotelRating || raw.hotel_rating || 4,
         amenities: raw.amenities || ['Wi-Fi', 'Breakfast']
+    };
+}
+
+function mapExternalHotel(raw, idx) {
+    return {
+        id: raw.id || idx || Date.now(),
+        name: raw.name || 'Hotel',
+        location: raw.city ? `${raw.city}${raw.country ? ', ' + raw.country : ''}` : (raw.location || 'Unknown'),
+        price: Number(raw.price || raw.base_price || 0).toFixed(2),
+        rating: raw.rating || raw.star_rating || 4.4,
+        reviews: raw.reviews || raw.review_count || 50,
+        description: raw.description || 'Partner hotel listing.',
+        image: raw.image_url || raw.image || 'https://images.unsplash.com/photo-1501117716987-c8e1ecb210af?auto=format&fit=crop&w=800&q=80',
+        roomType: raw.roomType || raw.room_type || raw.default_room || 'Standard',
+        hotelRating: raw.star_rating || raw.hotel_rating || 4,
+        amenities: raw.amenities || []
     };
 }
 
@@ -232,22 +279,111 @@ function mapRestaurant(raw, idx) {
 
 function renderPlaces(data) {
     const container = document.getElementById('places-list');
-    container.innerHTML = data.map(createPlaceCard).join('');
+    const pagination = document.getElementById('places-pagination');
+    const list = Array.isArray(data) ? data : [];
+    const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
+    placesPage = Math.min(Math.max(placesPage, 1), totalPages);
+    const start = (placesPage - 1) * ITEMS_PER_PAGE;
+    const pageItems = list.slice(start, start + ITEMS_PER_PAGE);
+
+    container.innerHTML = pageItems.length
+        ? pageItems.map(createPlaceCard).join('')
+        : '<div class="no-results"><i class="fas fa-map-marked-alt"></i><h3>No places found</h3><p>Try adjusting your search.</p></div>';
+
+    if (pagination) {
+        if (list.length <= ITEMS_PER_PAGE) {
+            pagination.innerHTML = '';
+        } else {
+            const total = totalPages;
+            pagination.innerHTML = `
+                <button ${placesPage === 1 ? 'disabled' : ''} onclick="changePlacesPage(${placesPage - 1})">Prev</button>
+                <span class="page-info">Page ${placesPage} / ${total}</span>
+                <button ${placesPage === total ? 'disabled' : ''} onclick="changePlacesPage(${placesPage + 1})">Next</button>
+            `;
+        }
+    }
 }
 
 function renderTours(data) {
     const container = document.getElementById('tours-list');
-    container.innerHTML = data.map(createTourCard).join('');
+    const pagination = document.getElementById('tours-pagination');
+    const list = Array.isArray(data) ? data : [];
+    const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
+    toursPage = Math.min(Math.max(toursPage, 1), totalPages);
+    const start = (toursPage - 1) * ITEMS_PER_PAGE;
+    const pageItems = list.slice(start, start + ITEMS_PER_PAGE);
+
+    container.innerHTML = pageItems.length
+        ? pageItems.map(createTourCard).join('')
+        : '<div class="no-results"><i class="fas fa-ticket-alt"></i><h3>No tours found</h3><p>Try adjusting your filters.</p></div>';
+
+    if (pagination) {
+        if (list.length <= ITEMS_PER_PAGE) {
+            pagination.innerHTML = '';
+        } else {
+            const total = totalPages;
+            pagination.innerHTML = `
+                <button ${toursPage === 1 ? 'disabled' : ''} onclick="changeToursPage(${toursPage - 1})">Prev</button>
+                <span class="page-info">Page ${toursPage} / ${total}</span>
+                <button ${toursPage === total ? 'disabled' : ''} onclick="changeToursPage(${toursPage + 1})">Next</button>
+            `;
+        }
+    }
 }
 
 function renderHotels(data) {
     const container = document.getElementById('hotels-list');
-    container.innerHTML = data.map(createHotelCard).join('');
+    const pagination = document.getElementById('hotels-pagination');
+    const list = Array.isArray(data) ? data : [];
+    const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
+    hotelsPage = Math.min(Math.max(hotelsPage, 1), totalPages);
+    const start = (hotelsPage - 1) * ITEMS_PER_PAGE;
+    const pageItems = list.slice(start, start + ITEMS_PER_PAGE);
+
+    container.innerHTML = pageItems.length
+        ? pageItems.map(createHotelCard).join('')
+        : '<div class="no-results"><i class="fas fa-bed"></i><h3>No hotels found</h3><p>Try adjusting your filters.</p></div>';
+
+    if (pagination) {
+        if (list.length <= ITEMS_PER_PAGE) {
+            pagination.innerHTML = '';
+        } else {
+            const disablePrev = hotelsPage === 1 ? 'disabled' : '';
+            const disableNext = hotelsPage === totalPages ? 'disabled' : '';
+            pagination.innerHTML = `
+                <button ${disablePrev} onclick="changeHotelsPage(${hotelsPage - 1})">Prev</button>
+                <span class="page-info">Page ${hotelsPage} / ${totalPages}</span>
+                <button ${disableNext} onclick="changeHotelsPage(${hotelsPage + 1})">Next</button>
+            `;
+        }
+    }
 }
 
 function renderRestaurants(data) {
     const container = document.getElementById('restaurants-list');
-    container.innerHTML = data.map(createRestaurantCard).join('');
+    const pagination = document.getElementById('restaurants-pagination');
+    const list = Array.isArray(data) ? data : [];
+    const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
+    restaurantsPage = Math.min(Math.max(restaurantsPage, 1), totalPages);
+    const start = (restaurantsPage - 1) * ITEMS_PER_PAGE;
+    const pageItems = list.slice(start, start + ITEMS_PER_PAGE);
+
+    container.innerHTML = pageItems.length
+        ? pageItems.map(createRestaurantCard).join('')
+        : '<div class="no-results"><i class="fas fa-utensils"></i><h3>No restaurants found</h3><p>Try adjusting your filters.</p></div>';
+
+    if (pagination) {
+        if (list.length <= ITEMS_PER_PAGE) {
+            pagination.innerHTML = '';
+        } else {
+            const total = totalPages;
+            pagination.innerHTML = `
+                <button ${restaurantsPage === 1 ? 'disabled' : ''} onclick="changeRestaurantsPage(${restaurantsPage - 1})">Prev</button>
+                <span class="page-info">Page ${restaurantsPage} / ${total}</span>
+                <button ${restaurantsPage === total ? 'disabled' : ''} onclick="changeRestaurantsPage(${restaurantsPage + 1})">Next</button>
+            `;
+        }
+    }
 }
 
 function createPlaceCard(place) {
@@ -354,8 +490,8 @@ function createHotelCard(hotel) {
                         <button onclick="viewHotelDetails(${hotel.id})" class="btn btn-outline" style="border-color: var(--border);">
                             <i class="fas fa-info-circle"></i> Details
                         </button>
-                        <button onclick="bookHotel(${hotel.id})" class="btn btn-primary">
-                            <i class="fas fa-bed"></i> Book Now
+                        <button onclick="bookPartnerHotel(${hotel.id})" class="btn btn-primary">
+                            <i class="fas fa-bed"></i> Check Availability
                         </button>
                     </div>
                 </div>
@@ -401,36 +537,44 @@ function createRestaurantCard(restaurant) {
 }
 
 function searchPlaces() {
+    placesPage = 1;
     renderPlaces(filterPlacesData());
 }
 
 function searchTours() {
+    toursPage = 1;
     renderTours(filterToursData());
 }
 
 function searchHotels() {
+    hotelsPage = 1;
     const value = document.getElementById('hotels-search').value || '';
     loadHotels(value);
 }
 
 function searchRestaurants() {
+    restaurantsPage = 1;
     const value = document.getElementById('restaurants-search').value || '';
     loadRestaurants(value);
 }
 
 function filterPlaces() {
+    placesPage = 1;
     renderPlaces(filterPlacesData());
 }
 
 function filterTours() {
+    toursPage = 1;
     renderTours(filterToursData());
 }
 
 function filterHotels() {
+    hotelsPage = 1;
     renderHotels(filterHotelsData());
 }
 
 function filterRestaurants() {
+    restaurantsPage = 1;
     renderRestaurants(filterRestaurantsData());
 }
 
@@ -562,41 +706,34 @@ async function bookTour(tourId) {
     }
 }
 
-async function bookHotel(hotelId) {
-    const user = requireAuth('Please login to book hotels.');
-    if (!user) return;
-
+async function bookPartnerHotel(hotelId) {
     const hotel = hotels.find(h => h.id === hotelId);
     if (!hotel) return alert('Hotel not found.');
 
-    const today = new Date();
-    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const checkIn = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const checkOut = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+
+    const qs = new URLSearchParams({
+        hotel_id: hotel.id,
+        check_in: checkIn.toISOString().split('T')[0],
+        check_out: checkOut.toISOString().split('T')[0]
+    });
 
     try {
-        // POST without sending X-API-KEY
-        const response = await fetch('/api/v1/hotels.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                user,
-                hotel_id: hotel.id,
-                check_in: today.toISOString().split('T')[0],
-                check_out: tomorrow.toISOString().split('T')[0],
-                guests: 2,
-                roomType: hotel.roomType
-            })
-        });
-
+        const response = await fetch(`/api/integrations/rooms.php?${qs.toString()}`);
         const payload = await response.json().catch(() => ({}));
-        if (response.ok) {
-            alert(`Hotel booked! Confirmation: ${payload.data?.confirmation || 'pending'}`);
+        if (response.ok && payload?.data?.data?.rooms) {
+            const rooms = payload.data.data.rooms;
+            const count = rooms.length;
+            const types = rooms.slice(0, 3).map(r => r.room_type?.name || r.room_type?.description || 'Room');
+            alert(`Availability check for ${hotel.name}:\nRooms available: ${count}\nSample types: ${types.join(', ')}`);
         } else {
-            const msg = payload?.message || 'Hotel booking failed (provider may not support booking).';
+            const msg = payload?.error || payload?.message || 'No rooms available or partner API error.';
             alert(msg);
         }
     } catch (err) {
-        console.error('Hotel booking error', err);
-        alert('Unable to book hotel right now.');
+        console.error('Partner availability error', err);
+        alert('Unable to check availability right now.');
     }
 }
 
@@ -738,6 +875,7 @@ async function loadTaxis() {
         const response = await fetch('/api/v1/taxis.php', {
             headers: { 'X-API-KEY': PUBLIC_API_KEY }
         }); // GET request
+        if (!response.ok) throw new Error(`Taxis API responded ${response.status}`);
         const payload = await response.json();
         taxis = payload.data || [];
         renderTaxis(filterTaxisData());
@@ -750,7 +888,9 @@ async function loadTaxis() {
         }
     } catch (err) {
         console.error('Failed to load taxis', err);
+        taxis = [];
         renderTaxis([]); // Empty if failed
+        showMessageBox?.('Unable to load taxis. Please try again later.', { title: 'Taxis', type: 'error' });
     }
 }
 
@@ -764,12 +904,16 @@ function renderTaxis(taxis) {
         : [];
     if (countEl) countEl.textContent = `${list.length} available`;
 
-    if (!list.length) {
-        container.innerHTML = '<div class="loading-taxis"><p>No taxis available right now.</p></div>';
-        return;
-    }
+    const pagination = document.getElementById('taxis-pagination');
+    const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
+    taxisPage = Math.min(Math.max(taxisPage, 1), totalPages);
+    const start = (taxisPage - 1) * ITEMS_PER_PAGE;
+    const pageItems = list.slice(start, start + ITEMS_PER_PAGE);
 
-    container.innerHTML = list.map(t => {
+    if (!pageItems.length) {
+        container.innerHTML = '<div class="loading-taxis"><p>No taxis available right now.</p></div>';
+    } else {
+        container.innerHTML = pageItems.map(t => {
         const img = t.image || 'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=800&q=60';
         const vehicle = t.vehicle_type || 'Standard';
         const price = t.price_per_km || 0;
@@ -803,14 +947,30 @@ function renderTaxis(taxis) {
                 </button>
             </div>
         </div>`;
-    }).join('');
+        }).join('');
+    }
+
+    if (pagination) {
+        if (list.length <= ITEMS_PER_PAGE) {
+            pagination.innerHTML = '';
+        } else {
+            const total = totalPages;
+            pagination.innerHTML = `
+                <button ${taxisPage === 1 ? 'disabled' : ''} onclick="changeTaxisPage(${taxisPage - 1})">Prev</button>
+                <span class="page-info">Page ${taxisPage} / ${total}</span>
+                <button ${taxisPage === total ? 'disabled' : ''} onclick="changeTaxisPage(${taxisPage + 1})">Next</button>
+            `;
+        }
+    }
 }
 
 function searchTaxis() {
+    taxisPage = 1;
     renderTaxis(filterTaxisData());
 }
 
 function filterTaxis() {
+    taxisPage = 1;
     renderTaxis(filterTaxisData());
 }
 
@@ -885,4 +1045,44 @@ function scrollToBookingForm() {
 // Persist selection and go to dedicated booking page
 function redirectToTaxiBooking() {
     window.location.href = 'taxi_booking.html';
+}
+
+function changeHotelsPage(page) {
+    const filtered = filterHotelsData();
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    hotelsPage = Math.min(Math.max(page, 1), totalPages);
+    renderHotels(filtered);
+    document.getElementById('hotels-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function changePlacesPage(page) {
+    const filtered = filterPlacesData();
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    placesPage = Math.min(Math.max(page, 1), totalPages);
+    renderPlaces(filtered);
+    document.getElementById('places-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function changeToursPage(page) {
+    const filtered = filterToursData();
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    toursPage = Math.min(Math.max(page, 1), totalPages);
+    renderTours(filtered);
+    document.getElementById('tours-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function changeRestaurantsPage(page) {
+    const filtered = filterRestaurantsData();
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    restaurantsPage = Math.min(Math.max(page, 1), totalPages);
+    renderRestaurants(filtered);
+    document.getElementById('restaurants-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function changeTaxisPage(page) {
+    const filtered = filterTaxisData();
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    taxisPage = Math.min(Math.max(page, 1), totalPages);
+    renderTaxis(filtered);
+    document.getElementById('taxis-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

@@ -128,3 +128,16 @@ The taxi endpoint reads OpenRouteService settings from env:
 - `EXTERNAL_TAXI_API_KEY` (your ORS key)
 
 For local mock mode, omit these or set `APP_ENV=local`. In non-local environments, both must be set.
+
+### External Hotel Management API (Group 6)
+
+We consume a partner hotel service (Group 6). Full docs are in `docs/hotel_management_api.md` with endpoints, examples, and auth notes. Base production URL: `http://hotelmanagemt.infinityfreeapp.com/api`.
+
+Local proxy endpoints you can call from frontend/backend:
+- `GET /api/integrations/hotels.php` (passes query params to partner `hotels.php`)
+- `GET /api/integrations/rooms.php?hotel_id=...&check_in=YYYY-MM-DD&check_out=YYYY-MM-DD`
+- `POST /api/integrations/hotel_bookings.php` (requires env `HOTEL_API_TOKEN`)
+
+Environment variables:
+- `HOTEL_API_BASE_URL` (default: `http://hotelmanagemt.infinityfreeapp.com/api`)
+- `HOTEL_API_TOKEN` (JWT/Bearer from partner for bookings)
