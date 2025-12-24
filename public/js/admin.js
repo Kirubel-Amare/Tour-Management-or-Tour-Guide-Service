@@ -14,6 +14,7 @@
             bookings: [],
             hotels: [],
             restaurants: [],
+            places: [],
             taxiOrders: [],
             hotelReservations: [],
             restaurantReservations: [],
@@ -21,6 +22,7 @@
                 total_users: 0,
                 total_tours: 0,
                 total_bookings: 0,
+                total_places: 0,
                 revenue: 0
             }
         };
@@ -98,6 +100,8 @@
                 loadHotels();
             } else if (viewName === 'restaurants') {
                 loadRestaurants();
+            } else if (viewName === 'places') {
+                loadPlaces();
             } else if (viewName === 'taxi') {
                 loadTaxiOrders();
             } else if (viewName === 'hotel-reservations') {
@@ -125,6 +129,7 @@
                 overview.users = data.users || [];
                 overview.tours = data.tours || [];
                 overview.bookings = data.bookings || [];
+                overview.places = data.places || overview.places;
                 overview.taxiOrders = data.taxi_orders || [];
                 overview.hotelReservations = data.hotel_reservations || [];
                 overview.restaurantReservations = data.restaurant_reservations || [];
@@ -138,6 +143,8 @@
                 document.getElementById('user-count').textContent = overview.stats.total_users;
                 document.getElementById('tour-count').textContent = overview.stats.total_tours;
                 document.getElementById('booking-count').textContent = overview.stats.total_bookings;
+                const placeBadge = document.getElementById('place-count');
+                if (placeBadge) placeBadge.textContent = overview.stats.total_places || (overview.places || []).length || 0;
                 const taxiBadge = document.getElementById('taxi-count');
                 if (taxiBadge) taxiBadge.textContent = overview.taxiOrders.length || 0;
                 const hotelResBadge = document.getElementById('hotel-res-count');
@@ -150,6 +157,7 @@
                 loadUsers();
                 loadTours();
                 loadBookings();
+                loadPlaces();
                 loadTaxiOrders();
                 loadHotelReservations();
                 loadRestaurantReservations();
@@ -734,6 +742,147 @@
                 Popup.modal({ title: 'Restaurant Details', content: details });
             } else {
                 alert(`Restaurant Details\n\n${details.replace(/<[^>]+>/g,'')}`);
+            }
+        }
+
+        // Places actions & drawer
+        async function loadPlaces() {
+            const body = document.getElementById('places-list');
+            if (body) body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>`;
+            try {
+                const res = await fetch('/api/places/read.php');
+                const data = await res.json();
+                overview.places = Array.isArray(data) ? data : (data.data || []);
+                renderPlaces();
+                const badge = document.getElementById('place-count');
+                if (badge) badge.textContent = (overview.places || []).length;
+            } catch (e) {
+                if (body) body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1rem; color: var(--danger);">Failed to load places</td></tr>`;
+            }
+        }
+
+        function renderPlaces() {
+            const body = document.getElementById('places-list');
+            if (!body) return;
+            const items = overview.places || [];
+            if (!items.length) {
+                body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1rem; color: var(--text-muted);">No places found</td></tr>`;
+                return;
+            }
+            body.innerHTML = items.map(p => `
+                <tr>
+                    <td>${p.name}</td>
+                    <td>${p.type}</td>
+                    <td>${p.continent}</td>
+                    <td>${p.climate || '-'}</td>
+                    <td>${(p.rating ?? '-') + '★'}</td>
+                    <td style="text-align:right;">
+                        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                            <button class="btn btn-outline btn-sm" onclick="viewPlace(${p.id})" title="View"><i class="fas fa-eye"></i></button>
+                            <button class="btn btn-outline btn-sm" onclick="editPlace(${p.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="deletePlace(${p.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function viewPlace(id) {
+            const p = (overview.places || []).find(x => x.id == id);
+            if (!p) return;
+            const details = Object.entries(p).map(([k,v]) => `<div><strong>${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}</div>`).join('');
+            if (window.Popup && Popup.modal) {
+                Popup.modal({ title: 'Place Details', content: details });
+            } else {
+                alert(`Place Details\n\n${details.replace(/<[^>]+>/g,'')}`);
+            }
+        }
+
+        function createNewPlace() {
+            openPlaceDrawer(null);
+        }
+
+        function editPlace(id) {
+            openPlaceDrawer(id);
+        }
+
+        function openPlaceDrawer(placeId) {
+            const p = (overview.places || []).find(x => x.id == placeId);
+            const creating = !p;
+            document.getElementById('place-mode').value = creating ? 'create' : 'edit';
+            document.getElementById('place-id').value = p ? p.id : '';
+            document.getElementById('place-name').value = p ? (p.name || '') : '';
+            document.getElementById('place-type').value = p ? (p.type || '') : '';
+            document.getElementById('place-continent').value = p ? (p.continent || '') : '';
+            document.getElementById('place-climate').value = p ? (p.climate || '') : '';
+            document.getElementById('place-image').value = p ? (p.image || '') : '';
+            document.getElementById('place-rating').value = p && p.rating !== undefined ? (p.rating || '') : '';
+            document.getElementById('place-reviews').value = p && p.reviews !== undefined ? (p.reviews || '') : '';
+            const feat = Array.isArray(p?.features) ? p.features.join(', ') : (p?.features || '');
+            document.getElementById('place-features').value = feat;
+            document.getElementById('place-description').value = p ? (p.description || '') : '';
+            document.getElementById('place-drawer-title').textContent = creating ? 'Add Place' : `Edit ${p?.name || ''}`;
+            document.getElementById('place-drawer').classList.remove('hidden');
+        }
+
+        function closePlaceDrawer() {
+            document.getElementById('place-drawer').classList.add('hidden');
+        }
+
+        async function submitPlace(event) {
+            event.preventDefault();
+            const mode = document.getElementById('place-mode').value;
+            const featuresRaw = document.getElementById('place-features').value;
+            const features = featuresRaw ? featuresRaw.split(',').map(f => f.trim()).filter(Boolean) : [];
+            const payload = {
+                id: document.getElementById('place-id').value ? parseInt(document.getElementById('place-id').value, 10) : undefined,
+                name: document.getElementById('place-name').value,
+                type: document.getElementById('place-type').value,
+                continent: document.getElementById('place-continent').value,
+                climate: document.getElementById('place-climate').value || undefined,
+                image: document.getElementById('place-image').value || null,
+                rating: document.getElementById('place-rating').value ? parseFloat(document.getElementById('place-rating').value) : undefined,
+                reviews: document.getElementById('place-reviews').value ? parseInt(document.getElementById('place-reviews').value, 10) : undefined,
+                features,
+                description: document.getElementById('place-description').value || null
+            };
+
+            if (!payload.name || !payload.type || !payload.continent) {
+                return notify('Name, type and continent are required.', 'error');
+            }
+
+            try {
+                const endpoint = mode === 'edit' ? '/api/admin/places/update.php' : '/api/admin/places/create.php';
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to save place');
+                notify(mode === 'edit' ? 'Place updated' : 'Place created', 'success');
+                closePlaceDrawer();
+                loadPlaces();
+            } catch (e) {
+                notify(e.message, 'error');
+            }
+        }
+
+        async function deletePlace(id) {
+            const ok = await askConfirm('Delete place', 'Delete this place?');
+            if (!ok) return;
+            try {
+                const res = await fetch('/api/admin/places/delete.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed');
+                notify('Place deleted', 'success');
+                loadPlaces();
+            } catch (e) {
+                notify(e.message, 'error');
             }
         }
         // User actions

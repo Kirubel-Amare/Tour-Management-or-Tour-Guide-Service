@@ -480,6 +480,18 @@
             gap: 1rem;
         }
 
+        /* Drawer form layout helpers */
+        .form-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .form-grid.two-col {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .form-grid .form-group { margin: 0; }
+
         .drawer-header {
             display: flex;
             justify-content: space-between;

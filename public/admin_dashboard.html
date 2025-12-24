@@ -91,6 +91,13 @@
                             style="margin-left: auto; background: var(--secondary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
                             id="restaurant-count">0</span>
                     </a>
+                        <a href="#places" class="nav-item" onclick="switchView('places')">
+                            <i class="fas fa-location-dot"></i>
+                            <span>Places</span>
+                            <span
+                                style="margin-left: auto; background: #06b6d4; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;"
+                                id="place-count">0</span>
+                        </a>
                     
                     <a href="#bookings" class="nav-item" onclick="switchView('bookings')">
                         <i class="fas fa-calendar-check"></i>
@@ -391,6 +398,37 @@
                             </thead>
                             <tbody id="restaurants-list">
                                 <tr><td colspan="5" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Places Management View -->
+            <div id="places-view" class="fade-in" style="display: none;">
+                <div class="search-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2><i class="fas fa-location-dot"></i> Places Management</h2>
+                        <button class="btn btn-primary" onclick="createNewPlace()">
+                            <i class="fas fa-plus-circle"></i> Add Place
+                        </button>
+                    </div>
+                </div>
+                <div id="places-management-content">
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="places-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Continent</th>
+                                    <th>Climate</th>
+                                    <th>Rating</th>
+                                    <th style="text-align:right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="places-list">
+                                <tr><td colspan="6" style="text-align:center; padding:1rem; color: var(--text-muted);">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -756,37 +794,39 @@
             <form id="hotel-form" onsubmit="submitHotel(event)">
                 <input type="hidden" id="hotel-id">
                 <input type="hidden" id="hotel-mode" value="create">
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" class="admin-input" id="hotel-name" required>
-                </div>
-                <div class="form-group">
-                    <label>Location</label>
-                    <input type="text" class="admin-input" id="hotel-location" required>
-                </div>
-                <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="url" class="admin-input" id="hotel-image" placeholder="https://example.com/hotel.jpg">
-                </div>
-                <div class="form-group">
-                    <label>Price</label>
-                    <input type="number" step="0.01" class="admin-input" id="hotel-price" required>
-                </div>
-                <div class="form-group">
-                    <label>Rating</label>
-                    <input type="number" step="0.1" class="admin-input" id="hotel-rating" placeholder="4.0">
-                </div>
-                <div class="form-group">
-                    <label>Room Type</label>
-                    <input type="text" class="admin-input" id="hotel-room-type" placeholder="Standard">
-                </div>
-                <div class="form-group">
-                    <label>Stars</label>
-                    <input type="number" class="admin-input" id="hotel-stars" placeholder="4">
+                <div class="form-grid two-col">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" class="admin-input" id="hotel-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" class="admin-input" id="hotel-location" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="url" class="admin-input" id="hotel-image" placeholder="https://example.com/hotel.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label>Price</label>
+                        <input type="number" step="0.01" class="admin-input" id="hotel-price" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Rating</label>
+                        <input type="number" step="0.1" class="admin-input" id="hotel-rating" placeholder="4.0">
+                    </div>
+                    <div class="form-group">
+                        <label>Room Type</label>
+                        <input type="text" class="admin-input" id="hotel-room-type" placeholder="Standard">
+                    </div>
+                    <div class="form-group">
+                        <label>Stars</label>
+                        <input type="number" class="admin-input" id="hotel-stars" placeholder="4">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Description</label>
-                    <textarea class="admin-input" id="hotel-description" rows="3"></textarea>
+                    <textarea class="admin-input" id="hotel-description" rows="4"></textarea>
                 </div>
                 <div class="drawer-footer">
                     <button type="button" class="btn btn-outline" onclick="closeHotelDrawer()">Cancel</button>
@@ -841,6 +881,66 @@
                 <div class="drawer-footer">
                     <button type="button" class="btn btn-outline" onclick="closeRestaurantDrawer()">Cancel</button>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save restaurant</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Place Drawer -->
+    <div id="place-drawer" class="control-drawer hidden">
+        <div class="drawer-overlay" onclick="closePlaceDrawer()"></div>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <div>
+                    <p class="eyebrow">Place</p>
+                    <h3 id="place-drawer-title">Add Place</h3>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="closePlaceDrawer()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="place-form" onsubmit="submitPlace(event)">
+                <input type="hidden" id="place-id">
+                <input type="hidden" id="place-mode" value="create">
+                <div class="form-grid two-col">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" class="admin-input" id="place-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <input type="text" class="admin-input" id="place-type" placeholder="City, Beach, Mountain" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Continent</label>
+                        <input type="text" class="admin-input" id="place-continent" placeholder="Europe" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Climate</label>
+                        <input type="text" class="admin-input" id="place-climate" placeholder="Temperate">
+                    </div>
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="url" class="admin-input" id="place-image" placeholder="https://example.com/place.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label>Rating</label>
+                        <input type="number" step="0.1" class="admin-input" id="place-rating" placeholder="4.5">
+                    </div>
+                    <div class="form-group">
+                        <label>Reviews count</label>
+                        <input type="number" class="admin-input" id="place-reviews" placeholder="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Features (comma separated)</label>
+                    <textarea class="admin-input" id="place-features" rows="3" placeholder="Eiffel Tower, Louvre Museum"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="admin-input" id="place-description" rows="4"></textarea>
+                </div>
+                <div class="drawer-footer">
+                    <button type="button" class="btn btn-outline" onclick="closePlaceDrawer()">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save place</button>
                 </div>
             </form>
         </div>

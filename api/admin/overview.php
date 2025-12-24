@@ -23,10 +23,12 @@ $overview = [
     'users' => [],
     'tours' => [],
     'bookings' => [],
+    'places' => [],
     'stats' => [
         'total_users' => 0,
         'total_tours' => 0,
         'total_bookings' => 0,
+        'total_places' => 0,
         'revenue' => 0
     ]
 ];
@@ -43,6 +45,16 @@ try {
     $tourStmt->execute();
     $overview['tours'] = $tourStmt->fetchAll(PDO::FETCH_ASSOC);
     $overview['stats']['total_tours'] = count($overview['tours']);
+
+    // Places
+    $placeStmt = $db->prepare('SELECT id, name, type, continent, climate, description, image, rating, reviews, features, created_at FROM places ORDER BY created_at DESC');
+    $placeStmt->execute();
+    $places = $placeStmt->fetchAll(PDO::FETCH_ASSOC);
+    $overview['places'] = array_map(function ($row) {
+        $row['features'] = isset($row['features']) && $row['features'] ? json_decode($row['features'], true) : [];
+        return $row;
+    }, $places);
+    $overview['stats']['total_places'] = count($overview['places']);
 
     // Taxi orders
     $taxiStmt = $db->prepare('SELECT t.id, t.user_id, t.pickup, t.destination, t.vehicle_type, t.schedule, t.custom_time, t.distance_km, t.fare, t.eta_minutes, t.status, t.created_at, u.name AS user_name, u.email AS user_email FROM taxi_orders t LEFT JOIN users u ON t.user_id = u.id ORDER BY t.created_at DESC');
