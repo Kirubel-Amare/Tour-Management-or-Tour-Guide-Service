@@ -368,6 +368,16 @@
                     </div>
                 </div>
 
+                <!-- Selected Taxi Service (hidden value + display) -->
+                <input type="hidden" id="service-id" name="service_id" value="">
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-id-card"></i> Selected Taxi Service</label>
+                    <div id="selected-service-display" class="form-input" style="background: var(--bg-muted);">
+                        None selected
+                    </div>
+                    <small class="form-help">Pick a service from the list on the right.</small>
+                </div>
+
                 <button type="submit" class="btn btn-primary btn-block btn-large">
                     <i class="fas fa-taxi"></i> Book Taxi Now
                 </button>

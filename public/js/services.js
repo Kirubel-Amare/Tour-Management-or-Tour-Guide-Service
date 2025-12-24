@@ -678,6 +678,8 @@ async function orderTaxi(e) {
     const vehicleType = document.getElementById('vehicle-type').value || 'standard';
     const schedule = document.getElementById('schedule').value;
     const customTime = document.getElementById('scheduled-time').value;
+    const serviceIdValue = (document.getElementById('service-id')?.value || '').trim();
+    const serviceId = serviceIdValue !== '' ? Number(serviceIdValue) : null;
 
     if (!pickup || !destination) {
         alert('Please enter both pickup and destination (you can type a place name or coordinates).');
@@ -698,7 +700,7 @@ async function orderTaxi(e) {
                 vehicle_type: vehicleType,
                 schedule,
                 pickup_time: customTime || undefined,
-                service_id: null
+                service_id: serviceId
             })
         });
 
@@ -756,11 +758,30 @@ function renderTaxis(taxis) {
     container.innerHTML = list.map(t => `
         <div class="taxi-card">
             <h3>${t.name || 'Taxi'}</h3>
+            <p>Service ID: ${t.id ?? '—'}</p>
             <p>Vehicle: ${t.vehicle_type || 'Standard'}</p>
             <p>Capacity: ${t.capacity || 4}</p>
             <p>Price per km: $${t.price_per_km || 0}</p>
             <p>ETA: ${t.eta_minutes || 'N/A'} min</p>
-            <button onclick="orderTaxi(event)">Book Now</button>
+            <button onclick="selectTaxiService(${t.id ?? 'null'}, '${(t.name || 'Taxi').replace(/'/g, "\'")}','${(t.vehicle_type || 'standard').replace(/'/g, "\'")}')">Select Service</button>
         </div>
     `).join('');
+}
+
+function selectTaxiService(id, name, vehicleType) {
+    const input = document.getElementById('service-id');
+    const display = document.getElementById('selected-service-display');
+    if (input) input.value = (id ?? '').toString();
+    if (display) display.textContent = id ? `${name} (ID: ${id})` : 'None selected';
+    // Auto-set vehicle type to match selected service when possible
+    if (vehicleType) {
+        const vt = document.getElementById('vehicle-type');
+        if (vt) {
+            const normalized = (vehicleType || '').toLowerCase();
+            vt.value = ['standard','premium','van','luxury'].includes(normalized) ? normalized : vt.value;
+            calculateFare();
+        }
+    }
+    // Focus the booking form's submit button for quick action
+    document.getElementById('taxi-form')?.querySelector('button[type="submit"]')?.focus({ preventScroll: true });
 }

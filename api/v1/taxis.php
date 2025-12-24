@@ -3,6 +3,8 @@ header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-KEY');
+// Ensure only JSON is output (avoid PHP warnings leaking into response)
+ini_set('display_errors', '0');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -352,6 +354,7 @@ if ($response['ok']) {
             ];
         }, $data);
     }
+}
 $listOut = [
     'source' => 'external',
     'data' => $services
@@ -383,4 +386,3 @@ if (!$response['ok'] || !$services) {
     $listOut['error'] = $response['error'];
 }
 echo json_encode($listOut);
-}
