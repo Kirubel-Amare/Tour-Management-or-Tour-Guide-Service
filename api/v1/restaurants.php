@@ -15,13 +15,65 @@ require_once '../../config/ExternalService.php';
 // Enforce API key authentication for partner access
 Auth::authenticate();
 
-// Base of the external API (e.g., https://restaurantmanagement.ct.ws/api)
-$baseApi = rtrim(getenv('EXTERNAL_RESTAURANT_API') ?: 'https://restaurantmanagement.ct.ws/api', '/');
+// Base of the external API (new upstream: https://restaurantmanagement.xo.je/api)
+$baseApi = rtrim(getenv('EXTERNAL_RESTAURANT_API') ?: 'https://restaurantmanagement.xo.je/api', '/');
 // Optional debug flag to inspect upstream behavior
 $DEBUG = (isset($_GET['debug']) && $_GET['debug'] === '1');
 
-// Upstream auth: Bearer token is required for most endpoints
+// Normalize image URL to include static host when upstream returns relative paths
+function normalizeRestaurantImageUrl($url)
+{
+    static $imageBase = null;
+    static $fallback = null;
+    if ($imageBase === null) {
+        $baseApi = rtrim(getenv('EXTERNAL_RESTAURANT_API') ?: 'https://restaurantmanagement.xo.je/api', '/');
+        $imageBase = rtrim(getenv('EXTERNAL_RESTAURANT_ASSET_BASE') ?: preg_replace('~/api/?$~', '', $baseApi) ?: 'https://restaurantmanagement.xo.je', '/');
+        $fallback = getenv('EXTERNAL_RESTAURANT_DEFAULT_IMAGE') ?: $imageBase . '/uploads/restaurants/default.jpg';
+    }
+
+    if (empty($url)) {
+        return $fallback;
+    }
+    if (preg_match('#^https?://#i', $url)) {
+        return $url;
+    }
+    return $imageBase . '/' . ltrim($url, '/');
+}
+
+// Choose the best image field from a restaurant item then normalize to absolute URL
+function pickRestaurantImage($item)
+{
+    if (!is_array($item)) {
+        return normalizeRestaurantImageUrl(null);
+    }
+
+    $candidates = [];
+    // common keys from possible upstream responses
+    foreach (['image_url', 'image', 'photo', 'thumbnail', 'logo', 'cover', 'banner'] as $key) {
+        if (!empty($item[$key])) {
+            $candidates[] = $item[$key];
+        }
+    }
+    // if upstream provides array of images
+    if (empty($candidates) && !empty($item['images']) && is_array($item['images'])) {
+        $first = reset($item['images']);
+        if (is_string($first)) {
+            $candidates[] = $first;
+        } elseif (is_array($first) && !empty($first['url'])) {
+            $candidates[] = $first['url'];
+        }
+    }
+
+    $chosen = $candidates[0] ?? null;
+    return normalizeRestaurantImageUrl($chosen);
+}
+
+// Upstream auth: API key header is required; Bearer token stays optional
 $restaurantHeaders = [];
+$apiKey = getenv('EXTERNAL_RESTAURANT_API_KEY') ?: 'RESTO-API-2025';
+if (!empty($apiKey)) {
+    $restaurantHeaders[] = 'X-API-KEY: ' . $apiKey;
+}
 $bearer = getenv('EXTERNAL_RESTAURANT_API_TOKEN');
 if ($bearer) {
     $restaurantHeaders[] = 'Authorization: Bearer ' . $bearer;
@@ -55,13 +107,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$reservation['restaurant_id'] || !$reservation['date'] || !$reservation['time']) {
         http_response_code(400);
         echo json_encode(['message' => 'restaurant_id, date, and time are required']);
-        exit;
-    }
-
-    // Booking requires Bearer token; fail fast if missing
-    if (!$bearer) {
-        http_response_code(401);
-        echo json_encode(['message' => 'EXTERNAL_RESTAURANT_API_TOKEN is required for booking']);
         exit;
     }
 
@@ -227,7 +272,7 @@ if ($response['ok']) {
                     'priceRange' => $item['price_range'] ?? '$$',
                     'rating' => isset($item['rating']) ? (is_numeric($item['rating']) ? (float)$item['rating'] : $item['rating']) : 4.5,
                     'description' => $item['description'] ?? 'Partner restaurant',
-                    'image' => $item['image_url'] ?? $item['image'] ?? 'https://via.placeholder.com/600x400?text=Restaurant',
+                    'image' => pickRestaurantImage($item),
                     'features' => $features,
                     // Additional fields
                     'capacity' => $item['capacity'] ?? null,
@@ -269,7 +314,7 @@ if ($response['ok']) {
                     'rating' => isset($item['rating']) ? (is_numeric($item['rating']) ? (float)$item['rating'] : $item['rating']) : 4.5,
                     'reviews' => $item['review_count'] ?? $item['reviews'] ?? 40,
                     'description' => $item['description'] ?? 'Partner restaurant',
-                    'image' => $item['image_url'] ?? $item['image'] ?? 'https://via.placeholder.com/600x400?text=Restaurant',
+                    'image' => pickRestaurantImage($item),
                     'features' => $features
                 ];
             }, $raw);
