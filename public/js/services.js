@@ -2,6 +2,7 @@ let places = [];
 let tours = [];
 let hotels = [];
 let restaurants = [];
+let taxis = [];
 const PUBLIC_API_KEY = window.__PUBLIC_API_KEY__ || window.__REVIEW_API_KEY__ || 'demo-api-key';
 
 // Modal-based message box to replace native alerts
@@ -673,11 +674,16 @@ async function orderTaxi(e) {
     const user = requireAuth('Please login to book a taxi.');
     if (!user) return;
 
-    const pickup = (document.getElementById('pickup-location').value || '').trim();
-    const destination = (document.getElementById('destination').value || '').trim();
-    const vehicleType = document.getElementById('vehicle-type').value || 'standard';
-    const schedule = document.getElementById('schedule').value;
-    const customTime = document.getElementById('scheduled-time').value;
+    const pickupField = document.getElementById('taxi-pickup') || document.getElementById('pickup-location');
+    const destinationField = document.getElementById('taxi-destination') || document.getElementById('destination');
+    const timeField = document.getElementById('taxi-time') || document.getElementById('scheduled-time');
+    const vehicleTypeField = document.getElementById('vehicle-type');
+
+    const pickup = (pickupField?.value || '').trim();
+    const destination = (destinationField?.value || '').trim();
+    const customTime = (timeField?.value || '').trim();
+    const vehicleType = vehicleTypeField?.value || 'standard';
+    const schedule = customTime ? 'scheduled' : 'now';
     const serviceIdValue = (document.getElementById('service-id')?.value || '').trim();
     const serviceId = serviceIdValue !== '' ? Number(serviceIdValue) : null;
 
@@ -733,9 +739,8 @@ async function loadTaxis() {
             headers: { 'X-API-KEY': PUBLIC_API_KEY }
         }); // GET request
         const payload = await response.json();
-        const taxis = payload.data || [];
-        
-        renderTaxis(taxis); // Render function for your UI
+        taxis = payload.data || [];
+        renderTaxis(filterTaxisData());
     } catch (err) {
         console.error('Failed to load taxis', err);
         renderTaxis([]); // Empty if failed
@@ -743,11 +748,13 @@ async function loadTaxis() {
 }
 
 function renderTaxis(taxis) {
-    const container = document.getElementById('availableTaxis');
+    const container = document.getElementById('taxis-list');
     const countEl = document.getElementById('taxis-count');
     if (!container) return;
 
-    const list = Array.isArray(taxis) ? taxis : [];
+    const list = Array.isArray(taxis)
+        ? taxis.filter(t => !t.status || String(t.status).toLowerCase() === 'available')
+        : [];
     if (countEl) countEl.textContent = `${list.length} available`;
 
     if (!list.length) {
@@ -755,17 +762,70 @@ function renderTaxis(taxis) {
         return;
     }
 
-    container.innerHTML = list.map(t => `
-        <div class="taxi-card">
-            <h3>${t.name || 'Taxi'}</h3>
-            <p>Service ID: ${t.id ?? '—'}</p>
-            <p>Vehicle: ${t.vehicle_type || 'Standard'}</p>
-            <p>Capacity: ${t.capacity || 4}</p>
-            <p>Price per km: $${t.price_per_km || 0}</p>
-            <p>ETA: ${t.eta_minutes || 'N/A'} min</p>
-            <button onclick="selectTaxiService(${t.id ?? 'null'}, '${(t.name || 'Taxi').replace(/'/g, "\'")}','${(t.vehicle_type || 'standard').replace(/'/g, "\'")}')">Select Service</button>
-        </div>
-    `).join('');
+    container.innerHTML = list.map(t => {
+        const img = t.image || 'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=800&q=60';
+        const vehicle = t.vehicle_type || 'Standard';
+        const price = t.price_per_km || 0;
+        const eta = t.eta_minutes || 'N/A';
+        const cap = t.capacity || 4;
+        const id = t.id ?? '—';
+        return `
+        <div class="service-card taxi-card">
+            <div class="service-image" style="background-image: url('${img}');">
+                <span class="service-badge">ETA ${eta} min</span>
+            </div>
+            <div class="service-content">
+                <h3 class="service-title">
+                    ${t.name || 'Taxi'}
+                    <span class="service-rating"><i class="fas fa-taxi"></i> ${vehicle}</span>
+                </h3>
+                <div class="service-location">
+                    <i class="fas fa-hashtag"></i> Service ID: ${id}
+                </div>
+                <div class="taxi-details">
+                    <span class="taxi-chip"><i class="fas fa-users"></i> ${cap} seats</span>
+                    <span class="taxi-chip"><i class="fas fa-dollar-sign"></i> $${price}/km</span>
+                    <span class="taxi-chip"><i class="fas fa-stopwatch"></i> ETA ${eta}</span>
+                </div>
+                <div class="taxi-price">
+                    <span>Status</span>
+                    <span class="taxi-status available">Available</span>
+                </div>
+                <button class="btn btn-primary btn-small" onclick="selectTaxiService(${JSON.stringify(id)}, ${JSON.stringify(t.name || 'Taxi')}, ${JSON.stringify(vehicle)}); scrollToBookingForm();">
+                    <i class="fas fa-ticket-alt"></i> Book this taxi
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function searchTaxis() {
+    renderTaxis(filterTaxisData());
+}
+
+function filterTaxis() {
+    renderTaxis(filterTaxisData());
+}
+
+function filterTaxisData() {
+    const query = (document.getElementById('taxis-search')?.value || '').toLowerCase();
+    const vehicleFilter = (document.getElementById('taxi-vehicle-filter')?.value || '').toLowerCase();
+    const priceFilter = document.getElementById('taxi-price-filter')?.value || '';
+
+    return (Array.isArray(taxis) ? taxis : []).filter(t => {
+        const name = (t.name || '').toLowerCase();
+        const vehicle = (t.vehicle_type || '').toLowerCase();
+        const price = parseFloat(t.price_per_km || t.price || 0);
+        const matchesQuery = !query || name.includes(query) || vehicle.includes(query);
+        const matchesVehicle = !vehicleFilter || vehicle === vehicleFilter;
+        const matchesPrice = !priceFilter || (
+            (priceFilter === '0-2' && price < 2) ||
+            (priceFilter === '2-3' && price >= 2 && price <= 3) ||
+            (priceFilter === '3-4' && price >= 3 && price <= 4) ||
+            (priceFilter === '4+' && price >= 4)
+        );
+        return matchesQuery && matchesVehicle && matchesPrice;
+    });
 }
 
 function selectTaxiService(id, name, vehicleType) {
@@ -783,5 +843,13 @@ function selectTaxiService(id, name, vehicleType) {
         }
     }
     // Focus the booking form's submit button for quick action
-    document.getElementById('taxi-form')?.querySelector('button[type="submit"]')?.focus({ preventScroll: true });
+    document.getElementById('taxi-booking-form')?.querySelector('button[type="submit"]')?.focus({ preventScroll: true });
+}
+
+function scrollToBookingForm() {
+    const form = document.getElementById('taxi-booking-card');
+    if (form) {
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        form.querySelector('input,textarea,select')?.focus({ preventScroll: true });
+    }
 }
