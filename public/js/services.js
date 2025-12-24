@@ -741,6 +741,13 @@ async function loadTaxis() {
         const payload = await response.json();
         taxis = payload.data || [];
         renderTaxis(filterTaxisData());
+
+        // Wire search input debounce once
+        const taxiSearch = document.getElementById('taxis-search');
+        if (taxiSearch && !taxiSearch.dataset.wired) {
+            taxiSearch.dataset.wired = 'true';
+            taxiSearch.addEventListener('input', debounce(() => renderTaxis(filterTaxisData()), 300));
+        }
     } catch (err) {
         console.error('Failed to load taxis', err);
         renderTaxis([]); // Empty if failed
@@ -791,7 +798,7 @@ function renderTaxis(taxis) {
                     <span>Status</span>
                     <span class="taxi-status available">Available</span>
                 </div>
-                <button class="btn btn-primary btn-small" onclick="selectTaxiService(${JSON.stringify(id)}, ${JSON.stringify(t.name || 'Taxi')}, ${JSON.stringify(vehicle)}); scrollToBookingForm();">
+                <button class="btn btn-primary btn-small" onclick='selectTaxiService(${JSON.stringify(t)}); redirectToTaxiBooking();'>
                     <i class="fas fa-ticket-alt"></i> Book this taxi
                 </button>
             </div>
@@ -828,22 +835,43 @@ function filterTaxisData() {
     });
 }
 
-function selectTaxiService(id, name, vehicleType) {
+function selectTaxiService(taxiOrId, name, vehicleType) {
+    const t = (typeof taxiOrId === 'object' && taxiOrId !== null)
+        ? taxiOrId
+        : { id: taxiOrId, name, vehicle_type: vehicleType };
+
+    const id = t.id ?? t.service_id ?? t.serviceId ?? '';
+    const resolvedName = t.name || 'Taxi';
+    const resolvedVehicle = t.vehicle_type || t.vehicleType || 'standard';
+
     const input = document.getElementById('service-id');
     const display = document.getElementById('selected-service-display');
     if (input) input.value = (id ?? '').toString();
-    if (display) display.textContent = id ? `${name} (ID: ${id})` : 'None selected';
+    if (display) display.textContent = id ? `${resolvedName} (ID: ${id})` : 'None selected';
     // Auto-set vehicle type to match selected service when possible
-    if (vehicleType) {
-        const vt = document.getElementById('vehicle-type');
-        if (vt) {
-            const normalized = (vehicleType || '').toLowerCase();
-            vt.value = ['standard','premium','van','luxury'].includes(normalized) ? normalized : vt.value;
-            calculateFare();
-        }
+    const vt = document.getElementById('vehicle-type');
+    if (vt) {
+        const normalized = (resolvedVehicle || '').toLowerCase();
+        vt.value = ['standard','premium','van','luxury'].includes(normalized) ? normalized : vt.value;
+        calculateFare();
     }
     // Focus the booking form's submit button for quick action
     document.getElementById('taxi-booking-form')?.querySelector('button[type="submit"]')?.focus({ preventScroll: true });
+
+    // Store selection for dedicated booking page with relevant payload from car
+    try {
+        sessionStorage.setItem('selectedTaxi', JSON.stringify({
+            id,
+            name: resolvedName,
+            vehicleType: resolvedVehicle,
+            pricePerKm: t.price_per_km ?? t.pricePerKm ?? null,
+            etaMinutes: t.eta_minutes ?? t.etaMinutes ?? null,
+            capacity: t.capacity ?? null,
+            image: t.image || null
+        }));
+    } catch (err) {
+        console.warn('Unable to persist taxi selection', err);
+    }
 }
 
 function scrollToBookingForm() {
@@ -852,4 +880,9 @@ function scrollToBookingForm() {
         form.scrollIntoView({ behavior: 'smooth', block: 'start' });
         form.querySelector('input,textarea,select')?.focus({ preventScroll: true });
     }
+}
+
+// Persist selection and go to dedicated booking page
+function redirectToTaxiBooking() {
+    window.location.href = 'taxi_booking.html';
 }
