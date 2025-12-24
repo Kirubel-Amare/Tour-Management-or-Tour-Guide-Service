@@ -3,6 +3,9 @@ let tours = [];
 let hotels = [];
 let restaurants = [];
 let taxis = [];
+let hotelsStatus = { error: '', empty: false };
+let restaurantsStatus = { error: '', empty: false };
+let taxisStatus = { error: '', empty: false };
 let placesPage = 1;
 let toursPage = 1;
 let hotelsPage = 1;
@@ -137,6 +140,7 @@ async function loadTours() {
 
 async function loadHotels(cityInput) {
     try {
+        hotelsStatus = { error: '', empty: false };
         const city = (cityInput || '').trim();
         const qs = city ? `?city=${encodeURIComponent(city)}` : '';
         // Fetch partner hotels through backend proxy
@@ -147,11 +151,13 @@ async function loadHotels(cityInput) {
         hotels = Array.isArray(incoming) && incoming.length ? incoming.map(mapExternalHotel) : [];
         hotelsPage = 1;
         if (!hotels.length) {
+            hotelsStatus.empty = true;
             showMessageBox?.('No hotels returned by the partner API.', { title: 'Hotels', type: 'error' });
         }
     } catch (err) {
         console.error('Failed to load hotels', err);
         hotels = [];
+        hotelsStatus = { error: err?.message || 'Unable to load hotels.', empty: false };
         showMessageBox?.('Unable to load hotels. Please try again later.', { title: 'Hotels', type: 'error' });
     }
     renderHotels(filterHotelsData());
@@ -168,6 +174,7 @@ async function loadHotels(cityInput) {
 
 async function loadRestaurants(cityInput) {
     try {
+        restaurantsStatus = { error: '', empty: false };
         const city = (cityInput || '').trim();
         const qs = city ? `?city=${encodeURIComponent(city)}` : '';
         const response = await fetch(`/api/v1/restaurants.php${qs}`, {
@@ -178,11 +185,13 @@ async function loadRestaurants(cityInput) {
         const incoming = payload?.data || payload || [];
         restaurants = Array.isArray(incoming) && incoming.length ? incoming.map(mapRestaurant) : [];
         if (!restaurants.length) {
+            restaurantsStatus.empty = true;
             showMessageBox?.('No restaurants returned by the API.', { title: 'Restaurants', type: 'error' });
         }
     } catch (err) {
         console.error('Failed to load restaurants', err);
         restaurants = [];
+        restaurantsStatus = { error: err?.message || 'Unable to load restaurants.', empty: false };
         showMessageBox?.('Unable to load restaurants. Please try again later.', { title: 'Restaurants', type: 'error' });
     }
     renderRestaurants(filterRestaurantsData());
@@ -342,7 +351,7 @@ function renderHotels(data) {
 
     container.innerHTML = pageItems.length
         ? pageItems.map(createHotelCard).join('')
-        : '<div class="no-results"><i class="fas fa-bed"></i><h3>No hotels found</h3><p>Try adjusting your filters.</p></div>';
+        : buildEmptyState('Hotels', hotelsStatus);
 
     if (pagination) {
         if (list.length <= ITEMS_PER_PAGE) {
@@ -370,7 +379,7 @@ function renderRestaurants(data) {
 
     container.innerHTML = pageItems.length
         ? pageItems.map(createRestaurantCard).join('')
-        : '<div class="no-results"><i class="fas fa-utensils"></i><h3>No restaurants found</h3><p>Try adjusting your filters.</p></div>';
+        : buildEmptyState('Restaurants', restaurantsStatus);
 
     if (pagination) {
         if (list.length <= ITEMS_PER_PAGE) {
@@ -526,7 +535,7 @@ function createRestaurantCard(restaurant) {
                         <button onclick="viewRestaurantDetails(${restaurant.id})" class="btn btn-outline" style="border-color: var(--border);">
                             <i class="fas fa-info-circle"></i> Details
                         </button>
-                        <button onclick="bookRestaurant(${restaurant.id})" class="btn btn-primary">
+                        <button onclick="startRestaurantBooking(${restaurant.id})" class="btn btn-primary">
                             <i class="fas fa-utensils"></i> Reserve Table
                         </button>
                     </div>
@@ -657,6 +666,25 @@ function filterRestaurantsData() {
     });
 }
 
+function buildEmptyState(label, status, isTaxi = false) {
+    const icon = label === 'Hotels' ? 'fa-bed' : label === 'Restaurants' ? 'fa-utensils' : 'fa-taxi';
+    const error = status?.error;
+    const emptyApi = status?.empty;
+    const hint = error
+        ? 'The service did not respond. Please retry or check your connection.'
+        : emptyApi
+            ? 'The API returned no results. Try another city or time.'
+            : 'Try clearing your filters or searching a different city.';
+
+    return `
+        <div class="no-results${error ? ' error' : ''}${isTaxi ? ' loading-taxis' : ''}">
+            <i class="fas ${icon}"></i>
+            <h3>${error ? `${label} unavailable` : `No ${label.toLowerCase()} found`}</h3>
+            <p>${hint}</p>
+        </div>
+    `;
+}
+
 function viewPlaceDetails(placeId) {
     const place = places.find(p => p.id === placeId);
     if (!place) return;
@@ -679,6 +707,32 @@ function viewRestaurantDetails(restaurantId) {
     const restaurant = restaurants.find(r => r.id === restaurantId);
     if (!restaurant) return;
     alert(`Restaurant Details:\n\n${restaurant.name}\nLocation: ${restaurant.location}\nCuisine: ${restaurant.cuisine}\nPrice Range: ${restaurant.priceRange}\nRating: ${restaurant.rating}★\n\n${restaurant.description}`);
+}
+
+function startRestaurantBooking(restaurantId) {
+    const restaurant = restaurants.find(r => r.id === restaurantId);
+    if (!restaurant) {
+        showMessageBox?.('Restaurant not found.', { title: 'Restaurant', type: 'error' });
+        return;
+    }
+
+    try {
+        sessionStorage.setItem('selectedRestaurant', JSON.stringify({
+            id: restaurant.id,
+            name: restaurant.name,
+            cuisine: restaurant.cuisine,
+            location: restaurant.location,
+            priceRange: restaurant.priceRange,
+            rating: restaurant.rating,
+            image: restaurant.image,
+            features: restaurant.features,
+            description: restaurant.description
+        }));
+    } catch (err) {
+        console.warn('Unable to persist restaurant selection', err);
+    }
+
+    window.location.href = 'restaurant_booking.html';
 }
 
 async function bookTour(tourId) {
@@ -872,12 +926,17 @@ async function orderTaxi(e) {
 
 async function loadTaxis() {
     try {
+        taxisStatus = { error: '', empty: false };
         const response = await fetch('/api/v1/taxis.php', {
             headers: { 'X-API-KEY': PUBLIC_API_KEY }
         }); // GET request
         if (!response.ok) throw new Error(`Taxis API responded ${response.status}`);
         const payload = await response.json();
         taxis = payload.data || [];
+        if (!taxis.length) {
+            taxisStatus.empty = true;
+            showMessageBox?.('No taxis returned by the API.', { title: 'Taxis', type: 'error' });
+        }
         renderTaxis(filterTaxisData());
 
         // Wire search input debounce once
@@ -889,6 +948,7 @@ async function loadTaxis() {
     } catch (err) {
         console.error('Failed to load taxis', err);
         taxis = [];
+        taxisStatus = { error: err?.message || 'Unable to load taxis.', empty: false };
         renderTaxis([]); // Empty if failed
         showMessageBox?.('Unable to load taxis. Please try again later.', { title: 'Taxis', type: 'error' });
     }
@@ -911,7 +971,7 @@ function renderTaxis(taxis) {
     const pageItems = list.slice(start, start + ITEMS_PER_PAGE);
 
     if (!pageItems.length) {
-        container.innerHTML = '<div class="loading-taxis"><p>No taxis available right now.</p></div>';
+        container.innerHTML = buildEmptyState('Taxis', taxisStatus, true);
     } else {
         container.innerHTML = pageItems.map(t => {
         const img = t.image || 'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=800&q=60';

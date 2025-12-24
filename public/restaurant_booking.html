@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Restaurant | TourismPro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/service.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="header-placeholder"></div>
+
+    <main class="page-section" style="padding: 3rem 1rem; background: #f9fafb;">
+        <div class="container" style="max-width: 1100px; margin: 0 auto; display: grid; gap: 2rem; grid-template-columns: 3fr 2fr; align-items: start;">
+            <section class="taxi-booking-form" id="restaurant-booking-card">
+                <div class="booking-intro">
+                    <span class="booking-icon"><i class="fas fa-utensils"></i></span>
+                    <h3>Reserve a Table</h3>
+                    <p>Select your date and time, confirm guests, and submit. We use the restaurant you picked on the services page.</p>
+                </div>
+                <form id="restaurant-booking-form" class="booking-form" onsubmit="orderSelectedRestaurant(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reservation-date">Date</label>
+                            <input type="date" id="reservation-date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reservation-time">Time</label>
+                            <input type="time" id="reservation-time" name="time" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="guest-count">Guests</label>
+                            <input type="number" id="guest-count" name="guests" min="1" max="12" value="2" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact-phone">Contact Phone (optional)</label>
+                            <input type="tel" id="contact-phone" name="phone" placeholder="e.g., +1 555 123 4567">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="special-requests">Special Requests (optional)</label>
+                        <textarea id="special-requests" name="requests" rows="3" placeholder="Dietary needs, seating preference, occasion"></textarea>
+                    </div>
+
+                    <!-- Hidden fields populated from selected restaurant -->
+                    <input type="hidden" id="selected-restaurant-id">
+                    <input type="hidden" id="selected-restaurant-name">
+                    <input type="hidden" id="selected-restaurant-location">
+                    <input type="hidden" id="selected-restaurant-cuisine">
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check-circle"></i> Confirm Reservation
+                    </button>
+                </form>
+            </section>
+
+            <aside class="taxi-summary">
+                <div class="taxi-summary-card">
+                    <div class="summary-hero" id="summary-hero">
+                        <div class="summary-hero-icon"><i class="fas fa-utensils"></i></div>
+                        <div class="summary-hero-copy">
+                            <p class="summary-label">Selected Restaurant</p>
+                            <h4 id="summary-name">Not selected</h4>
+                            <p id="summary-cuisine" class="summary-sub">Cuisine</p>
+                        </div>
+                    </div>
+                    <div class="summary-body">
+                        <div class="summary-row">
+                            <span>Location</span>
+                            <strong id="summary-location">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Date</span>
+                            <strong id="summary-date">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Time</span>
+                            <strong id="summary-time">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Guests</span>
+                            <strong id="summary-guests">—</strong>
+                        </div>
+                        <div class="summary-chips" id="summary-extra"></div>
+                    </div>
+                    <div class="summary-footer">
+                        <p class="summary-note">We send these details to the partner restaurant to place your reservation.</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <!-- Reusable Message Box Modal -->
+    <div id="message-modal" class="msg-modal" aria-hidden="true">
+        <div class="msg-backdrop" data-close="true"></div>
+        <div class="msg-dialog info" role="dialog" aria-modal="true" aria-labelledby="msg-title">
+            <div class="msg-header">
+                <span id="msg-title">Message</span>
+                <button type="button" class="msg-close" aria-label="Close" data-close="true">&times;</button>
+            </div>
+            <div class="msg-body" id="msg-body"></div>
+            <div class="msg-actions">
+                <button type="button" class="btn btn-primary" id="msg-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/restaurant_booking.js"></script>
+</body>
+</html>
