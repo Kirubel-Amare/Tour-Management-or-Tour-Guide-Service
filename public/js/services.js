@@ -694,7 +694,12 @@ function viewPlaceDetails(placeId) {
 function viewTourDetails(tourId) {
     const tour = tours.find(t => t.id === tourId);
     if (!tour) return;
-    alert(`Tour Details:\n\n${tour.title}\nLocation: ${tour.location}\nDuration: ${tour.duration}\nPrice: $${tour.price}\nRating: ${tour.rating}★\n\n${tour.description}`);
+    const msg = `Tour Details:\n\n${tour.title}\nLocation: ${tour.location}\nDuration: ${tour.duration}\nPrice: $${tour.price}\nRating: ${tour.rating}★\n\n${tour.description}`;
+    if (typeof showMessageBox === 'function') {
+        showMessageBox(msg, { title: 'Tour Details' });
+    } else {
+        alert(msg);
+    }
 }
 
 function viewHotelDetails(hotelId) {
@@ -740,7 +745,10 @@ async function bookTour(tourId) {
     if (!user) return;
 
     const tour = tours.find(t => t.id === tourId);
-    if (!tour) return alert('Tour not found.');
+    if (!tour) {
+        showMessageBox?.('Tour not found.', { title: 'Tours', type: 'error' });
+        return;
+    }
 
     try {
         const response = await fetch('/api/bookings/create.php', {
@@ -750,13 +758,13 @@ async function bookTour(tourId) {
         });
 
         if (response.ok) {
-            alert(`Booking confirmed for ${tour.title}`);
+            showMessageBox?.(`Booking confirmed for ${tour.title}`, { title: 'Tour Booking', type: 'success' });
         } else {
-            alert('Booking failed.');
+            showMessageBox?.('Booking failed.', { title: 'Tour Booking', type: 'error' });
         }
     } catch (err) {
         console.error('Booking error', err);
-        alert('Unable to book tour right now.');
+        showMessageBox?.('Unable to book tour right now.', { title: 'Tour Booking', type: 'error' });
     }
 }
 

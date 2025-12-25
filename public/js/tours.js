@@ -6,10 +6,42 @@ const API_BASE_PATH = (window.__APP_BASE_PATH__ || '').replace(/\/$/, '');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    initMessageBox();
     loadTours();
     setupEventListeners();
     setupReviewForm();
 });
+
+function initMessageBox() {
+    const modal = document.getElementById('message-modal');
+    if (!modal || modal.dataset.wired) return;
+    modal.dataset.wired = 'true';
+
+    const dialog = modal.querySelector('.msg-dialog');
+    const titleEl = document.getElementById('msg-title');
+    const bodyEl = document.getElementById('msg-body');
+    const okBtn = document.getElementById('msg-ok');
+    const closeElements = modal.querySelectorAll('[data-close]');
+
+    const close = () => modal.classList.remove('show');
+    closeElements.forEach(el => el.addEventListener('click', close));
+    okBtn?.addEventListener('click', close);
+    modal.addEventListener('click', (e) => {
+        if (e.target.dataset.close === 'true') close();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) close();
+    });
+
+    window.showMessageBox = (message, { title = 'Message', type = 'info' } = {}) => {
+        dialog.classList.remove('info', 'success', 'error');
+        dialog.classList.add(type || 'info');
+        titleEl.textContent = title;
+        bodyEl.textContent = Array.isArray(message) ? message.join('\n') : message;
+        modal.classList.add('show');
+        okBtn?.focus({ preventScroll: true });
+    };
+}
 
 // Load tours from API
 async function loadTours() {
@@ -312,43 +344,49 @@ function viewTourDetails(tourId) {
     const tour = allTours.find(t => t.id === tourId);
     if (!tour) return;
 
-    alert(`Tour Details:\n\n${tour.title}\nLocation: ${tour.location}\nDate: ${new Date(tour.schedule_date).toLocaleDateString()}\nDuration: ${tour.duration}\nPrice: $${tour.price}\n\n${tour.description}`);
+    const msg = `Tour Details:\n\n${tour.title}\nLocation: ${tour.location}\nDate: ${new Date(tour.schedule_date).toLocaleDateString()}\nDuration: ${tour.duration}\nPrice: $${tour.price}\n\n${tour.description}`;
+    if (typeof showMessageBox === 'function') {
+        showMessageBox(msg, { title: 'Tour Details' });
+    } else {
+        alert(msg);
+    }
 }
 
 async function bookTour(tourId) {
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user) {
-        if (confirm('Please login to book tours. Go to login page?')) {
-            window.location.href = 'login.html';
-        }
+        showMessageBox?.('Please login to book tours.', { title: 'Login required', type: 'info' });
+        window.location.href = 'login.html';
         return;
     }
 
     const tour = allTours.find(t => t.id === tourId);
-    if (!tour) return;
+    if (!tour) {
+        showMessageBox?.('Tour not found.', { title: 'Tours', type: 'error' });
+        return;
+    }
 
-    if (confirm(`Book "${tour.title}" for $${tour.price}?`)) {
-        try {
-            const response = await fetch('/api/bookings/create.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    tour_id: tour.id,
-                    user_id: user.id
-                })
-            });
+    try {
+        const response = await fetch('/api/bookings/create.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                tour_id: tour.id,
+                user_id: user.id
+            })
+        });
 
-            if (response.ok) {
-                alert('Booking Confirmed! You can view your bookings in your Dashboard.');
-            } else {
-                const data = await response.json();
-                alert('Booking Failed: ' + (data.message || 'Unknown error'));
-            }
-        } catch (error) {
-            console.error('Error booking tour:', error);
-            alert('An error occurred. Please try again.');
+        if (response.ok) {
+            showMessageBox?.('Booking confirmed! You can view your bookings in your Dashboard.', { title: 'Tour Booking', type: 'success' });
+        } else {
+            const data = await response.json().catch(() => ({}));
+            const msg = data?.message || 'Booking failed.';
+            showMessageBox?.(msg, { title: 'Tour Booking', type: 'error' });
         }
+    } catch (error) {
+        console.error('Error booking tour:', error);
+        showMessageBox?.('An error occurred. Please try again.', { title: 'Tour Booking', type: 'error' });
     }
 }
