@@ -17,7 +17,11 @@ $endpoint = rtrim($base, '/') . '/hotels.php';
 $query = $_SERVER['QUERY_STRING'] ?? '';
 $url = $endpoint . ($query ? '?' . $query : '');
 
-$response = ExternalService::requestJson($url, 'GET');
+$apiKey = getenv('HOTEL_GROUP6_API_KEY') ?: 'HOTEL_GROUP6_API_KEY_2024';
+$headers = [
+    'X-API-Key: ' . $apiKey
+];
+$response = ExternalService::requestJson($url, 'GET', null, $headers);
 
 http_response_code($response['status'] ?: 500);
 echo json_encode([
