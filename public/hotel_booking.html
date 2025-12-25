@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Hotel | TourismPro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/service.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div id="header-placeholder"></div>
+
+    <main class="page-section" style="padding: 3rem 1rem; background: #f9fafb;">
+        <div class="container" style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 3fr 2fr; gap: 2rem; align-items: start;">
+            <section class="hotel-booking-form" id="hotel-booking-card" style="background: #fff; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 2rem 2rem 1.5rem 2rem; min-width: 0;">
+                <div class="booking-intro">
+                    <span class="booking-icon"><i class="fas fa-bed"></i></span>
+                    <h3>Book This Hotel</h3>
+                    <p>Fill in guest details and dates. Other info is auto-filled from the selected hotel.</p>
+                </div>
+                <form id="hotel-booking-form" class="booking-form" onsubmit="bookSelectedHotel(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="guest-name">Guest Name</label>
+                            <input type="text" id="guest-name" name="guest_name" placeholder="Full name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="guest-email">Guest Email</label>
+                            <input type="email" id="guest-email" name="guest_email" placeholder="Email address">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="guest-phone">Guest Phone</label>
+                            <input type="tel" id="guest-phone" name="guest_phone" placeholder="Phone number">
+                        </div>
+                        <div class="form-group">
+                            <label for="guests">Guests</label>
+                            <input type="number" id="guests" name="guests" min="1" value="1" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="check-in">Check-in Date</label>
+                            <input type="date" id="check-in" name="check_in" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="check-out">Check-out Date</label>
+                            <input type="date" id="check-out" name="check_out" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label for="special-requests">Special Requests</label>
+                            <textarea id="special-requests" name="special_requests" placeholder="Any special requests?" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <!-- Hidden fields populated from selected hotel -->
+                    <input type="hidden" id="selected-hotel-id" name="hotel_id">
+                    <input type="hidden" id="selected-room-id" name="room_id">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check-circle"></i> Confirm Booking
+                    </button>
+                </form>
+            </section>
+            <aside class="hotel-summary" style="min-width: 0;">
+                <div class="hotel-summary-card" style="background: #fff; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 2rem 1.5rem 1.5rem 1.5rem;">
+                    <div class="summary-hero" id="summary-hero">
+                        <div class="summary-hero-icon"><i class="fas fa-bed"></i></div>
+                        <div class="summary-hero-copy">
+                            <p class="summary-label">Selected Hotel</p>
+                            <h4 id="summary-name">Not selected</h4>
+                            <p id="summary-room" class="summary-sub">Room type</p>
+                        </div>
+                    </div>
+                    <div class="summary-body">
+                        <div class="summary-row">
+                            <span>Hotel ID</span>
+                            <strong id="summary-hotel-id">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Room ID</span>
+                            <strong id="summary-room-id">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Check-in</span>
+                            <strong id="summary-check-in">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Check-out</span>
+                            <strong id="summary-check-out">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Guests</span>
+                            <strong id="summary-guests">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Guest Name</span>
+                            <strong id="summary-guest-name">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Guest Email</span>
+                            <strong id="summary-guest-email">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Guest Phone</span>
+                            <strong id="summary-guest-phone">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Special Requests</span>
+                            <strong id="summary-special-requests">—</strong>
+                        </div>
+                        <div class="summary-chips" id="summary-extra"></div>
+                    </div>
+                    <div class="summary-footer">
+                        <p class="summary-note">Room, price, and details come directly from the hotel you picked.</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <div id="message-modal" class="msg-modal" aria-hidden="true">
+        <div class="msg-backdrop" data-close="true"></div>
+        <div class="msg-dialog info" role="dialog" aria-modal="true" aria-labelledby="msg-title">
+            <div class="msg-header">
+                <span id="msg-title">Message</span>
+                <button type="button" class="msg-close" aria-label="Close" data-close="true">&times;</button>
+            </div>
+            <div class="msg-body" id="msg-body"></div>
+            <div class="msg-actions">
+                <button type="button" class="btn btn-primary" id="msg-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="js/app.js"></script>
+    <script src="js/hotel_booking.js"></script>
+    <script>
+    // --- Dynamic summary update for hotel booking ---
+    document.addEventListener('DOMContentLoaded', function () {
+        function updateSummary() {
+            document.getElementById('summary-hotel-id').textContent = document.getElementById('selected-hotel-id').value || '—';
+            document.getElementById('summary-room-id').textContent = document.getElementById('selected-room-id').value || '—';
+            document.getElementById('summary-check-in').textContent = document.getElementById('check-in').value || '—';
+            document.getElementById('summary-check-out').textContent = document.getElementById('check-out').value || '—';
+            document.getElementById('summary-guests').textContent = document.getElementById('guests').value || '—';
+            document.getElementById('summary-guest-name').textContent = document.getElementById('guest-name').value || '—';
+            document.getElementById('summary-guest-email').textContent = document.getElementById('guest-email').value || '—';
+            document.getElementById('summary-guest-phone').textContent = document.getElementById('guest-phone').value || '—';
+            document.getElementById('summary-special-requests').textContent = document.getElementById('special-requests').value || '—';
+        }
+        [
+            'selected-hotel-id','selected-room-id','check-in','check-out','guests',
+            'guest-name','guest-email','guest-phone','special-requests'
+        ].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.addEventListener('input', updateSummary);
+        });
+        updateSummary();
+    });
+    </script>
+</body>
+</html>

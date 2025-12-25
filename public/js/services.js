@@ -1,3 +1,6 @@
+// Expose for inline onclick usage (must be outside any function or block)
+window.bookHotelNow = bookHotelNow;
+window.switchService = switchService;
 let places = [];
 let tours = [];
 let hotels = [];
@@ -64,7 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initServicesPage() {
     await Promise.all([loadPlaces(), loadTours(), loadHotels(), loadRestaurants(), loadTaxis()]);
     setupEventListeners();
-    calculateFare();
+    if (document.getElementById('vehicle-type')) {
+        calculateFare();
+    }
     syncAuthLinks();
 }
 
@@ -514,12 +519,38 @@ function createHotelCard(hotel) {
                         <button onclick="bookPartnerHotel(${hotel.id})" class="btn btn-primary">
                             <i class="fas fa-bed"></i> Check Availability
                         </button>
+                        <button onclick="bookHotelNow(${hotel.id})" class="btn btn-success book-hotel-btn-full">
+                            <i class="fas fa-calendar-check"></i> Book Hotel
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     `;
 }
+
+// Book hotel directly using integration API
+async function bookHotelNow(hotelId) {
+    const hotel = hotels.find(h => h.id === hotelId);
+    if (!hotel) return alert('Hotel not found.');
+
+    // For demo, pick first available room (simulate room_id=1)
+    const roomId = hotel.room_id || 1;
+    // Save hotel info to sessionStorage for booking page
+    sessionStorage.setItem('selectedHotel', JSON.stringify({
+        id: hotel.id,
+        name: hotel.name,
+        room_id: roomId,
+        roomType: hotel.roomType || 'Room',
+        image: hotel.image,
+        price: hotel.price,
+        rating: hotel.rating
+    }));
+    window.location.href = 'hotel_booking.html';
+}
+
+// Expose for inline onclick usage (must be outside any function or block)
+window.bookHotelNow = bookHotelNow;
 
 function createRestaurantCard(restaurant) {
     return `

@@ -18,13 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 require_once __DIR__ . '/../../config/ExternalService.php';
 
-$token = getenv('HOTEL_API_TOKEN');
-if (!$token) {
-    http_response_code(400);
-    echo json_encode(['ok' => false, 'status' => 400, 'error' => 'HOTEL_API_TOKEN not set. Provide partner token to create bookings.']);
-    exit;
-}
 
+$apiKey = getenv('HOTEL_API_KEY') ?: 'HOTEL_GROUP6_API_KEY_2024';
 $base = getenv('HOTEL_API_BASE_URL') ?: 'http://hotelmanagemt.infinityfreeapp.com/api';
 $endpoint = rtrim($base, '/') . '/bookings.php';
 
@@ -36,11 +31,12 @@ if (!is_array($payload)) {
     exit;
 }
 
+
 $response = ExternalService::requestJson(
     $endpoint,
     'POST',
     $payload,
-    ['Authorization: Bearer ' . $token]
+    ['X-API-Key: ' . $apiKey]
 );
 
 http_response_code($response['status'] ?: 500);
