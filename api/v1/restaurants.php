@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $reservation = [
-        'user' => $payload['user'] ?? ['id' => 0],
+        'user' => $payload['user'] ?? ['id' => ($payload['user_id'] ?? 0)],
         'restaurant_id' => $payload['restaurant_id'] ?? null,
         'date' => $payload['date'] ?? null,
         'time' => $payload['time'] ?? null,
@@ -119,6 +119,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'number_of_people' => $reservation['guests'],
         'special_requests' => $reservation['notes']
     ];
+
+    // Upstream requires customer_id; prefer user_id if provided
+    $customerId = $payload['user_id'] ?? ($reservation['user']['id'] ?? null);
+    if ($customerId) {
+        $externalBody['customer_id'] = $customerId;
+    }
 
     $source = 'external';
     $data = null;
