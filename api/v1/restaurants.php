@@ -101,7 +101,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'date' => $payload['date'] ?? null,
         'time' => $payload['time'] ?? null,
         'guests' => $payload['guests'] ?? 2,
-        'notes' => $payload['notes'] ?? ''
+        // accept either 'notes' or 'requests' from client
+        'notes' => $payload['notes'] ?? ($payload['requests'] ?? '')
     ];
 
     if (!$reservation['restaurant_id'] || !$reservation['date'] || !$reservation['time']) {
@@ -127,19 +128,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($response['ok']) {
         $data = $response['data'];
     } else {
-        http_response_code(503);
-        $out = [
-            'message' => 'External service error',
-            'status' => $response['status'],
-            'error' => $response['error']
-        ];
-        if ($DEBUG) {
-            $out['upstream'] = $response['data'];
-            $out['hit_url'] = $url;
-            $out['payload'] = $externalBody;
+        // Optional dev fallback: allow mock confirmation when upstream fails
+        $allowMock = (getenv('ALLOW_RESTAURANT_MOCK_ON_FAIL') === 'true') || (getenv('EXTERNAL_API_MODE') === 'mock');
+        if ($allowMock) {
+            $data = [
+                'reservation_id' => 'mock-rest-' . uniqid(),
+                'confirmation' => 'REST-' . strtoupper(substr(md5(uniqid()), 0, 6)),
+                'status' => 'confirmed',
+                'message' => 'Mock reservation accepted (upstream unavailable).'
+            ];
+        } else {
+            http_response_code(503);
+            $out = [
+                'message' => 'External service error',
+                'status' => $response['status'],
+                'error' => $response['error']
+            ];
+            if ($DEBUG) {
+                $out['upstream'] = $response['data'];
+                $out['hit_url'] = $url;
+                $out['payload'] = $externalBody;
+            }
+            echo json_encode($out);
+            exit;
         }
-        echo json_encode($out);
-        exit;
     }
 
     $confirmation = is_array($data) ? ($data['confirmation'] ?? null) : null;
