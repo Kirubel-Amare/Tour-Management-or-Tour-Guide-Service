@@ -458,7 +458,7 @@ function createTourCard(tour) {
                         <button onclick="viewTourDetails(${tour.id})" class="btn btn-outline" style="border-color: var(--border);">
                             <i class="fas fa-info-circle"></i> Details
                         </button>
-                        <button onclick="bookTour(${tour.id})" class="btn btn-primary">
+                        <button onclick="startTourBooking(${tour.id})" class="btn btn-primary">
                             <i class="fas fa-calendar-plus"></i> Book Now
                         </button>
                     </div>
@@ -766,6 +766,34 @@ async function bookTour(tourId) {
         console.error('Booking error', err);
         showMessageBox?.('Unable to book tour right now.', { title: 'Tour Booking', type: 'error' });
     }
+}
+
+function startTourBooking(tourId) {
+    // Require login
+    const user = requireAuth('Please login to book tours.');
+    if (!user) return;
+
+    const tour = tours.find(t => t.id === tourId);
+    if (!tour) {
+        showMessageBox?.('Tour not found.', { title: 'Tours', type: 'error' });
+        return;
+    }
+
+    try {
+        sessionStorage.setItem('selectedTour', JSON.stringify({
+            id: tour.id,
+            title: tour.title,
+            location: tour.location,
+            price: tour.price,
+            schedule_date: tour.schedule_date,
+            duration: tour.duration,
+            image: tour.image
+        }));
+    } catch (err) {
+        console.warn('Unable to persist tour selection', err);
+    }
+
+    window.location.href = 'tour_booking.html';
 }
 
 async function bookPartnerHotel(hotelId) {
