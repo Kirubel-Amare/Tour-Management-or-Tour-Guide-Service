@@ -13,6 +13,7 @@ let restaurantsPage = 1;
 let taxisPage = 1;
 const ITEMS_PER_PAGE = 9;
 const PUBLIC_API_KEY = window.__PUBLIC_API_KEY__ || window.__REVIEW_API_KEY__ || 'demo-api-key';
+const RESTAURANT_PLACEHOLDER = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80';
 
 // Modal-based message box to replace native alerts
 const nativeAlert = window.alert;
@@ -272,6 +273,17 @@ function mapExternalHotel(raw, idx) {
 }
 
 function mapRestaurant(raw, idx) {
+    const normalizeImage = (url) => {
+        if (!url) return RESTAURANT_PLACEHOLDER;
+        if (url.startsWith('//')) return 'https:' + url;
+        if (url.startsWith('http://')) return url.replace('http://', 'https://');
+        if (url.startsWith('https://')) return url;
+        // Relative path: assume same origin
+        return `${window.location.origin}/${url.replace(/^\/+/, '')}`;
+    };
+
+    const imageUrl = normalizeImage(raw.image || raw.image_url);
+
     return {
         id: raw.id || idx || Date.now(),
         name: raw.name || 'Restaurant',
@@ -281,7 +293,7 @@ function mapRestaurant(raw, idx) {
         rating: raw.rating || 4.5,
         reviews: raw.reviews || 40,
         description: raw.description || 'Great food from our partner restaurant.',
-        image: raw.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+        image: imageUrl,
         features: raw.features || ['Family friendly']
     };
 }
