@@ -4,353 +4,187 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-KEY');
 
+ini_set('display_errors', '0');
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
 }
 
+// Polyfill for getallheaders() if missing
+if (!function_exists('getallheaders')) {
+    function getallheaders() {
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            if (substr($name, 0, 5) === 'HTTP_') {
+                $key = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))));
+                $headers[$key] = $value;
+            }
+        }
+        return $headers;
+    }
+}
+
 require_once 'middleware/Auth.php';
 require_once '../../config/ExternalService.php';
 
-// Enforce API key authentication for partner access
-Auth::authenticate();
+/* =========================
+   DEFAULT ACTION
+========================= */
+if (!isset($_GET['action']) || $_GET['action'] === '') {
+    $_GET['action'] = 'restaurants';
+}
+$action = $_GET['action'];
 
-// Base of the external API (new upstream: https://restaurantmanagement.xo.je/api)
-$baseApi = rtrim(getenv('EXTERNAL_RESTAURANT_API') ?: 'https://restaurantmanagement.xo.je/api', '/');
-// Optional debug flag to inspect upstream behavior
-$DEBUG = (isset($_GET['debug']) && $_GET['debug'] === '1');
+/* =========================
+   AUTH
+========================= */
+// Public endpoints: no API key required
+Auth::authenticate([
+    'restaurants',
+    'restaurant_details'
+]);
 
-// Normalize image URL to include static host when upstream returns relative paths
-function normalizeRestaurantImageUrl($url)
-{
-    static $imageBase = null;
-    static $fallback = null;
-    if ($imageBase === null) {
-        $baseApi = rtrim(getenv('EXTERNAL_RESTAURANT_API') ?: 'https://restaurantmanagement.xo.je/api', '/');
-        $imageBase = rtrim(getenv('EXTERNAL_RESTAURANT_ASSET_BASE') ?: preg_replace('~/api/?$~', '', $baseApi) ?: 'https://restaurantmanagement.xo.je', '/');
-        $fallback = getenv('EXTERNAL_RESTAURANT_DEFAULT_IMAGE') ?: $imageBase . '/uploads/restaurants/default.jpg';
-    }
+/* =========================
+   CONFIG
+========================= */
+$DEBUG = isset($_GET['debug']) && $_GET['debug'] === '1';
+$BASE_URL = 'https://restaurant-managment-system.free.nf/api/service-provider.php';
+$SERVICE_API_KEY = 'TOUR_SERVICE_KEY_2025';
 
-    if (empty($url)) {
-        return $fallback;
+$headers = [
+    'Content-Type: application/json',
+    'X-API-KEY: ' . $SERVICE_API_KEY
+];
+
+/* =========================
+   HELPERS
+========================= */
+function pickRestaurantImage($item) {
+    if (!is_array($item)) return null;
+    foreach (['image','image_url','photo','thumbnail','logo','cover','banner'] as $k) {
+        if (!empty($item[$k])) return $item[$k];
     }
-    if (preg_match('#^https?://#i', $url)) {
-        return $url;
-    }
-    return $imageBase . '/' . ltrim($url, '/');
+    return null;
 }
 
-// Choose the best image field from a restaurant item then normalize to absolute URL
-function pickRestaurantImage($item)
-{
-    if (!is_array($item)) {
-        return normalizeRestaurantImageUrl(null);
+/* =========================
+   GET – LIST RESTAURANTS
+========================= */
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'restaurants') {
+    $url = $BASE_URL . '?action=restaurants';
+    $resp = ExternalService::requestJson($url, 'GET', null, $headers);
+
+    if (!$resp['ok']) {
+        http_response_code(503);
+        echo json_encode([
+            'message' => 'Restaurant service unavailable',
+            'error' => $resp['error']
+        ]);
+        exit;
     }
 
-    $candidates = [];
-    // common keys from possible upstream responses
-    foreach (['image_url', 'image', 'photo', 'thumbnail', 'logo', 'cover', 'banner'] as $key) {
-        if (!empty($item[$key])) {
-            $candidates[] = $item[$key];
-        }
-    }
-    // if upstream provides array of images
-    if (empty($candidates) && !empty($item['images']) && is_array($item['images'])) {
-        $first = reset($item['images']);
-        if (is_string($first)) {
-            $candidates[] = $first;
-        } elseif (is_array($first) && !empty($first['url'])) {
-            $candidates[] = $first['url'];
-        }
-    }
+    $raw = $resp['data']['data'] ?? $resp['data'] ?? [];
+    $restaurants = array_map(function ($r) {
+        return [
+            'id' => $r['id'] ?? null,
+            'name' => $r['name'] ?? 'Restaurant',
+            'cuisine' => $r['cuisine'] ?? 'International',
+            'address' => $r['address'] ?? $r['location'] ?? '',
+            'phone' => $r['phone'] ?? '',
+            'rating' => isset($r['rating']) ? (float)$r['rating'] : null,
+            'price_range' => $r['price_range'] ?? '',
+            'image' => pickRestaurantImage($r)
+        ];
+    }, is_array($raw) ? $raw : []);
 
-    $chosen = $candidates[0] ?? null;
-    return normalizeRestaurantImageUrl($chosen);
-}
-
-// Upstream auth: API key header is required; Bearer token stays optional
-$restaurantHeaders = [];
-$apiKey = getenv('EXTERNAL_RESTAURANT_API_KEY') ?: 'RESTO-API-2025';
-if (!empty($apiKey)) {
-    $restaurantHeaders[] = 'X-API-KEY: ' . $apiKey;
-}
-$bearer = getenv('EXTERNAL_RESTAURANT_API_TOKEN');
-if ($bearer) {
-    $restaurantHeaders[] = 'Authorization: Bearer ' . $bearer;
-}
-$restaurantHeaders[] = 'Content-Type: application/json';
-
-if (empty($baseApi)) {
-    http_response_code(500);
-    echo json_encode(['message' => 'EXTERNAL_RESTAURANT_API base URL is required']);
+    echo json_encode([
+        'source' => 'external',
+        'message' => 'Restaurants retrieved successfully',
+        'data' => $restaurants,
+        $DEBUG ? 'debug' : null => $DEBUG ? $raw : null
+    ]);
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $payload = json_decode(file_get_contents('php://input'), true);
+/* =========================
+   GET – RESTAURANT DETAILS
+========================= */
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'restaurant_details') {
+    $id = $_GET['id'] ?? null;
+    if (!$id) {
+        http_response_code(400);
+        echo json_encode(['message' => 'id is required']);
+        exit;
+    }
 
+    $url = $BASE_URL . '?action=restaurant_details&id=' . urlencode($id);
+    $resp = ExternalService::requestJson($url, 'GET', null, $headers);
+
+    if (!$resp['ok']) {
+        http_response_code(503);
+        echo json_encode(['message' => 'External service error']);
+        exit;
+    }
+
+    $r = $resp['data']['data'] ?? $resp['data'];
+
+    echo json_encode([
+        'source' => 'external',
+        'message' => 'Restaurant details retrieved',
+        'data' => [
+            'id' => $r['id'] ?? null,
+            'name' => $r['name'] ?? '',
+            'description' => $r['description'] ?? '',
+            'cuisine' => $r['cuisine'] ?? '',
+            'address' => $r['address'] ?? '',
+            'phone' => $r['phone'] ?? '',
+            'rating' => isset($r['rating']) ? (float)$r['rating'] : null,
+            'opening_hours' => $r['opening_hours'] ?? '',
+            'capacity' => $r['seating_capacity'] ?? null
+        ]
+    ]);
+    exit;
+}
+
+/* =========================
+   POST – CREATE RESERVATION
+========================= */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'create_reservation') {
+    $payload = json_decode(file_get_contents('php://input'), true);
     if (!$payload) {
         http_response_code(400);
         echo json_encode(['message' => 'Invalid JSON payload']);
         exit;
     }
 
-    $reservation = [
-        'user' => $payload['user'] ?? ['id' => ($payload['user_id'] ?? 0)],
-        'restaurant_id' => $payload['restaurant_id'] ?? null,
-        'date' => $payload['date'] ?? null,
-        'time' => $payload['time'] ?? null,
-        'guests' => $payload['guests'] ?? 2,
-        // accept either 'notes' or 'requests' from client
-        'notes' => $payload['notes'] ?? ($payload['requests'] ?? '')
-    ];
-
-    if (!$reservation['restaurant_id'] || !$reservation['date'] || !$reservation['time']) {
-        http_response_code(400);
-        echo json_encode(['message' => 'restaurant_id, date, and time are required']);
-        exit;
-    }
-
-    // Map to external Booking API payload
-    $externalBody = [
-        'restaurant_id' => $reservation['restaurant_id'],
-        'booking_date' => $reservation['date'],
-        'booking_time' => $reservation['time'],
-        'number_of_people' => $reservation['guests'],
-        'special_requests' => $reservation['notes']
-    ];
-
-    // Upstream requires customer_id; prefer user_id if provided
-    $customerId = $payload['user_id'] ?? ($reservation['user']['id'] ?? null);
-    if ($customerId) {
-        $externalBody['customer_id'] = $customerId;
-    }
-
-    $source = 'external';
-    $data = null;
-
-    $url = $baseApi . '/bookings/create.php';
-    $response = ExternalService::requestJson($url, 'POST', $externalBody, $restaurantHeaders);
-    if ($response['ok']) {
-        $data = $response['data'];
-    } else {
-        // Optional dev fallback: allow mock confirmation when upstream fails
-        $allowMock = (getenv('ALLOW_RESTAURANT_MOCK_ON_FAIL') === 'true') || (getenv('EXTERNAL_API_MODE') === 'mock');
-        if ($allowMock) {
-            $data = [
-                'reservation_id' => 'mock-rest-' . uniqid(),
-                'confirmation' => 'REST-' . strtoupper(substr(md5(uniqid()), 0, 6)),
-                'status' => 'confirmed',
-                'message' => 'Mock reservation accepted (upstream unavailable).'
-            ];
-        } else {
-            http_response_code(503);
-            $out = [
-                'message' => 'External service error',
-                'status' => $response['status'],
-                'error' => $response['error']
-            ];
-            if ($DEBUG) {
-                $out['upstream'] = $response['data'];
-                $out['hit_url'] = $url;
-                $out['payload'] = $externalBody;
-            }
-            echo json_encode($out);
+    foreach (['restaurant_id','customer_name','customer_phone','date','time','guests'] as $f) {
+        if (empty($payload[$f])) {
+            http_response_code(400);
+            echo json_encode(['message' => "$f is required"]);
             exit;
         }
     }
 
-    $confirmation = is_array($data) ? ($data['confirmation'] ?? null) : null;
-    $finalMessage = $confirmation ? 'Restaurant reservation confirmed' : 'Restaurant reservation submitted';
+    $url = $BASE_URL . '?action=create_reservation';
+    $resp = ExternalService::requestJson($url, 'POST', $payload, $headers);
+
+    if (!$resp['ok']) {
+        http_response_code(503);
+        echo json_encode(['message' => 'Reservation failed']);
+        exit;
+    }
 
     echo json_encode([
-        'source' => $source,
-        'data' => $data,
-        'message' => $finalMessage,
-        'confirmation' => $confirmation
+        'source' => 'external',
+        'message' => 'Reservation created successfully',
+        'data' => $resp['data']
     ]);
     exit;
 }
 
-// Build listing/search against external API
-$queryParams = [
-    'q' => $_GET['q'] ?? '',
-    'city' => $_GET['city'] ?? '',
-    'priceRange' => $_GET['price'] ?? '',
-    'rating' => $_GET['rating'] ?? '',
-    'user_id' => $_GET['user_id'] ?? ''
-];
-
-$source = 'external';
-$data = [];
-
-// Map our query to provider fields
-$forward = [];
-if (!empty($queryParams['city'])) $forward['location'] = $queryParams['city'];
-if (!empty($queryParams['priceRange'])) $forward['price_range'] = $queryParams['priceRange'];
-if (!empty($queryParams['rating'])) $forward['rating'] = $queryParams['rating'];
-if (!empty($queryParams['user_id'])) $forward['user_id'] = $queryParams['user_id'];
-// External docs do not mention free-text search param; ignore 'q' if present.
-
-$url = $baseApi . '/restaurants/index.php';
-if (!empty($forward)) {
-    $url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query($forward);
-}
-
-$response = ExternalService::requestJson($url, 'GET', null, $restaurantHeaders);
-if ($response['ok']) {
-    $debugInfo = ['hit_url' => $url];
-    // Decide which upstream endpoint to call based on query
-    $id = $_GET['id'] ?? null;
-    $hasMenu = isset($_GET['menu']);
-    $hasAvailability = isset($_GET['availability']);
-    $hasReviews = isset($_GET['reviews']);
-
-    if ($id && $hasMenu) {
-        // Menu
-        $menuUrl = $baseApi . '/restaurants/menu.php?id=' . urlencode($id);
-        $resp = ExternalService::requestJson($menuUrl, 'GET', null, $restaurantHeaders);
-        if ($resp['ok']) {
-            $raw = $resp['data'];
-            $debugInfo['hit_url'] = $menuUrl;
-            $debugInfo['upstream'] = $DEBUG ? $raw : null;
-            $data = is_array($raw) && isset($raw['data']) ? $raw['data'] : (is_array($raw) ? $raw : []);
-        } else {
-            http_response_code(503);
-            $out = ['message' => 'External service error', 'status' => $resp['status'], 'error' => $resp['error']];
-            if ($DEBUG) { $out['hit_url'] = $menuUrl; $out['upstream'] = $resp['data']; }
-            echo json_encode($out);
-            exit;
-        }
-    } elseif ($id && $hasAvailability) {
-        // Availability requires id, date, time
-        $date = $_GET['date'] ?? '';
-        $time = $_GET['time'] ?? '';
-        $availUrl = $baseApi . '/restaurants/availability.php?id=' . urlencode($id) . '&date=' . urlencode($date) . '&time=' . urlencode($time);
-        $resp = ExternalService::requestJson($availUrl, 'GET', null, $restaurantHeaders);
-        if ($resp['ok']) {
-            $raw = $resp['data'];
-            $debugInfo['hit_url'] = $availUrl;
-            $debugInfo['upstream'] = $DEBUG ? $raw : null;
-            $raw = is_array($raw) && isset($raw['data']) ? $raw['data'] : $raw;
-            if (is_array($raw)) {
-                $data = [
-                    'restaurant_id' => $raw['restaurant_id'] ?? $id,
-                    'date' => $raw['date'] ?? $date,
-                    'time' => $raw['time'] ?? $time,
-                    'available_seats' => $raw['available_seats'] ?? null
-                ];
-            } else {
-                $data = $raw ?: [];
-            }
-        } else {
-            http_response_code(503);
-            $out = ['message' => 'External service error', 'status' => $resp['status'], 'error' => $resp['error']];
-            if ($DEBUG) { $out['hit_url'] = $availUrl; $out['upstream'] = $resp['data']; }
-            echo json_encode($out);
-            exit;
-        }
-    } elseif ($id && $hasReviews) {
-        // Reviews
-        $reviewsUrl = $baseApi . '/restaurants/reviews.php?id=' . urlencode($id);
-        $resp = ExternalService::requestJson($reviewsUrl, 'GET', null, $restaurantHeaders);
-        if ($resp['ok']) {
-            $raw = $resp['data'];
-            $debugInfo['hit_url'] = $reviewsUrl;
-            $debugInfo['upstream'] = $DEBUG ? $raw : null;
-            $data = is_array($raw) && isset($raw['data']) ? $raw['data'] : (is_array($raw) ? $raw : []);
-        } else {
-            http_response_code(503);
-            $out = ['message' => 'External service error', 'status' => $resp['status'], 'error' => $resp['error']];
-            if ($DEBUG) { $out['hit_url'] = $reviewsUrl; $out['upstream'] = $resp['data']; }
-            echo json_encode($out);
-            exit;
-        }
-    } elseif ($id) {
-        // Single restaurant read
-        $readUrl = $baseApi . '/restaurants/read.php?id=' . urlencode($id);
-        $resp = ExternalService::requestJson($readUrl, 'GET', null, $restaurantHeaders);
-        if ($resp['ok']) {
-            $raw = $resp['data'];
-            $debugInfo['hit_url'] = $readUrl;
-            $debugInfo['upstream'] = $DEBUG ? $raw : null;
-            $raw = is_array($raw) && isset($raw['data']) ? $raw['data'] : $raw;
-            if (is_array($raw)) {
-                $item = $raw;
-                $amenitiesStr = $item['amenities'] ?? '';
-                $features = [];
-                if (is_string($amenitiesStr) && $amenitiesStr !== '') {
-                    $features = array_values(array_filter(array_map(function ($s) { return trim($s); }, explode(',', $amenitiesStr)), fn($x) => $x !== ''));
-                }
-                $data = [
-                    'id' => $item['id'] ?? uniqid('restaurant_', true),
-                    'name' => $item['name'] ?? 'Restaurant',
-                    'location' => $item['location'] ?? 'Unknown',
-                    'cuisine' => $item['cuisine'] ?? 'International',
-                    'priceRange' => $item['price_range'] ?? '$$',
-                    'rating' => isset($item['rating']) ? (is_numeric($item['rating']) ? (float)$item['rating'] : $item['rating']) : 4.5,
-                    'description' => $item['description'] ?? 'Partner restaurant',
-                    'image' => pickRestaurantImage($item),
-                    'features' => $features,
-                    // Additional fields
-                    'capacity' => $item['capacity'] ?? null,
-                    'contact_phone' => $item['contact_phone'] ?? null,
-                    'opening_hours' => $item['opening_hours'] ?? null
-                ];
-            } else {
-                $data = [];
-            }
-        } else {
-            http_response_code(503);
-            $out = ['message' => 'External service error', 'status' => $resp['status'], 'error' => $resp['error']];
-            if ($DEBUG) { $out['hit_url'] = $readUrl; $out['upstream'] = $resp['data']; }
-            echo json_encode($out);
-            exit;
-        }
-    } else {
-        // List/search
-        $raw = $response['data'];
-        if (is_array($raw) && isset($raw['data'])) {
-            $raw = $raw['data'];
-        }
-        if ($DEBUG) {
-            $debugInfo['upstream'] = $raw;
-        }
-        if (is_array($raw)) {
-            $data = array_map(function ($item) {
-                $amenitiesStr = $item['amenities'] ?? '';
-                $features = [];
-                if (is_string($amenitiesStr) && $amenitiesStr !== '') {
-                    $features = array_values(array_filter(array_map(function ($s) { return trim($s); }, explode(',', $amenitiesStr)), fn($x) => $x !== ''));
-                }
-                return [
-                    'id' => $item['id'] ?? uniqid('restaurant_', true),
-                    'name' => $item['name'] ?? 'Restaurant',
-                    'location' => $item['location'] ?? 'Unknown',
-                    'cuisine' => $item['cuisine'] ?? 'International',
-                    'priceRange' => $item['price_range'] ?? '$$',
-                    'rating' => isset($item['rating']) ? (is_numeric($item['rating']) ? (float)$item['rating'] : $item['rating']) : 4.5,
-                    'reviews' => $item['review_count'] ?? $item['reviews'] ?? 40,
-                    'description' => $item['description'] ?? 'Partner restaurant',
-                    'image' => pickRestaurantImage($item),
-                    'features' => $features
-                ];
-            }, $raw);
-        }
-    }
-} else {
-    http_response_code(503);
-    $out = [
-        'message' => 'External service error',
-        'status' => $response['status'],
-        'error' => $response['error']
-    ];
-    if ($DEBUG) {
-        $out['upstream'] = $response['data'];
-        $out['hit_url'] = $url;
-    }
-    echo json_encode($out);
-    exit;
-}
-
-echo json_encode($DEBUG ? ['source' => $source, 'data' => $data, 'debug' => $debugInfo] : ['source' => $source, 'data' => $data]);
+/* =========================
+   FALLBACK
+========================= */
+http_response_code(404);
+echo json_encode(['message' => 'Invalid endpoint']);

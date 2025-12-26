@@ -84,69 +84,76 @@
         const date = document.getElementById('reservation-date').value || '—';
         const time = document.getElementById('reservation-time').value || '—';
         const guests = document.getElementById('guest-count').value || '—';
+        const name = document.getElementById('customer-name').value || '—';
+        const phone = document.getElementById('contact-phone').value || '—';
         document.getElementById('summary-date').textContent = date;
         document.getElementById('summary-time').textContent = time;
         document.getElementById('summary-guests').textContent = guests;
+        document.getElementById('summary-customer-name').textContent = name;
+        document.getElementById('summary-customer-phone').textContent = phone;
     }
 
-    async function orderSelectedRestaurant(e) {
-        e.preventDefault();
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user) {
-            showMessageBox('Please login to book a restaurant.', { type: 'info', title: 'Login required' });
-            window.location.href = 'login.html';
-            return;
-        }
-
-        const restaurantId = document.getElementById('selected-restaurant-id').value;
-        const date = (document.getElementById('reservation-date').value || '').trim();
-        const time = (document.getElementById('reservation-time').value || '').trim();
-        const guests = Number(document.getElementById('guest-count').value || 0);
-        const phone = (document.getElementById('contact-phone').value || '').trim();
-        const requests = (document.getElementById('special-requests').value || '').trim();
-
-        if (!restaurantId || !date || !time || !guests) {
-            showMessageBox('Date, time, and guest count are required.', { type: 'error', title: 'Missing info' });
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/v1/restaurants.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-KEY': window.__PUBLIC_API_KEY__ || 'demo-api-key'
-                },
-                body: JSON.stringify({
-                    user_id: user.id,
-                    restaurant_id: restaurantId,
-                    date,
-                    time,
-                    guests,
-                    phone: phone || undefined,
-                    requests: requests || undefined
-                })
-            });
-
-            const payload = await response.json().catch(() => ({}));
-            if (response.ok) {
-                const conf = payload.data?.confirmation || 'pending';
-                showMessageBox(`Reservation placed!\n\nDate: ${date}\nTime: ${time}\nGuests: ${guests}\nConfirmation: ${conf}`, { type: 'success', title: 'Reserved' });
-                sessionStorage.removeItem('selectedRestaurant');
-                e.target.reset();
-                updateSummary();
-            } else {
-                const msg = payload?.message || 'Reservation failed (provider may not support booking in this environment).';
-                showMessageBox(msg, { type: 'error', title: 'Booking failed' });
-            }
-        } catch (err) {
-            console.error('Restaurant booking error', err);
-            showMessageBox('Unable to reserve table right now.', { type: 'error', title: 'Error' });
-        }
+   async function orderSelectedRestaurant(e) {
+    e.preventDefault();
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) {
+        showMessageBox('Please login to book a restaurant.', { type: 'info', title: 'Login required' });
+        window.location.href = 'login.html';
+        return;
     }
+
+    const restaurantId = document.getElementById('selected-restaurant-id').value;
+    const date = (document.getElementById('reservation-date').value || '').trim();
+    const time = (document.getElementById('reservation-time').value || '').trim();
+    const guests = Number(document.getElementById('guest-count').value || 0);
+    const phone = (document.getElementById('contact-phone').value || '').trim();
+    const requests = (document.getElementById('special-requests').value || '').trim();
+
+    if (!restaurantId || !date || !time || !guests) {
+        showMessageBox('Date, time, and guest count are required.', { type: 'error', title: 'Missing info' });
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/v1/restaurants.php?action=create_reservation`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': 'TOUR_SERVICE_KEY_2025'
+            },
+            body: JSON.stringify({
+                user_id: user.id,
+                customer_name: document.getElementById('customer-name')?.value || user.name,
+                customer_phone: phone,
+                restaurant_id: restaurantId,
+                date,
+                time,
+                guests,
+                phone: phone || undefined,
+                requests: requests || undefined
+            })
+        });
+
+        const payload = await response.json().catch(() => ({}));
+
+        if (response.ok && payload.success) {
+            const conf = payload.data?.confirmation_code || 'pending';
+            showMessageBox(`Reservation placed!\n\nDate: ${date}\nTime: ${time}\nGuests: ${guests}\nConfirmation: ${conf}`, { type: 'success', title: 'Reserved' });
+            sessionStorage.removeItem('selectedRestaurant');
+            e.target.reset();
+            updateSummary();
+        } else {
+            const msg = payload?.message || 'Reservation failed (provider may not support booking in this environment).';
+            showMessageBox(msg, { type: 'error', title: 'Booking failed' });
+        }
+    } catch (err) {
+        console.error('Restaurant booking error', err);
+        showMessageBox('Unable to reserve table right now.', { type: 'error', title: 'Error' });
+    }
+}
 
     function wireSummaryUpdates() {
-        ['reservation-date', 'reservation-time', 'guest-count'].forEach(id => {
+        ['reservation-date', 'reservation-time', 'guest-count', 'customer-name', 'contact-phone'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 el.addEventListener('input', updateSummary);

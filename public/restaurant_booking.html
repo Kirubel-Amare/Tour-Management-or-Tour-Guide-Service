@@ -20,6 +20,10 @@
                     <p>Select your date and time, confirm guests, and submit. We use the restaurant you picked on the services page.</p>
                 </div>
                 <form id="restaurant-booking-form" class="booking-form" onsubmit="orderSelectedRestaurant(event)">
+                                        <div class="form-group">
+                                            <label for="customer-name">Full Name</label>
+                                            <input type="text" id="customer-name" name="customer_name" placeholder="Your name" required>
+                                        </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="reservation-date">Date</label>
@@ -69,8 +73,8 @@
                     </div>
                     <div class="summary-body">
                         <div class="summary-row">
-                            <span>Location</span>
-                            <strong id="summary-location">—</strong>
+                            <span>Name</span>
+                            <strong id="summary-customer-name">—</strong>
                         </div>
                         <div class="summary-row">
                             <span>Date</span>
@@ -83,6 +87,10 @@
                         <div class="summary-row">
                             <span>Guests</span>
                             <strong id="summary-guests">—</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Phone</span>
+                            <strong id="summary-customer-phone">—</strong>
                         </div>
                         <div class="summary-chips" id="summary-extra"></div>
                     </div>

@@ -1,8 +1,12 @@
 <?php
 class Auth
 {
-    // Defaults to env API_REVIEW_KEY/REVIEW_API_KEY, falls back to demo key for local
-    private static $apiKey = 'demo-api-key';
+    // List of valid API keys
+    private static $validApiKeys = [
+        'demo-api-key',
+        'TOUR_SERVICE_KEY_2025',
+        'TAXI_GROUP_SECURE_KEY_2024',
+    ];
 
     public static function authenticate()
     {
@@ -14,9 +18,14 @@ class Auth
             ?? ($_SERVER['HTTP_X_API_KEY'] ?? null)
             ?? ($_SERVER['HTTP_X_API-KEY'] ?? null);
 
-        $envKey = getenv('API_REVIEW_KEY') ?: getenv('REVIEW_API_KEY') ?: self::$apiKey;
+        // Add environment keys if set
+        $envKeys = array_filter([
+            getenv('API_REVIEW_KEY'),
+            getenv('REVIEW_API_KEY'),
+        ]);
+        $allValidKeys = array_merge(self::$validApiKeys, $envKeys);
 
-        if (!$apiKey || $apiKey !== $envKey) {
+        if (!$apiKey || !in_array($apiKey, $allValidKeys, true)) {
             header('Content-Type: application/json');
             http_response_code(401);
             echo json_encode(['error' => 'Unauthorized', 'message' => 'Invalid or missing API Key']);
