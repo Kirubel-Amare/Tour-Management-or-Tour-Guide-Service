@@ -257,7 +257,8 @@ function mapHotel(raw, idx) {
         image: raw.image || 'https://images.unsplash.com/photo-1501117716987-c8e1ecb210af?auto=format&fit=crop&w=800&q=80',
         roomType: raw.roomType || raw.room_type || 'Standard',
         hotelRating: raw.hotelRating || raw.hotel_rating || 4,
-        amenities: raw.amenities || ['Wi-Fi', 'Breakfast']
+        amenities: raw.amenities || ['Wi-Fi', 'Breakfast'],
+        amenity_names: Array.isArray(raw.amenities) ? raw.amenities : []
     };
 }
 
@@ -486,6 +487,9 @@ function createTourCard(tour) {
 }
 
 function createHotelCard(hotel) {
+    const amenitiesText = (hotel.amenity_names && hotel.amenity_names.length)
+        ? hotel.amenity_names.join(', ')
+        : '';
     return `
         <div class="service-card">
             <div class="service-image" style="background-image: url('${hotel.image}');">
@@ -504,11 +508,7 @@ function createHotelCard(hotel) {
                 </div>
                 <p class="service-description">${hotel.description}</p>
                 <div class="hotel-amenities">
-                    ${(hotel.amenities || []).map(amenity => `
-                        <div class="amenity-item">
-                            <i class="fas fa-check"></i> ${amenity}
-                        </div>
-                    `).join('')}
+                    ${amenitiesText ? `<span>${amenitiesText}</span>` : ''}
                 </div>
                 <div class="service-footer">
                     <div class="service-price">$${hotel.price} <span style="font-size: 0.9rem; color: var(--text-muted);">per night</span></div>
