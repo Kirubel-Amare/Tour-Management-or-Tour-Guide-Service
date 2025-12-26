@@ -2,6 +2,14 @@
 
 class User
 {
+    // Read all users (for admin)
+    public function readAll()
+    {
+        $query = "SELECT id, name, email, role FROM " . $this->table_name . " ORDER BY id DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     private $conn;
     private $table_name = "users";
 

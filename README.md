@@ -1,5 +1,30 @@
 # TourismPro - Tour Management System
 
+## CRUD Endpoints Plan by Role
+
+### Admin
+- Users: Create, Read (list), Update, Delete
+- Hotels: Create, Read, Update, Delete
+- Places: Create, Read, Update, Delete
+- Restaurants: Create, Read, Update, Delete
+- Tours: Create, Read, Update, Delete
+- Bookings: Read, Update, Delete
+- Reviews: Read, Delete
+
+### Manager
+- Hotels: Create, Read, Update, Delete (for managed hotels)
+- Bookings: Create, Read, Update, Delete (for managed hotels)
+- Tours: Create, Read, Update, Delete (for managed tours)
+- Restaurants: Create, Read, Update, Delete (for managed restaurants)
+
+### User
+- Profile: Read, Update, Delete
+- Bookings: Create, Read, Update, Delete (own)
+- Reviews: Create, Read, Update, Delete (own)
+
+---
+Missing endpoints and UI will be implemented for all above operations.
+
 A web-based platform connecting tourists with expert local guides. This application allows users to browse tours, book adventures, and enables guides to manage their tour offerings.
 
 ## 🚀 Getting Started

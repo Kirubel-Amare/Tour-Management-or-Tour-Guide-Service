@@ -116,3 +116,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 });
+    // Delete Profile Handler
+    const deleteBtn = document.getElementById('delete-profile-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to delete your profile? This action cannot be undone.')) return;
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = 'Deleting...';
+            try {
+                const res = await fetch('/api/user/delete_profile.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: user.id })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    alert('Profile deleted successfully.');
+                    localStorage.removeItem('user');
+                    sessionStorage.removeItem('isLoggedIn');
+                    window.location.href = 'register.html';
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert(error.message || 'Failed to delete profile.');
+            } finally {
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = 'Delete Profile';
+            }
+        });
+    }

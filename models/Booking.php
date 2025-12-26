@@ -1,3 +1,4 @@
+
 <?php
 class Booking
 {
@@ -79,5 +80,32 @@ class Booking
         $stmt->execute();
 
         return $stmt;
+    }
+
+    // Update booking by user (only status)
+    public function updateByUser()
+    {
+        $query = "UPDATE " . $this->table_name . " SET status = :status WHERE id = :id AND user_id = :user_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':status', $this->status);
+        $stmt->bindParam(':id', $this->id);
+        $stmt->bindParam(':user_id', $this->user_id);
+        if ($stmt->execute()) {
+            return $stmt->rowCount() > 0;
+        }
+        return false;
+    }
+
+    // Delete booking by user
+    public function deleteByUser()
+    {
+        $query = "DELETE FROM " . $this->table_name . " WHERE id = :id AND user_id = :user_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $this->id);
+        $stmt->bindParam(':user_id', $this->user_id);
+        if ($stmt->execute()) {
+            return $stmt->rowCount() > 0;
+        }
+        return false;
     }
 }

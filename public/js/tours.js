@@ -10,7 +10,100 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTours();
     setupEventListeners();
     setupReviewForm();
+    loadMyReviews();
 });
+
+// Load user's reviews
+async function loadMyReviews() {
+    let user;
+    try {
+        user = JSON.parse(localStorage.getItem('user'));
+    } catch { user = null; }
+    if (!user || !user.id) return;
+    const container = document.getElementById('my-reviews-list');
+    if (!container) return;
+    container.innerHTML = '<div>Loading your reviews...</div>';
+    try {
+        const res = await fetch(`/api/reviews/read.php?user_id=${user.id}`);
+        const reviews = await res.json();
+        if (!Array.isArray(reviews) || reviews.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-muted);">No reviews yet.</div>';
+            return;
+        }
+        container.innerHTML = reviews.map(createMyReviewCard).join('');
+    } catch (err) {
+        container.innerHTML = '<div style="color:red;">Failed to load reviews.</div>';
+    }
+}
+
+function createMyReviewCard(review) {
+    return `
+        <div class="review-item" style="border-bottom:1px solid #eee; padding:1rem 0;">
+            <div><b>Tour:</b> ${review.tour_title || review.tour_id}</div>
+            <div><b>Rating:</b> ${review.rating} / 5</div>
+            <div><b>Comment:</b> ${review.comment}</div>
+            <div style="margin-top:0.5rem;">
+                <button class="btn btn-outline btn-sm" onclick="editReview(${review.id}, this)">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteReview(${review.id}, this)">Delete</button>
+            </div>
+        </div>
+    `;
+}
+
+// Edit review (simple prompt-based for now)
+async function editReview(reviewId, btn) {
+    const newComment = prompt('Update your review comment:');
+    if (newComment === null) return;
+    const newRating = prompt('Update your rating (1-5):');
+    if (newRating === null) return;
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    try {
+        const res = await fetch('/api/reviews/update.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: reviewId, comment: newComment, rating: newRating })
+        });
+        const result = await res.json();
+        if (res.ok) {
+            alert('Review updated.');
+            loadMyReviews();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (err) {
+        alert(err.message || 'Failed to update review.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Edit';
+    }
+}
+
+// Delete review
+async function deleteReview(reviewId, btn) {
+    if (!confirm('Delete this review?')) return;
+    btn.disabled = true;
+    btn.textContent = 'Deleting...';
+    try {
+        const res = await fetch('/api/reviews/delete.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: reviewId })
+        });
+        const result = await res.json();
+        if (res.ok) {
+            alert('Review deleted.');
+            loadMyReviews();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (err) {
+        alert(err.message || 'Failed to delete review.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+    }
+}
 
 function initMessageBox() {
     const modal = document.getElementById('message-modal');

@@ -196,7 +196,7 @@ function createBookingCard(booking) {
             </div>
             
             <div class="booking-actions">
-                <button class="btn btn-danger btn-sm" disabled style="opacity: 0.5;">
+                <button class="btn btn-danger btn-sm" onclick="cancelBooking(${booking.id}, this)">
                     <i class="fas fa-times"></i> Cancel
                 </button>
                 <button onclick="viewBookingDetails(${booking.id})" class="btn btn-outline btn-sm" style="border-color: var(--border);">
@@ -205,6 +205,32 @@ function createBookingCard(booking) {
             </div>
         </div>
     `;
+}
+
+// Cancel booking
+async function cancelBooking(bookingId, btn) {
+    if (!confirm('Are you sure you want to cancel this booking?')) return;
+    btn.disabled = true;
+    btn.textContent = 'Cancelling...';
+    try {
+        const response = await fetch('/api/bookings/delete.php', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: bookingId })
+        });
+        const result = await response.json();
+        if (response.ok) {
+            alert('Booking cancelled successfully.');
+            loadBookings();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        alert(error.message || 'Failed to cancel booking.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Cancel';
+    }
 }
 
 // Update statistics
