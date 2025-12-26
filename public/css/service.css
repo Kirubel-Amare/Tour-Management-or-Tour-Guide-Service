@@ -1,9 +1,10 @@
 /* Make hotel booking button full width and aligned */
 .book-hotel-btn-full {
-    width: 100%;
+    width: 200%;
     margin: 0.5em 0 0 0;
     display: block;
     box-sizing: border-box;
+    background-color: var(--primary);
 }
 
         /* Services Page Specific Styles */

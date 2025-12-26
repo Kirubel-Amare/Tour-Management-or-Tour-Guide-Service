@@ -516,10 +516,10 @@ function createHotelCard(hotel) {
                         <button onclick="viewHotelDetails(${hotel.id})" class="btn btn-outline" style="border-color: var(--border);">
                             <i class="fas fa-info-circle"></i> Details
                         </button>
-                        <button onclick="bookPartnerHotel(${hotel.id})" class="btn btn-primary">
+                        <button onclick="bookPartnerHotel(${hotel.id})" class="btn btn-success">
                             <i class="fas fa-bed"></i> Check Availability
                         </button>
-                        <button onclick="bookHotelNow(${hotel.id})" class="btn btn-success book-hotel-btn-full">
+                        <button onclick="bookHotelNow(${hotel.id})" class="btn btn-primary book-hotel-btn-full">
                             <i class="fas fa-calendar-check"></i> Book Hotel
                         </button>
                     </div>
