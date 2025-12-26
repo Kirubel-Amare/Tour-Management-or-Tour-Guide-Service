@@ -108,9 +108,15 @@
     const guests = Number(document.getElementById('guest-count').value || 0);
     const phone = (document.getElementById('contact-phone').value || '').trim();
     const requests = (document.getElementById('special-requests').value || '').trim();
+    const customerName = document.getElementById('customer-name')?.value || user.name;
+    const customerEmail = user.email || '';
 
     if (!restaurantId || !date || !time || !guests) {
         showMessageBox('Date, time, and guest count are required.', { type: 'error', title: 'Missing info' });
+        return;
+    }
+    if (!customerEmail) {
+        showMessageBox('Your profile is missing an email address. Please update your profile.', { type: 'error', title: 'Missing email' });
         return;
     }
 
@@ -123,14 +129,14 @@
             },
             body: JSON.stringify({
                 user_id: user.id,
-                customer_name: document.getElementById('customer-name')?.value || user.name,
+                customer_name: customerName,
+                customer_email: customerEmail,
                 customer_phone: phone,
                 restaurant_id: restaurantId,
                 date,
                 time,
                 guests,
-                phone: phone || undefined,
-                requests: requests || undefined
+                special_requests: requests || undefined
             })
         });
 
